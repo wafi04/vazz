@@ -1,7 +1,7 @@
 'use client';
 import { trpc } from '@/utils/trpc';
 import { HelpCircle } from 'lucide-react';
-import { SidebarOrder } from './sidebar';
+import { SidebarOrder } from '../../../app/(main)/order/[name]/_components/sidebar';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import Image from 'next/image';
 import { PlaceholderContent } from './placeholder/content';

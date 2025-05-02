@@ -8,7 +8,7 @@
 .dockerignore
 docker-compose.yml
 Dockerfile.prod
-
+docker/db
 /.pnp
 .pnp.*
 .yarn/*

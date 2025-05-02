@@ -1,4 +1,5 @@
 import { router } from '../trpc';
+import { categoriesRouter } from './categories/get';
 import { ConfigWeb } from './config';
 import { Deposits } from './deposits';
 import { Layanans } from './layanans';
@@ -13,6 +14,7 @@ import { WhatsappMessage } from './whatsapp';
 
 export const appRouter = router({
   main: mainRouter,
+  categories : categoriesRouter,
   methods: methods,
   layanans: Layanans,
   sub: subCategory,

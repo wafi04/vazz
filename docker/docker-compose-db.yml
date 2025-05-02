@@ -1,0 +1,21 @@
+version: '3.9'
+services:
+  db_vazzuniverse:
+    image: mariadb:10.11.11-jammy
+    container_name: mariadb-database
+    restart: unless-stopped
+    volumes:
+      - ./db:/var/lib/mysql
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_DATABASE: vazzuniverse
+      MARIADB_USER: user
+      MARIADB_PASSWORD: userpassword
+    ports:
+      - "3001:3306"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

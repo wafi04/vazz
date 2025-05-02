@@ -48,7 +48,6 @@ export async function GET() {
     if (Array.isArray(rawResponse)) {
       dataArray = rawResponse;
     } else if (rawResponse && typeof rawResponse === 'object') {
-      // Try to find the data array - common API patterns
       if (Array.isArray(rawResponse.data)) {
         dataArray = rawResponse.data;
       } else if (
@@ -56,9 +55,7 @@ export async function GET() {
         Array.isArray(rawResponse.response.data)
       ) {
         dataArray = rawResponse.response.data;
-      } else {
-        // Log what we actually received
-        
+      } else {        
         return NextResponse.json(
           { error: 'Invalid response format - data array not found' },
           { status: 500 }
@@ -116,9 +113,7 @@ export async function GET() {
 
       let matchCount = 0;
 
-      // For each data item, check if it matches the current category
       for (const item of dataArray) {
-        // Skip invalid items
         if (!item || typeof item !== 'object') {
           continue;
         }
@@ -149,12 +144,8 @@ export async function GET() {
               where: { providerId: item.buyer_sku_code },
             });
 
-            if (!existingService) {
-              // Create new service
-              
-
+            if (!existingService) {              
               try {
-                // Calculate base price with profit margins
                 const regularPrice = Math.round(
                   item.price + (item.price * defaultProfits.profit) / 100
                 );
@@ -166,7 +157,6 @@ export async function GET() {
                   item.price + (item.price * defaultProfits.profitGold) / 100
                 );
 
-                // For platinum, apply the profit margin and then subtract 1%
                 const platinumBasePrice = Math.round(
                   item.price +
                     (item.price * defaultProfits.profitPlatinum) / 100
