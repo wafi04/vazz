@@ -19,6 +19,9 @@ const nextConfig = {
             },
             {
                 hostname: 'upload.wikimedia.org',
+            },
+            {
+                hostname : "www.ourastore.com"
             }
         ]
     }

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import AllCategories from './all-categories';
 import { CategoryTypeSelector } from './header-state';
+import { HeaderFilterGame } from './_components/headerFilter';
 
 export default function Categories() {
   const [select, setSelect] = useState<string>('gamelainnya');
@@ -14,10 +15,7 @@ export default function Categories() {
           <span className="absolute -bottom-1 left-0 w-1/3 h-1 bg-orange-500 rounded-full"></span>
         </span>
       </h1>
-      <CategoryTypeSelector
-        initialType={select}
-        onTypeChange={(type) => setSelect(type)}
-      />
+     <HeaderFilterGame />
       <AllCategories type={select} />
     </section>
   );

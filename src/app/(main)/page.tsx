@@ -1,7 +1,8 @@
-import { PopularSection } from './populer';
 
 import Categories from './categories';
 import { BannerSlider } from './banner';
+import { PopularSection } from './_components/popular';
+import { CategoriesAll } from './_components/catgeoriesAll';
 
 export default async function Home() {
   return (
@@ -13,7 +14,7 @@ export default async function Home() {
         <section className="py-8">
           <PopularSection />
         </section>
-        <Categories />
+        <CategoriesAll />
       </main>
     </>
   );
