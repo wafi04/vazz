@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { HeaderFilterGame } from "./headerFilter"
 import { EmptyState } from "@/components/ui/not-found/NotFound"
 import { Loader2, ChevronDown } from "lucide-react"
+import Link from "next/link"
 
 export function CategoriesAll() {
   const { filter } = useFilterCategoryHome()
@@ -85,9 +86,7 @@ export function CategoriesAll() {
         </motion.p>
       </div>
 
-      {!isLoading && categories.length === 0 && (
-        <EmptyState />
-      )}
+     
 
       {/* Product grid */}
       {!isLoading && categories.length > 0 && (
@@ -102,8 +101,8 @@ export function CategoriesAll() {
               className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-2"
             >
               {categories.map((category, index) => (
+                <Link href={`/order/${category.kode}`} key={category.id}>
                 <motion.div
-                  key={`${category.id}-${index}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
@@ -208,6 +207,7 @@ export function CategoriesAll() {
                     </div>
                   </div>
                 </motion.div>
+                </Link>
               ))}
             </motion.div>
           </AnimatePresence>

@@ -20,8 +20,8 @@ export type Category = {
 export type SubCategories = {
   name: string;
   id: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | null
+  updatedAt: string | null;
   code: string;
   categoryId: number;
   active: boolean;

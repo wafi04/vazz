@@ -1,6 +1,8 @@
 export const URL_LOGO = 'https://res.cloudinary.com/dstvymie8/image/upload/v1741104560/LOGO_VAZZ_STORE_2_dereyt.webp'
 export const DIGI_USERNAME = process.env.DIGI_USERNAME as string;
 export const DIGI_KEY = process.env.DIGI_API_KEY as string;
+export const CLIENT_DIGI_USERNAME = process.env.NEXT_PUBLIC_DIGI_USERNAME as string;
+export const CLIENT_DIGI_KEY = process.env.NEXT_PUBLIC_DIGI_API_KEY as string;
 export const CATEGORIES_QUERY_KEY = ['categories'] as const;
 export const DUITKU_MERCHANT_CODE = process.env.DUITKU_MERCHANT_CODE;
 export const DUITKU_API_KEY = process.env.DUITKU_API_KEY;

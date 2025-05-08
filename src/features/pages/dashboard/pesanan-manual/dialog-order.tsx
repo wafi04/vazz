@@ -26,7 +26,7 @@ import { trpc } from '@/utils/trpc';
 import { Loader2 } from 'lucide-react';
 import { ReactNode, useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { PlaceholderContent } from '../../order/placeholder/content';
+import { PlaceholderContent } from '../../../../app/(main)/order/[name]/_components/placeholder';
 import { getServerData } from '@/data/data-server-region';
 
 interface DialogOrderManualProps {

@@ -195,7 +195,7 @@ model Pembelian {
   successReportSended   Boolean   @map("success_report_sended")
   createdAt             DateTime? @default(now()) @map("created_at")
   updatedAt             DateTime? @updatedAt @map("updated_at")
-  
+  voucherUsage          VoucherUsage[]
   pembayaran            Pembayaran? @relation("PembayaranToPembelian", fields: [orderId], references: [orderId])
   user                  Users?     @relation(fields: [username], references: [username])
   systemLogs            SystemLog[]
@@ -368,9 +368,11 @@ model Voucher {
   usageCount     Int       @default(0)
   isForAllCategories Boolean @default(false) @map("is_for_all_categories")
   isActive       Boolean   @default(true) @map("is_active")
+
   startDate      DateTime  @default(now()) @map("start_date")
   expiryDate     DateTime  @map("expiry_date")
   description    String?
+  usage          VoucherUsage[]
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
   
@@ -393,6 +395,26 @@ model VoucherCategory {
   @@index([voucherId])
   @@index([categoryId])
   @@map("voucher_categories")
+}
+
+model VoucherUsage {
+  id          Int        @id @default(autoincrement())
+  voucherId   Int        @map("voucher_id")
+  orderId     Int        @map("order_id")
+  user        String     @map("user")
+  amount      Int    
+  createdAt   DateTime   @default(now()) @map("created_at")
+  status      String     @default("PENDING")
+  expiresAt   DateTime?  @map("expires_at")  
+
+  voucher     Voucher    @relation(fields: [voucherId], references: [id])
+  pembelian   Pembelian  @relation(fields: [orderId], references: [id])
+
+  @@index([voucherId])
+  @@index([orderId])
+  @@index([user])
+  @@index([status])
+  @@map("voucher_usages")
 }
 
 model SystemLog {

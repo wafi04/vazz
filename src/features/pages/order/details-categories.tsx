@@ -4,7 +4,7 @@ import { HelpCircle } from 'lucide-react';
 import { SidebarOrder } from '../../../app/(main)/order/[name]/_components/sidebar';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import Image from 'next/image';
-import { PlaceholderContent } from './placeholder/content';
+import { PlaceholderContent } from '../../../app/(main)/order/[name]/_components/placeholder';
 import { Category,  SubCategories } from '@/types/category';
 import { usePlansStore } from '@/hooks/use-select-plan';
 import { OrderPage } from './order';
