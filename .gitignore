@@ -16,6 +16,8 @@ docker/db
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+/scripts
+/docker
 
 # testing
 /coverage
