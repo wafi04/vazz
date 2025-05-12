@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { HeaderNumber } from "@/components/ui/headernumber";
 import { Input } from "@/components/ui/input";
-import { useOrderStore } from "@/hooks/user-order";
+import { useOrderStore } from "@/hooks/use-order";
 
 export function KodeVoucherInput() {
   const { setVoucherCode } = useOrderStore();
@@ -15,7 +15,7 @@ export function KodeVoucherInput() {
   };
 
   const handleSubmit = () => {
-    setVoucherCode(localVoucherCode); 
+    setVoucherCode(localVoucherCode);
   };
 
   return (

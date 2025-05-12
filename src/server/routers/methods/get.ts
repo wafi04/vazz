@@ -19,7 +19,6 @@ export const Methods = router({
             ...(search && {
                 name: {
                     contains: search,
-                    mode: 'insensitive'
                 }
             })
         };

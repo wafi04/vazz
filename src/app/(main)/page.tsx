@@ -1,8 +1,7 @@
-
-import Categories from './categories';
-import { BannerSlider } from './banner';
-import { PopularSection } from './_components/popular';
-import { CategoriesAll } from './_components/categoriesAll';
+import Categories from "./categories";
+import { BannerSlider } from "./banner";
+import { PopularSection } from "./_components/popular";
+import { CategoriesAll } from "./_components/categoriesAll";
 
 export default async function Home() {
   return (

@@ -1,11 +1,11 @@
-"use client"
+"use client";
 import { Flame } from "lucide-react";
 import { ProductData } from "@/types/product";
 import Image from "next/image";
 import { FormatPrice } from "@/utils/formatPrice";
 import { motion } from "framer-motion";
 import { SvgProduct } from "./svg";
-import { useOrderStore } from "@/hooks/user-order";
+import { useOrderStore } from "@/hooks/use-order";
 
 export function ProductPage({ products }: { products: ProductData[] }) {
   return (
@@ -16,28 +16,30 @@ export function ProductPage({ products }: { products: ProductData[] }) {
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
-      
+
       {products.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-lg text-gray-400">No products found matching your criteria</p>
+          <p className="text-lg text-gray-400">
+            No products found matching your criteria
+          </p>
         </div>
       )}
     </div>
   );
 }
 function ProductCard({ product }: { product: ProductData }) {
-  let gameName = product.layanan
-  let diamondInfo = ""
-  
+  let gameName = product.layanan;
+  let diamondInfo = "";
+
   if (product.layanan) {
-    const match = product.layanan.match(/(.*?)(\d+\s*[a-zA-Z]*)$/)
+    const match = product.layanan.match(/(.*?)(\d+\s*[a-zA-Z]*)$/);
     if (match) {
-      gameName = match[1].trim().replace("-", " ")
-      diamondInfo = match[2].trim()
+      gameName = match[1].trim().replace("-", " ");
+      diamondInfo = match[2].trim();
     }
   }
-  const {setProduct,productDetails,setPrice}  = useOrderStore()
-  const isSelected = product.providerId === productDetails.code
+  const { setProduct, productDetails, setPrice } = useOrderStore();
+  const isSelected = product.providerId === productDetails.code;
   return (
     <motion.div
       onClick={() => {
@@ -45,9 +47,8 @@ function ProductCard({ product }: { product: ProductData }) {
           code: product.providerId,
           name: product.layanan,
           price: product.harga,
-        }
-      )
-      setPrice(product.harga);
+        });
+        setPrice(product.harga);
       }}
       className="relative rounded-xl cursor-pointer overflow-hidden shadow-lg hover:shadow-xl transition-all bg-blue-900/20 border border-border flex flex-col justify-between"
       initial={{ opacity: 0, y: 20 }}
@@ -67,8 +68,7 @@ function ProductCard({ product }: { product: ProductData }) {
                 alt={product.layanan}
                 className="w-12 h-12 object-contain rounded-md"
               />
-            ) :
-              (
+            ) : (
               <Image
                 width={40}
                 height={40}
@@ -79,18 +79,21 @@ function ProductCard({ product }: { product: ProductData }) {
             )}
           </div>
           {isSelected && (
-          <div className="absolute top-3 right-3 bg-primary text-primary-foreground text-xs rounded-full py-0.5 px-1.5">
-            ✓
-          </div>
-        )}
-      
+            <div className="absolute top-3 right-3 bg-primary text-primary-foreground text-xs rounded-full py-0.5 px-1.5">
+              ✓
+            </div>
+          )}
 
           <div className="ml-3 flex-grow">
             <div className="flex items-center">
-              <span className="text-sm font-normal text-white">{product.layanan}</span>
+              <span className="text-sm font-normal text-white">
+                {product.layanan}
+              </span>
             </div>
             {product.harga && (
-              <p className="font-semibold text-foreground">{FormatPrice(product.harga)}</p>
+              <p className="font-semibold text-foreground">
+                {FormatPrice(product.harga)}
+              </p>
             )}
           </div>
         </div>
@@ -109,5 +112,5 @@ function ProductCard({ product }: { product: ProductData }) {
         </div>
       )}
     </motion.div>
-  )
+  );
 }

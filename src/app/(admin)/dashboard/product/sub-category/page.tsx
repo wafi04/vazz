@@ -1,4 +1,4 @@
-import SubCategory from '@/features/pages/dashboard/dashboard-sub-category/sub-category';
+import SubCategory from '@/features/pages/dashboard/subCategory/sub-category';
 
 export default function Page() {
   return <SubCategory />;

@@ -1,17 +1,16 @@
-'use client';
+"use client";
 
-import type React from 'react';
-
-import { Input } from '@/components/ui/input';
+import type React from "react";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Info } from 'lucide-react';
-import type { Category } from '@/types/category';
+} from "@/components/ui/select";
+import { Info } from "lucide-react";
+import type { Category } from "@/types/category";
 
 interface ServerOption {
   name: string;
@@ -33,16 +32,16 @@ export function PlaceholderContent({
   category,
   onChangeServerId,
   onChangeUserId,
-  serverId = '',
-  userId = '',
+  serverId = "",
+  userId = "",
   serverData,
 }: PlaceholderContentType) {
   const hasSecondInput =
     category.placeholder2 &&
-    category.placeholder2 !== '-' &&
-    category.placeholder2 !== '.' &&
-    category.placeholder2 !== '2' &&
-    category.placeholder2 != 'h';
+    category.placeholder2 !== "-" &&
+    category.placeholder2 !== "." &&
+    category.placeholder2 !== "2" &&
+    category.placeholder2 != "h";
   const shouldUseDropdown =
     hasSecondInput && serverData && serverData.length > 0;
 
@@ -69,14 +68,14 @@ export function PlaceholderContent({
       <div className="flex flex-col space-y-2 w-full">
         <label className="text-sm font-medium text-gray-200 flex items-center gap-2">
           {category.placeholder1}
-          {category.placeholder1 === 'User ID' && (
+          {category.placeholder1 === "User ID" && (
             <span className="tooltip" title="Enter your User ID">
               <Info size={16} className="text-gray-400" />
             </span>
           )}
         </label>
         <Input
-          value={userId ?? ''}
+          value={userId ?? ""}
           onChange={handleUserIdChange}
           placeholder={`${category.placeholder1}`}
           className="w-full rounded-lg px-2 py-1 placeholder:text-gray-500 text-white border-2 border-blue-500 focus-visible:ring-0 focus-visible:border-blue-900"
@@ -87,7 +86,7 @@ export function PlaceholderContent({
         <div className="flex flex-col space-y-2 w-full">
           <label className="text-sm font-medium text-gray-200 flex items-center gap-2">
             {category.placeholder2}
-            {category.placeholder2 === 'Server' && (
+            {category.placeholder2 === "Server" && (
               <span className="tooltip" title="Enter your Server ID">
                 <Info size={16} className="text-gray-400" />
               </span>
@@ -103,9 +102,9 @@ export function PlaceholderContent({
                 {serverData.map((server, index) => {
                   // Handle both string arrays and object arrays
                   const value =
-                    typeof server === 'string' ? server : server.value;
+                    typeof server === "string" ? server : server.value;
                   const label =
-                    typeof server === 'string' ? server : server.name;
+                    typeof server === "string" ? server : server.name;
 
                   return (
                     <SelectItem
@@ -121,7 +120,7 @@ export function PlaceholderContent({
             </Select>
           ) : (
             <Input
-              value={serverId ?? ''}
+              value={serverId ?? ""}
               onChange={handleServerIdChange}
               placeholder={`${category.placeholder2}`}
               className="w-full rounded-lg px-2 py-1 placeholder:text-gray-500 text-white border-2 border-blue-500 focus-visible:ring-0 focus-visible:border-blue-900"

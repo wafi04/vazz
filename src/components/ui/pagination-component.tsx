@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Pagination,
@@ -8,7 +8,7 @@ import {
   PaginationNext,
   PaginationLink,
   PaginationEllipsis,
-} from './pagination';
+} from "./pagination";
 
 // Pagination component
 export function PaginationComponent({
@@ -28,15 +28,15 @@ export function PaginationComponent({
   setCurrentPage: (page: number | ((prev: number) => number)) => void;
 }) {
   return (
-    <div className="flex items-center justify-between mt-6">
+    <section className="flex items-center justify-between mt-6">
       <p className="text-sm text-muted-foreground">
-        Menampilkan{' '}
-        <span className="font-medium">{(currentPage - 1) * perPage + 1}</span>{' '}
-        sampai{' '}
+        Menampilkan{" "}
+        <span className="font-medium">{(currentPage - 1) * perPage + 1}</span>{" "}
+        sampai{" "}
         <span className="font-medium">
           {Math.min(currentPage * perPage, pagination.totalCount)}
-        </span>{' '}
-        dari <span className="font-medium">{pagination.totalCount}</span>{' '}
+        </span>{" "}
+        dari <span className="font-medium">{pagination.totalCount}</span>{" "}
         kategori
       </p>
 
@@ -47,8 +47,8 @@ export function PaginationComponent({
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               className={
                 !pagination.hasPreviousPage
-                  ? 'pointer-events-none opacity-50'
-                  : 'cursor-pointer'
+                  ? "pointer-events-none opacity-50"
+                  : "cursor-pointer"
               }
             />
           </PaginationItem>
@@ -65,28 +65,28 @@ export function PaginationComponent({
                 if (currentPage <= 3) {
                   // Near start: show first 3, ellipsis, last
                   if (i < 3) return i + 1;
-                  if (i === 3) return 'ellipsis';
+                  if (i === 3) return "ellipsis";
                   return pagination.totalPages;
                 }
 
                 if (currentPage >= pagination.totalPages - 2) {
                   // Near end: show first, ellipsis, last 3
                   if (i === 0) return 1;
-                  if (i === 1) return 'ellipsis';
+                  if (i === 1) return "ellipsis";
                   return pagination.totalPages - (4 - i);
                 }
 
                 // Middle: show first, ellipsis, current-1, current, current+1, ellipsis, last
                 if (i === 0) return 1;
-                if (i === 1) return 'ellipsis';
+                if (i === 1) return "ellipsis";
                 if (i === 2) return currentPage;
-                if (i === 3) return 'ellipsis';
+                if (i === 3) return "ellipsis";
                 return pagination.totalPages;
               };
 
               const page = pageToShow();
 
-              if (page === 'ellipsis') {
+              if (page === "ellipsis") {
                 return (
                   <PaginationItem key={`ellipsis-${i}`}>
                     <PaginationEllipsis />
@@ -116,13 +116,13 @@ export function PaginationComponent({
               }
               className={
                 !pagination.hasNextPage
-                  ? 'pointer-events-none opacity-50'
-                  : 'cursor-pointer'
+                  ? "pointer-events-none opacity-50"
+                  : "cursor-pointer"
               }
             />
           </PaginationItem>
         </PaginationContent>
       </Pagination>
-    </div>
+    </section>
   );
 }

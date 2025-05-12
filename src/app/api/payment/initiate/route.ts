@@ -16,6 +16,7 @@ import { getProfile } from '@/app/(auth)/auth/components/server';
 import { GenerateRandomId } from '@/utils/generateRandomId';
 import { Prisma } from '@prisma/client';
 import { handleOrderStatusChange } from '@/lib/whatsapp-message';
+import { checkingVoucher } from '@/features/transaction/voucher/checkingVoucher';
 
 export type RequestPayment = {
   noWa: number
@@ -29,77 +30,6 @@ export type RequestPayment = {
   nickname: string;
 };
 
-/**
- * Helper function for safely processing vouchers with race condition handling
- */
-class PaymentRequestQueue {
-    private static instance: PaymentRequestQueue;
-    private activeRequests: Set<string> = new Set();
-    private queue: Map<string, Promise<any>> = new Map();
-    private maxConcurrentRequests: number;
-  
-    private constructor(maxConcurrentRequests = 10) {
-      this.maxConcurrentRequests = maxConcurrentRequests;
-    }
-  
-    static getInstance(maxConcurrentRequests = 10): PaymentRequestQueue {
-      if (!PaymentRequestQueue.instance) {
-        PaymentRequestQueue.instance = new PaymentRequestQueue(maxConcurrentRequests);
-      }
-      return PaymentRequestQueue.instance;
-    }
-  
-    async enqueue(key: string, processFn: () => Promise<any>): Promise<any> {
-      // Jika request untuk key ini sudah ada, tunggu
-      if (this.activeRequests.has(key)) {
-        if (!this.queue.has(key)) {
-          throw new Error('Concurrent request processing error');
-        }
-        return this.queue.get(key);
-      }
-  
-      // Cek jumlah request aktif
-      if (this.activeRequests.size >= this.maxConcurrentRequests) {
-        // Tunggu sampai ada slot kosong
-        await this.waitForSlot();
-      }
-  
-      // Tandai request sebagai aktif
-      this.activeRequests.add(key);
-  
-      try {
-        // Proses request
-        const requestPromise = processFn().finally(() => {
-          this.activeRequests.delete(key);
-          this.queue.delete(key);
-        });
-  
-        // Simpan promise
-        this.queue.set(key, requestPromise);
-  
-        return await requestPromise;
-      } catch (error) {
-        // Hapus request dari active requests jika error
-        this.activeRequests.delete(key);
-        this.queue.delete(key);
-        throw error;
-      }
-    }
-  
-    private async waitForSlot(): Promise<void> {
-      return new Promise((resolve) => {
-        const checkSlot = () => {
-          if (this.activeRequests.size < this.maxConcurrentRequests) {
-            resolve();
-          } else {
-            setTimeout(checkSlot, 100);
-          }
-        };
-        checkSlot();
-      });
-    }
-  }
-
 // Voucher Processing Function
 async function processVoucher(
   tx: Prisma.TransactionClient,
@@ -107,83 +37,27 @@ async function processVoucher(
   price: number,
   categoryDetails: any
 ) {
-  // First find the voucher
-  const voucher = await tx.voucher.findFirst({
-    where: {
-      code: voucherCode,
-      isActive: true,
-      expiryDate: { gt: new Date() },
-      startDate: { lte: new Date() },
-    },
-    include: {
-      categories: true,
-    },
-  });
-
-  if (!voucher) {
-    throw new Error('Invalid or expired voucher code');
-  }
-
-  // Lock the voucher row to prevent concurrent modifications
-  await tx.$executeRaw`SELECT * FROM vouchers WHERE id = ${voucher.id} FOR UPDATE`;
   
-  // Refetch after locking to get the most up-to-date state
-  const lockedVoucher = await tx.voucher.findUnique({
-    where: { id: voucher.id },
-  });
-  
-  if (!lockedVoucher) {
-    throw new Error('Voucher no longer available');
-  }
-  
-  // Check usage limits
-  if (
-    lockedVoucher.usageLimit &&
-    lockedVoucher.usageCount >= lockedVoucher.usageLimit
-  ) {
-    throw new Error('Voucher usage limit reached');
-  }
+  const voucher = await checkingVoucher(tx,{
+    amount : price,
+    voucherCode,
+    categoryId : categoryDetails.id
+  })
 
-  // Check minimum purchase requirement
-  if (voucher.minPurchase && price < voucher.minPurchase) {
-    throw new Error(`Minimum purchase of ${voucher.minPurchase} required for this voucher`);
-  }
-
-  const isApplicable =
-    voucher.isForAllCategories ||
-    voucher.categories.some(vc => vc.categoryId === categoryDetails.id);
-
-  if (!isApplicable) {
-    throw new Error('Voucher not applicable to this product category');
-  }
-
-  // Calculate discount amount
-  let discountAmount = 0;
-  if (voucher.discountType === 'PERCENTAGE') {
-    discountAmount = (price * voucher.discountValue) / 100;
-    if (voucher.maxDiscount) {
-      discountAmount = Math.min(discountAmount, voucher.maxDiscount);
-    }
-  } else {
-    discountAmount = voucher.discountValue;
-  }
-
-  // Update voucher usage count immediately while we have the lock
   await tx.voucher.update({
-    where: { id: voucher.id },
+    where: { id: voucher.voucherId },
     data: { usageCount: { increment: 1 } },
   });
 
   return {
-    price: Math.max(0, price - discountAmount),
-    discountAmount,
-    appliedVoucherId: voucher.id
+    price: voucher.finalPrice,
+    discountAmount : voucher.discountAmount,
+    appliedVoucherId: voucher.voucherId
   };
 }
 
 
 export async function POST(req: NextRequest) {
-  const requestQueue = PaymentRequestQueue.getInstance();
 
   try {
     // Parse request body
@@ -201,12 +75,6 @@ export async function POST(req: NextRequest) {
       accountId,
     }: RequestPayment = body;
 
-    // Generate unique request key for concurrency control
-    const requestKey = `${accountId}-${layanan}-${serverId}`;
-
-    // Enqueue and process the request
-    return await requestQueue.enqueue(requestKey, async () => {
-      // Initialize Digiflazz
       const digiflazz = new Digiflazz(DIGI_USERNAME, DIGI_KEY);
 
     // Validate required input
@@ -307,9 +175,9 @@ export async function POST(req: NextRequest) {
         if (voucherCode) {
           try {
             const voucherResult = await processVoucher(tx, voucherCode, price, categoryDetails);
-            price = voucherResult.price;
-            discountAmount = voucherResult.discountAmount;
-            appliedVoucherId = voucherResult.appliedVoucherId;
+            price = voucherResult.price as number
+            discountAmount = voucherResult.discountAmount as number;
+            appliedVoucherId = voucherResult.appliedVoucherId as number;
           } catch (error) {
             return NextResponse.json(
               { 
@@ -610,7 +478,7 @@ export async function POST(req: NextRequest) {
         timeout: 10000,
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable
       }
-    )})
+    )
   } catch (error: any) {
     return NextResponse.json(
       {

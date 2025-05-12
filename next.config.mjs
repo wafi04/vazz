@@ -10,7 +10,7 @@ const nextConfig = {
     },
     images: {
     domains : [
-        'vazzuniverse.id'
+        'universeh2h.site'
     ],    minimumCacheTTL: 60,
 
         remotePatterns: [

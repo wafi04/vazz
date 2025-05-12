@@ -1,42 +1,43 @@
-import { Prisma } from '@prisma/client';
-import { router, publicProcedure } from '../trpc';
-import { z } from 'zod';
-import { FormCategory } from '@/types/schema/categories';
+import { Prisma } from "@prisma/client";
+import { router, publicProcedure } from "../trpc";
+import { z } from "zod";
+import { FormCategory } from "@/types/schema/categories";
 export const mainRouter = router({
   getBanners: publicProcedure.query(async ({ ctx }) => {
     try {
       const banners = await ctx.prisma.berita.findMany();
       const layananFlashsale = await ctx.prisma.layanan.findMany({
-        where : {
-          isFlashSale : true
+        where: {
+          isFlashSale: true,
         },
-        select :{
-          hargaFlashSale : true,
-          judulFlashSale : true,
-          layanan : true,
-          bannerFlashSale : true,
-          expiredFlashSale : true,
+        select: {
+          hargaFlashSale: true,
+          judulFlashSale: true,
+          layanan: true,
+          bannerFlashSale: true,
+          expiredFlashSale: true,
         },
-        orderBy : {
-          expiredFlashSale : 'desc'
-        }
-      })
+        orderBy: {
+          expiredFlashSale: "desc",
+        },
+      });
       return {
         statusCode: 200,
-        message: 'Banners fetched successfully',
+        message: "Banners fetched successfully",
         data: {
           banners,
-          flashSale : layananFlashsale
+          flashSale: layananFlashsale,
         },
       };
     } catch (error) {
-      console.error('Error fetching banners:', error);
-      throw new Error('Failed to fetch banners');
+      console.error("Error fetching banners:", error);
+      throw new Error("Failed to fetch banners");
     }
   }),
   createCategory: publicProcedure
     .input(FormCategory)
     .mutation(async ({ ctx, input }) => {
+      console.log("From Client");
       const category = await ctx.prisma.categories.create({
         data: {
           ...input,
@@ -44,7 +45,7 @@ export const mainRouter = router({
       });
 
       return {
-        message: 'success',
+        message: "success",
         status: true,
         data: category,
       };
@@ -64,7 +65,7 @@ export const mainRouter = router({
       });
 
       return {
-        message: 'success',
+        message: "success",
         status: true,
         data: category,
       };
@@ -82,7 +83,7 @@ export const mainRouter = router({
       });
 
       return {
-        message: 'success',
+        message: "success",
         status: true,
       };
     }),
@@ -97,7 +98,7 @@ export const mainRouter = router({
         const categories = await ctx.prisma.categories.findFirst({
           where: {
             kode: input.kode,
-            status: 'active',
+            status: "active",
           },
         });
 
@@ -112,7 +113,7 @@ export const mainRouter = router({
         if (error instanceof Error) {
           console.error(error.message);
         }
-        throw new Error('Failed to fetch  categories');
+        throw new Error("Failed to fetch  categories");
       }
     }),
   getCategoriesType: publicProcedure.query(async ({ ctx }) => {
@@ -126,7 +127,7 @@ export const mainRouter = router({
       if (error instanceof Error) {
         console.error(error.message);
       }
-      throw new Error('Failed to fetch  categories');
+      throw new Error("Failed to fetch  categories");
     }
   }),
   getCategoriesActive: publicProcedure
@@ -143,10 +144,10 @@ export const mainRouter = router({
 
         // Get paginated data
         const categories = await ctx.prisma.categories.findMany({
-          where: { tipe: input.type, status: 'active' },
+          where: { tipe: input.type, status: "active" },
           skip,
           take: input.perPage,
-          orderBy: { id: 'asc' },
+          orderBy: { id: "asc" },
         });
 
         const totalCount = await ctx.prisma.categories.count({
@@ -170,7 +171,7 @@ export const mainRouter = router({
         if (error instanceof Error) {
           console.error(error.message);
         }
-        throw new Error('Failed to fetch active categories');
+        throw new Error("Failed to fetch active categories");
       }
     }),
   getCategoriesAll: publicProcedure
@@ -221,7 +222,7 @@ export const mainRouter = router({
             take,
             skip,
             orderBy: {
-              createdAt: 'desc',
+              createdAt: "desc",
             },
           }),
           ctx.prisma.categories.count({ where }),
@@ -245,15 +246,15 @@ export const mainRouter = router({
         if (error instanceof Error) {
           console.error(error.message);
         }
-        throw new Error('Failed to fetch categories');
+        throw new Error("Failed to fetch categories");
       }
     }),
   getCategoriesPopular: publicProcedure.query(async ({ ctx }) => {
     try {
       const categories = await ctx.prisma.categories.findMany({
         where: {
-          tipe: 'populer',
-          status: 'active',
+          tipe: "populer",
+          status: "active",
         },
       });
       return categories;
@@ -261,7 +262,7 @@ export const mainRouter = router({
       if (error instanceof Error) {
         console.error(error.message);
       }
-      throw new Error('failed to fetch categories popular');
+      throw new Error("failed to fetch categories popular");
     }
   }),
   getCategories: publicProcedure
@@ -289,12 +290,12 @@ export const mainRouter = router({
 
         return {
           statusCode: 200,
-          message: 'Categories fetched successfully',
+          message: "Categories fetched successfully",
           data: categories,
         };
       } catch (error) {
-        console.error('Error fetching categories:', error);
-        throw new Error('Failed to fetch categories');
+        console.error("Error fetching categories:", error);
+        throw new Error("Failed to fetch categories");
       }
     }),
 });

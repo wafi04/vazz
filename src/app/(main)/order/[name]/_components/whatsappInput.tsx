@@ -78,13 +78,13 @@ export default function WhatsAppInput() {
             />
           </div>
           
-          <div className="flex items-center mt-1 text-xs text-white italic">
-            <Info className="w-3 h-3 mr-1" />
+          <div className="flex items-center mt-3 text-xs text-white italic">
+            <Info className="w-3 h-3 mr-1  " />
             <span>*Nomor ini akan dihubungi jika terjadi masalah</span>
           </div>
           
           <div className="flex items-center mt-3 text-xs text-white bg-blue-500 p-2 rounded-md">
-            <Phone className="w-4 h-4 mr-2 text-white" />
+            <Phone className="w-4 h-4 mr-2  text-white" />
             <span>Jika ada kendala, kami akan menghubungi nomor WA kamu diatas</span>
           </div>
         </div>

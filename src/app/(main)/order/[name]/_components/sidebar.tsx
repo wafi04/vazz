@@ -1,6 +1,4 @@
-import { useOrderStore } from '@/hooks/user-order';
 import { Category } from '@/types/category';
-import Image from 'next/image';
 import { JSX, useEffect, useState } from 'react';
 import { CartDetails } from './cartDetails';
 

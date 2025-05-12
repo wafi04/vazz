@@ -23,3 +23,13 @@ declare module "next-auth/jwt" {
     username? : string
   }
 }
+
+declare global {
+  const myKVNamespace: KVNamespace;
+
+  interface CacheStorage {
+    default: CacheStorage;
+    put : (request : string,res : Response)  => void
+  
+  }
+}

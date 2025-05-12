@@ -1,27 +1,31 @@
-'use client';
+"use client";
 
-import { trpc } from '@/utils/trpc';
-import Image from 'next/image';
-import { SidebarOrder } from '@/app/(main)/order/[name]/_components/sidebar';
-import { ProductPage } from './products';
-import { HeaderFilterProduct } from './header';
-import { useFilterProduct } from '@/hooks/use-filterProduct';
-import { useEffect, useState } from 'react';
-import { HeroSection } from './herosection';
-import { PlaceholderContent } from '@/app/(main)/order/[name]/_components/placeholder';
-import { useOrderStore } from '@/hooks/user-order';
-import WhatsAppInput from './whatsappInput';
-import { MethodSection } from './methodSection';
-import { HeaderNumber } from '@/components/ui/headernumber';
-import { KodeVoucherInput } from './voucher';
+import { trpc } from "@/utils/trpc";
+import Image from "next/image";
+import { SidebarOrder } from "@/app/(main)/order/[name]/_components/sidebar";
+import { ProductPage } from "./products";
+import { HeaderFilterProduct } from "./header";
+import { useFilterProduct } from "@/hooks/use-filterProduct";
+import { useEffect, useState } from "react";
+import { HeroSection } from "./herosection";
+import { PlaceholderContent } from "@/app/(main)/order/[name]/_components/placeholder";
+import { useOrderStore } from "@/hooks/use-order";
+import WhatsAppInput from "./whatsappInput";
+import { MethodSection } from "./methodSection";
+import { HeaderNumber } from "@/components/ui/headernumber";
+import { KodeVoucherInput } from "./voucher";
 
 export default function DetailsCategories({ name }: { name: string }) {
   const { filter } = useFilterProduct();
-  const { data, isLoading } = trpc.categories.getByCode.useQuery({ code: name });
-  const {setUserId,setZone,userId,zone}  = useOrderStore()
+  const { data, isLoading } = trpc.categories.getByCode.useQuery({
+    code: name,
+  });
+  const { setUserId, setZone, userId, zone } = useOrderStore();
   const category = data?.data;
 
-  const [filteredProducts, setFilteredProducts] = useState(category?.layanan ?? []);
+  const [filteredProducts, setFilteredProducts] = useState(
+    category?.layanan ?? []
+  );
 
   useEffect(() => {
     if (category?.layanan) {
@@ -40,7 +44,7 @@ export default function DetailsCategories({ name }: { name: string }) {
 
       setFilteredProducts(updatedLayanan);
     }
-  }, [filter, category?.layanan]); 
+  }, [filter, category?.layanan]);
 
   if (isLoading) {
     return null;
@@ -63,17 +67,23 @@ export default function DetailsCategories({ name }: { name: string }) {
         <div className="hidden lg:block lg:sticky lg:top-6 lg:self-start">
           <SidebarOrder category={category} />
         </div>
-        
+
         {/* Input Section */}
         <div className="lg:col-span-2 px-2 space-y-6">
           <div className="flex flex-col w-full rounded-lg overflow-hidden border-2">
-              <HeaderNumber number={"1"} title={"Masukkan Detail Akun"} />
-              <PlaceholderContent category={category} onChangeServerId={setZone} serverId={zone} userId={userId} onChangeUserId={setUserId} />
+            <HeaderNumber number={"1"} title={"Masukkan Detail Akun"} />
+            <PlaceholderContent
+              category={category}
+              onChangeServerId={setZone}
+              serverId={zone}
+              userId={userId}
+              onChangeUserId={setUserId}
+            />
           </div>
           <div className="flex flex-col w-full rounded-lg overflow-hidden border-2">
-              <HeaderNumber number={"2"} title={"Pilih Product"} />
-              <HeaderFilterProduct subCategories={category.subCategories} /> 
-              <ProductPage products={filteredProducts} />
+            <HeaderNumber number={"2"} title={"Pilih Product"} />
+            <HeaderFilterProduct subCategories={category.subCategories} />
+            <ProductPage products={filteredProducts} />
           </div>
           <MethodSection />
           <WhatsAppInput />
@@ -86,5 +96,5 @@ export default function DetailsCategories({ name }: { name: string }) {
 
 // Helper buat format ProviderID
 function formatProviderId(providerId: string) {
-  return providerId.toUpperCase().replace(/\s+/g, ''); // contoh sederhana
+  return providerId.toUpperCase().replace(/\s+/g, ""); // contoh sederhana
 }

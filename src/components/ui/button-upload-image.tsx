@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { Button } from './button';
 
 export interface ButtonUploadImageProps {
   onUpload: (file: File, type: string) => void;
   imageUrl: string;
   className?: string;
   type: string;
+  disabled : boolean
 }
 
 export function ButtonUploadImage({
@@ -14,6 +16,7 @@ export function ButtonUploadImage({
   className,
   type,
   onUpload,
+  disabled
 }: ButtonUploadImageProps) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -99,13 +102,13 @@ export function ButtonUploadImage({
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       {file && (
-        <button
+        <Button
           onClick={handleUpload}
           disabled={loading}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+          className="w-full"
         >
           {loading ? 'Uploading...' : 'Upload'}
-        </button>
+        </Button>
       )}
     </div>
   );

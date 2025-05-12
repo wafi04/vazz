@@ -7,7 +7,7 @@ import {
   ShoppingCart,
   Users,
   Wallet,
-} from 'lucide-react';
+} from "lucide-react";
 
 export interface NavItem {
   nama: string;
@@ -17,86 +17,86 @@ export interface NavItem {
 }
 export const dataNavAdmin: NavItem[] = [
   {
-    nama: 'Dashboard',
-    path: '/dashboard',
+    nama: "Dashboard",
+    path: "/dashboard",
     icon: <LayoutDashboard className="h-5 w-5" />,
   },
   {
-    nama: 'Pesanan',
+    nama: "Pesanan",
     icon: <ShoppingCart className="h-5 w-5" />,
     children: [
       {
-        nama: 'Semua Pesanan',
-        path: '/dashboard/pesanan',
+        nama: "Semua Pesanan",
+        path: "/dashboard/pesanan",
       },
       {
-        nama: 'Pesanan Joki',
-        path: '/dashboard/data/joki',
+        nama: "Pesanan Joki",
+        path: "/dashboard/data/joki",
       },
       {
-        nama: 'Pesanan Gift Skin',
-        path: '/dashboard/data/skin',
+        nama: "Pesanan Gift Skin",
+        path: "/dashboard/data/skin",
       },
       {
-        nama: 'Pesanan Vilog',
-        path: '/dashboard/data/dmvilog',
+        nama: "Pesanan Vilog",
+        path: "/dashboard/data/dmvilog",
       },
     ],
   },
   {
-    nama: 'Member',
+    nama: "Member",
     icon: <Users className="h-5 w-5" />,
     children: [
       {
-        nama: 'Member Deposit',
-        path: '/dashboard/user-deposit',
+        nama: "Member Deposit",
+        path: "/dashboard/user-deposit",
       },
       {
-        nama: 'Kelola Member',
-        path: '/dashboard/member',
+        nama: "Kelola Member",
+        path: "/dashboard/member",
       },
     ],
   },
   {
-    nama: 'Produk',
+    nama: "Produk",
     icon: <Package className="h-5 w-5" />,
     children: [
       {
-        nama: 'Kategori',
-        path: '/dashboard/product/category',
+        nama: "Kategori",
+        path: "/dashboard/product/category",
       },
       {
-        nama: 'Sub - Kategori',
-        path: '/dashboard/product/sub-category',
+        nama: "Sub - Kategori",
+        path: "/dashboard/product/sub-category",
       },
       {
-        nama: 'Layanan',
-        path: '/dashboard/product/layanan',
+        nama: "Product",
+        path: "/dashboard/product/layanan",
       },
       {
-        nama: 'Voucher',
-        path: '/dashboard/product/voucher',
+        nama: "Voucher",
+        path: "/dashboard/product/voucher",
       },
     ],
   },
   {
-    nama : "Tracking",
-    path : "/dashboard/tracking",
-    icon : <PackageSearch  className='size-4' />
+    nama: "Tracking",
+    path: "/dashboard/tracking",
+    icon: <PackageSearch className="size-4" />,
   },
   {
-    nama : "Metode",
-    path : "/dashboard/methode",
-    icon : <Wallet className='size-4'/>
+    nama: "Metode",
+    path: "/dashboard/methode",
+    icon: <Wallet className="size-4" />,
   },
   {
-    nama: 'Pesanan Manual',
-    path: '/dashboard/pesanan-manual',
+    nama: "Pesanan Manual",
+    path: "/dashboard/pesanan-manual",
     icon: <ClipboardList className="h-5 w-5" />,
   },
   {
-    nama: 'General',
-    path: '/dashboard/general',
+    nama: "General",
+    path: "/dashboard/general",
     icon: <Settings className="h-5 w-5" />,
   },
 ];
