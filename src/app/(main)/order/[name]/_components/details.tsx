@@ -14,6 +14,7 @@ import WhatsAppInput from "./whatsappInput";
 import { MethodSection } from "./methodSection";
 import { HeaderNumber } from "@/components/ui/headernumber";
 import { KodeVoucherInput } from "./voucher";
+import { CartDetails } from "./cartDetails";
 
 export default function DetailsCategories({ name }: { name: string }) {
   const { filter } = useFilterProduct();
@@ -88,6 +89,7 @@ export default function DetailsCategories({ name }: { name: string }) {
           <MethodSection />
           <WhatsAppInput />
           <KodeVoucherInput />
+          <CartDetails className="md:hidden block" />
         </div>
       </section>
     </main>

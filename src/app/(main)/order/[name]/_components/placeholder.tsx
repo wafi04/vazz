@@ -64,7 +64,7 @@ export function PlaceholderContent({
   };
 
   return (
-    <div className="flex flex-col md:flex-row justify-between space-y-4 p-4 md:space-y-0 gap-4 w-full">
+    <div className="flex flex-col md:flex-row justify-between space-y-4 p-4 md:space-y-0 gap-4 ">
       <div className="flex flex-col space-y-2 w-full">
         <label className="text-sm font-medium text-gray-200 flex items-center gap-2">
           {category.placeholder1}

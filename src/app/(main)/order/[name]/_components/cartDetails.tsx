@@ -1,7 +1,9 @@
+import { DialogPayment } from "@/features/pages/payment/dialog-payment";
 import { useOrderStore } from "@/hooks/use-order";
+import { cn } from "@/lib/utils";
 import { FormatPrice } from "@/utils/formatPrice";
 
-export function CartDetails() {
+export function CartDetails({ className }: { className?: string }) {
   const { method, price, voucherCode, zone, userId, productDetails } =
     useOrderStore();
 
@@ -9,7 +11,12 @@ export function CartDetails() {
     return null;
   }
   return (
-    <div className="bg-blue-900/20 rounded-xl p-6 border border-blue-800/50">
+    <div
+      className={cn(
+        "bg-blue-900/20 rounded-xl p-6 border border-blue-800/50",
+        className
+      )}
+    >
       <h3 className="text-lg font-semibold text-white mb-4">Detail Order</h3>
       <div className="space-y-3 text-sm text-gray-300">
         <div className="flex justify-between">
@@ -46,6 +53,8 @@ export function CartDetails() {
             {price > 0 ? FormatPrice(price) : "-"}
           </span>
         </div>
+
+        <DialogPayment />
       </div>
     </div>
   );

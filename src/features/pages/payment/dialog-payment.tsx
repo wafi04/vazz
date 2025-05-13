@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-'use client';
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
+"use client";
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,40 +10,38 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { useMidtransPayment } from '@/hooks/use-payment';
-import { usePlansStore } from '@/hooks/use-select-plan';
+} from "@/components/ui/dialog";
+import { useMidtransPayment } from "@/hooks/use-payment";
 import {
   AlertCircle,
   CheckCircle,
   CreditCard,
   Loader2,
+  Phone,
   ShieldCheck,
   Smartphone,
-} from 'lucide-react';
-import { FormatPrice } from '@/utils/formatPrice';
-import { toast } from 'sonner';
-import { CheckNickName } from '@/lib/check-nickname';
-import { useParams } from 'next/navigation';
-import { Separator } from '@/components/ui/separator';
-import { GAMES_WITH_VALIDATION, GameType } from '@/data/check-code';
+} from "lucide-react";
+import { FormatPrice } from "@/utils/formatPrice";
+import { toast } from "sonner";
+import { CheckNickName } from "@/lib/check-nickname";
+import { useParams } from "next/navigation";
+import { Separator } from "@/components/ui/separator";
+import { GAMES_WITH_VALIDATION, GameType } from "@/data/check-code";
+import { useOrderStore } from "@/hooks/use-order";
 
-export function DialogPayment({ amount }: { amount: number }) {
+export function DialogPayment() {
   const {
-    selectPlans,
-    selectPayment,
-    noWa,
-    voucher,
-    userID,
-    serverID,
-    categories,
-    setCategories,
-    setSelectPayment,
-    setSelectPlans,
-    setServerId,
-    setUserId,
-    setVoucher,
-  } = usePlansStore();
+    userId,
+    zone,
+    method,
+    price,
+    productDetails,
+    voucherCode,
+    whatsAppNumber,
+    setWhatsAppNumber,
+    resetOrder,
+  } = useOrderStore();
+
   const payment = useMidtransPayment();
   const [isLoading, setIsLoading] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
@@ -54,20 +52,22 @@ export function DialogPayment({ amount }: { amount: number }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [requiresValidation, setRequiresValidation] = useState(false);
 
+  // Determine if game needs validation
   useEffect(() => {
     const gameType = name as GameType;
     const needsValidation = GAMES_WITH_VALIDATION.includes(gameType);
     setRequiresValidation(needsValidation);
   }, [name]);
 
+  // Check nickname validity when dialog opens
   useEffect(() => {
     async function checkNickname() {
-      if (!isDialogOpen || !userID || !requiresValidation) {
+      if (!isDialogOpen || !userId || !requiresValidation) {
         return;
       }
 
-      if (requiresValidation && name === 'mobile-legend' && !serverID) {
-        setError('Server ID is required for this game');
+      if (requiresValidation && name === "mobile-legend" && !zone) {
+        setError("Server ID is required for this game");
         return;
       }
 
@@ -78,32 +78,33 @@ export function DialogPayment({ amount }: { amount: number }) {
 
         const nicknameResult = await CheckNickName({
           type: name as GameType,
-          userId: userID,
-          serverId: serverID as string,
+          userId: userId,
+          serverId: zone as string,
         });
+
         if (nicknameResult.success) {
-          setNicknameData(nicknameResult.name || 'account ditemukan');
+          setNicknameData(nicknameResult.name || "Account found");
         } else {
-          setError(`Pengguna Di temukan`);
+          setError("User account not found");
         }
       } catch (err) {
-        setError('Failed to check nickname. Please try again.');
+        setError("Failed to check nickname. Please try again.");
       } finally {
         setIsCheckingNickname(false);
       }
     }
 
     checkNickname();
-  }, [isDialogOpen, userID, serverID, name, requiresValidation]);
+  }, [isDialogOpen, userId, zone, name, requiresValidation]);
 
   const handlePayment = async () => {
-    if (!noWa || !selectPayment?.code || !selectPlans) {
-      setError('Missing required payment information');
+    if (!whatsAppNumber || !method?.code || !productDetails?.code) {
+      setError("Missing required payment information");
       return;
     }
 
     if (requiresValidation && !nicknameData && !isCheckingNickname) {
-      setError('Please wait for account verification or try again');
+      setError("Please wait for account verification or try again");
       return;
     }
 
@@ -112,34 +113,31 @@ export function DialogPayment({ amount }: { amount: number }) {
       setError(null);
 
       const response = await payment.initiatePayment({
-        noWa: parseInt(noWa),
-        paymentCode: selectPayment.code,
-        layanan: selectPlans.layanan,
-        accountId: userID as string,
-        serverId: serverID as string,
-        voucherCode: voucher,
+        noWa: parseInt(whatsAppNumber),
+        paymentCode: method.code,
+        layanan: productDetails.name,
+        accountId: userId,
+        serverId: zone || "",
+        voucherCode: voucherCode,
         game: name as string,
-        typeTransaksi: selectPayment.type,
-        nickname: nicknameData ?? 'not-found',
+        typeTransaksi: method.name,
+        nickname: nicknameData ?? "not-found",
       });
 
       if (response.success) {
         if (response.paymentUrl) {
           setPaymentUrl(response.paymentUrl);
-          window.open(response.paymentUrl, '_blank');
+          window.open(response.paymentUrl, "_blank");
         }
 
-        setSelectPayment(null);
-        setCategories(null);
-        setSelectPlans(null);
-        setVoucher('');
-        setServerId(null);
-        setUserId(null);
+        // Reset order data after successful payment
+        resetOrder();
+        setWhatsAppNumber("");
 
-        toast.success('Payment create successfully!');
+        toast.success("Payment created successfully!");
       }
     } catch (err) {
-      setError('Terjadi kesalahan. Please try again.');
+      setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -147,14 +145,17 @@ export function DialogPayment({ amount }: { amount: number }) {
 
   const isPaymentDisabled =
     isLoading ||
-    !noWa ||
+    !whatsAppNumber ||
     (requiresValidation && isCheckingNickname) ||
     (requiresValidation && !nicknameData && !error);
 
   return (
     <Dialog onOpenChange={(open) => setIsDialogOpen(open)}>
       <DialogTrigger asChild>
-        <Button className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 px-6 rounded-md transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed">
+        <Button
+          className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 px-6 rounded-md transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+          disabled={!userId || (name === "mobile-legend" && !zone)}
+        >
           Continue To Payment
         </Button>
       </DialogTrigger>
@@ -168,35 +169,21 @@ export function DialogPayment({ amount }: { amount: number }) {
             Complete Your Payment
           </DialogTitle>
           <DialogDescription className="text-blue-300 mt-1">
-       
+            Verify your details and proceed to payment
           </DialogDescription>
         </DialogHeader>
 
         {/* Game info section */}
-        {categories && (
+        {productDetails?.name && (
           <div className="px-6 py-3">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="relative h-12 w-12 rounded-lg overflow-hidden bg-blue-900/50">
-                <Image
-                  src={
-                    categories.thumbnail
-                  }
-                  alt={categories.nama}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div>
-                <h3 className="font-medium text-blue-100">{categories.nama}</h3>
-                <p className="text-xs text-blue-300">
-                  {selectPlans?.layanan || 'Product'}
-                </p>
-              </div>
+            <div>
+              <h3 className="font-medium text-blue-100">{name}</h3>
+              <p className="text-xs text-blue-300">
+                {productDetails.name || "Product"}
+              </p>
             </div>
           </div>
         )}
-
-        <Separator className="bg-blue-800/50" />
 
         {/* Payment details */}
         <div className="px-6 py-4">
@@ -235,8 +222,8 @@ export function DialogPayment({ amount }: { amount: number }) {
                   )}
                 </span>
                 <p className="text-xs text-blue-400">
-                  {userID}
-                  {serverID ? ` (${serverID})` : ''}
+                  {userId}
+                  {zone ? ` (${zone})` : ""}
                 </p>
               </div>
             </div>
@@ -249,21 +236,32 @@ export function DialogPayment({ amount }: { amount: number }) {
                 <span className="text-sm text-blue-300">Payment</span>
               </div>
               <span className="font-medium text-blue-100">
-                {selectPayment?.name || 'Not selected'}
+                {method?.name || "Payment Belum Dipilih"}
               </span>
             </div>
-
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mr-3">
-                  <Smartphone className="h-4 w-4 text-blue-400" />
+                  <Phone className="h-4 w-4 text-blue-400" />
                 </div>
-                <span className="text-sm text-blue-300">WhatsApp</span>
+                <span className="text-sm text-blue-300">Phone Number</span>
               </div>
               <span className="font-medium text-blue-100">
-                {noWa || 'Not provided'}
+                {whatsAppNumber || "Belum Diisi"}
               </span>
             </div>
+
+            {voucherCode && (
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mr-3">
+                    <CheckCircle className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <span className="text-sm text-blue-300">Voucher</span>
+                </div>
+                <span className="font-medium text-blue-100">{voucherCode}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -276,7 +274,7 @@ export function DialogPayment({ amount }: { amount: number }) {
               Total Amount
             </span>
             <span className="text-xl font-bold text-blue-100">
-              {amount ? FormatPrice(amount) : 'N/A'}
+              {price ? FormatPrice(price) : "N/A"}
             </span>
           </div>
         </div>
@@ -326,7 +324,7 @@ export function DialogPayment({ amount }: { amount: number }) {
                 Processing...
               </>
             ) : (
-              'Proceed to Payment'
+              "Proceed to Payment"
             )}
           </Button>
         </div>

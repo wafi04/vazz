@@ -1,9 +1,8 @@
-'use client';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search,Tag, X, Plus } from 'lucide-react';
+"use client";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, Tag, X, Plus, Filter } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,16 +10,30 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { VoucherForm } from './voucher-form';
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { VoucherForm } from "./voucher-form";
 
 interface HeaderVoucherProps {
   onChange: (term: string) => void;
+  onStatusChange: (status: string[]) => void;
   setActiveTab: (active: string) => void;
+  selectedStatuses: string[];
 }
 
-export function HeaderVoucher({ onChange, setActiveTab }: HeaderVoucherProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+export function HeaderVoucher({
+  onChange,
+  onStatusChange,
+  selectedStatuses,
+}: HeaderVoucherProps) {
+  const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const handleSearch = (value: string) => {
@@ -29,8 +42,23 @@ export function HeaderVoucher({ onChange, setActiveTab }: HeaderVoucherProps) {
   };
 
   const clearSearch = () => {
-    setSearchTerm('');
-    onChange('');
+    setSearchTerm("");
+    onChange("");
+  };
+
+  const statusOptions = [
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" },
+    { value: "upcoming", label: "Upcoming" },
+    { value: "expired", label: "Expired" },
+  ];
+
+  const handleStatusChange = (status: string) => {
+    const newStatuses = selectedStatuses.includes(status)
+      ? selectedStatuses.filter((s) => s !== status)
+      : [...selectedStatuses, status];
+
+    onStatusChange(newStatuses);
   };
 
   return (
@@ -80,9 +108,34 @@ export function HeaderVoucher({ onChange, setActiveTab }: HeaderVoucherProps) {
             </Button>
           )}
         </div>
-      </div>
 
-    
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              Status
+              {selectedStatuses.length > 0 && (
+                <span className="ml-2 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
+                  {selectedStatuses.length}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {statusOptions.map((status) => (
+              <DropdownMenuCheckboxItem
+                key={status.value}
+                checked={selectedStatuses.includes(status.value)}
+                onCheckedChange={() => handleStatusChange(status.value)}
+              >
+                {status.label}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 }

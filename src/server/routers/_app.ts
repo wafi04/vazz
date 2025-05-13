@@ -12,7 +12,7 @@ import { Products } from "./products/routes";
 import { subCategory } from "./sub-category";
 import { subCategories } from "./subCategory/routes";
 import { adminStats, PembelianAll } from "./transaction";
-import { voucher } from "./voucher";
+import { Vouchers } from "./voucher/routes";
 import { WhatsappMessage } from "./whatsapp";
 
 export const appRouter = router({
@@ -21,12 +21,12 @@ export const appRouter = router({
   method: Methods,
   subCategory: subCategories,
   methods: methods,
-  products : Products,
+  products: Products,
   layanans: Layanans,
   sub: subCategory,
   transaction: adminStats,
   order: order,
-  voucher: voucher,
+  voucher: Vouchers,
   deposits: Deposits,
   setting: ConfigWeb,
   pembelian: PembelianAll,

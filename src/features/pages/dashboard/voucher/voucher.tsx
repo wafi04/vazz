@@ -1,36 +1,46 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { HeaderVoucher } from "./header-voucher";
+import { useState } from "react";
 import { trpc } from "@/utils/trpc";
-import { Tag } from "lucide-react";
-import { VoucherTable } from "./voucher-table";
+import { HeaderVoucher } from "./header-voucher";
 import { VoucherTableSkeleton } from "@/components/ui/skeleton/voucher_skeleton";
+import { VoucherTable } from "./voucher-table";
+import { Tag } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 
 export function VoucherPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 
-  const debouncedSearch = useDebouncedValue(searchTerm);
+  const debouncedSearch = useDebouncedValue(searchTerm, 300);
 
   const handleSearchChange = (term: string) => {
     setSearchTerm(term);
   };
 
+  const handleStatusChange = (statuses: string[]) => {
+    setSelectedStatuses(statuses);
+  };
+
+  const determineCategory = () => {
+    if (selectedStatuses.length === 0) return activeTab;
+    return selectedStatuses[0];
+  };
+
   const { data, isLoading } = trpc.voucher.getAll.useQuery({
     code: debouncedSearch,
-    category: activeTab,
+    category: determineCategory(),
   });
-
   return (
     <main className="p-8">
       <HeaderVoucher
         onChange={handleSearchChange}
         setActiveTab={setActiveTab}
+        onStatusChange={handleStatusChange}
+        selectedStatuses={selectedStatuses}
       />
 
-      <div className="m-8">
+      <section className="py-3">
         {isLoading ? (
           <VoucherTableSkeleton />
         ) : data && data.length > 0 ? (
@@ -46,7 +56,7 @@ export function VoucherPage() {
             </p>
           </div>
         )}
-      </div>
+      </section>
     </main>
   );
 }
