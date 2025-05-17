@@ -1,8 +1,7 @@
 function extractWithNamedGroups(message) {
-    const regex = /#(?<trxid>\d+) (?<nomimal>\w+).(?<tujuan>\d+) SUKSES. SN\/Ref: (?<sn>.+)/;    
+    const regex = /#(?<trxid>\d+).+ (?<nominal>\w+).(?<tujuan>\d+) .+ status Sukses. SN\/Ref: (?<sn>\d+)./;    
     const match = message.match(regex);
-    
-    console.log('Match result:', match);
+    console.log(match)
     
     if(match){
         const { trxid, nominal, tujuan, sn } = match.groups;
@@ -17,7 +16,7 @@ function extractWithNamedGroups(message) {
     
 }
 const testMessages = [
-    'dddw232421 #4251432 GOPAY100.08561434542 SUKSES. SN/Ref: GOPAY - 08561434542'
+    'R#4292958 Transaksi Double TDM13B1B.082135421251 sdh pernah jam 16:16, status Sukses. SN/Ref: 03783900001382270599.'
 ];
 
 testMessages.forEach(message => {

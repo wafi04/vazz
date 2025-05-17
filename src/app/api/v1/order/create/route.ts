@@ -1,15 +1,10 @@
 import { getProfile } from "@/app/(auth)/auth/components/server";
-import {
-  DUITKU_API_KEY,
-  DUITKU_CALLBACK_URL,
-  DUITKU_MERCHANT_CODE,
-} from "@/constants";
+import { DUITKU_API_KEY, DUITKU_MERCHANT_CODE } from "@/constants";
 import { ValidationMethodPayment } from "@/features/transaction/method/validation";
 import { PaymentUsingSaldo } from "@/features/transaction/payment/saldo";
 import { checkingVoucher } from "@/features/transaction/voucher/checkingVoucher";
 import { Duitku } from "@/lib/duitku/duitku";
 import { prisma } from "@/lib/prisma";
-import { handleOrderStatusChange } from "@/lib/whatsapp-message";
 import { TRANSACTION_FLOW } from "@/types/transaction";
 import { GenerateRandomId } from "@/utils/generateRandomId";
 import { NextRequest, NextResponse } from "next/server";
@@ -24,6 +19,8 @@ export const CreateOrder = z.object({
   paymentCode: z.string(),
   noWa: z.string(),
 });
+
+export type CreateOrderType = z.infer<typeof CreateOrder>;
 
 export type OrderInput = z.infer<typeof CreateOrder>;
 
@@ -59,116 +56,164 @@ export async function POST(req: NextRequest) {
     const user = await getProfile();
     const merchantOrderId = GenerateRandomId();
 
-    // Initialize Duitku
+    // Initialize Duitku with proper error handling
     const duitku = new Duitku(
       DUITKU_API_KEY as string,
-      DUITKU_MERCHANT_CODE as string,
-      DUITKU_CALLBACK_URL as string
+      DUITKU_MERCHANT_CODE as string
     );
 
-    return await prisma.$transaction(async (tx) => {
-      // Find product
-      const product = await tx.layanan.findFirst({
-        where: {
-          providerId: productCode,
+    // Validate Duitku configuration
+    if (!DUITKU_API_KEY || !DUITKU_MERCHANT_CODE) {
+      console.error("Missing Duitku configuration");
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Payment gateway configuration error",
+          code: 500,
         },
-      });
+        { status: 500 }
+      );
+    }
 
-      if (!product) {
-        return NextResponse.json(
-          {
-            status: false,
-            message: "Product not found",
-            code: 404,
+    // Use a timeout to prevent long-running transactions
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Transaction timeout")), 10000);
+    });
+
+    const transactionPromise = prisma.$transaction(
+      async (tx) => {
+        // Find product with explicit locking
+        const product = await tx.layanan.findFirst({
+          where: {
+            providerId: productCode,
           },
-          { status: 404 }
-        );
-      }
-
-      // Calculate price based on user role
-      let price: number;
-      let profit: number;
-
-      if (user && user.session.role === "Platinum") {
-        price = product.hargaPlatinum;
-        profit = product.profitPlatinum;
-      } else if (user && user.session.role === "Reseller") {
-        price = product.hargaReseller;
-        profit = product.profitReseller;
-      } else {
-        price = product.harga;
-        profit = product.profit;
-      }
-
-      // Process voucher if provided
-      let discountAmount = 0;
-      let appliedVoucherId = null;
-
-      if (voucherCode) {
-        const validated = await checkingVoucher(tx, {
-          amount: price,
-          voucherCode,
-          categoryId: product?.kategoriId,
         });
 
-        if (validated.status) {
-          await tx.voucher.update({
-            where: { id: validated.voucherId },
-            data: { usageCount: { increment: 1 } },
-          });
-
-          price = validated.finalPrice as number;
-          discountAmount = validated.discountAmount as number;
-          appliedVoucherId = validated.voucherId;
-        } else {
+        if (!product) {
           return NextResponse.json(
             {
               status: false,
-              message: validated.message,
-              code: 400,
+              message: "Product not found",
+              code: 404,
             },
-            { status: 400 }
+            { status: 404 }
           );
         }
-      }
 
-      // Create purchase record
-      await tx.pembelian.create({
-        data: {
-          harga: price,
-          profit,
-          isDigi: true,
-          layanan: product.layanan,
-          status: TRANSACTION_FLOW.PENDING,
-          successReportSended: false,
-          log: "Pembelian Pending",
-          nickname,
-          orderId: merchantOrderId,
-          tipeTransaksi: "TOPUP",
-          userId,
-          zone,
-          providerOrderId: productCode,
-          username: user?.session.username ?? "Anonymous",
-          createdAt: new Date(),
-        },
-      });
+        // Calculate price based on user role
+        let price: number;
+        let profit: number;
 
-      // Process payment using balance if applicable
-      if (user?.session.username && paymentCode === "SALDO") {
-        const data = await PaymentUsingSaldo({
-          amount: price,
-          noWa,
-          orderId: merchantOrderId,
-          productCode: productCode,
-          productName: product.layanan,
-          tx,
-          userId: userId,
-          username: user.session.username,
-          serverId: zone,
-        });
+        if (user && user.session.role === "Platinum") {
+          price = product.hargaPlatinum;
+          profit = product.profitPlatinum;
+        } else if (user && user.session.role === "Reseller") {
+          price = product.hargaReseller;
+          profit = product.profitReseller;
+        } else {
+          price = product.harga;
+          profit = product.profit;
+        }
 
-        return NextResponse.json(
-          {
+        // Process voucher if provided
+        let discountAmount = 0;
+        let appliedVoucherId = null;
+
+        if (voucherCode) {
+          const voucher = await tx.voucher.findUnique({
+            where: { code: voucherCode },
+            select: { id: true },
+          });
+
+          if (voucher) {
+            await tx.$executeRaw`SELECT 1 FROM vouchers WHERE id = ${voucher.id} FOR UPDATE`;
+          }
+
+          const validated = await checkingVoucher(tx, {
+            amount: price,
+            voucherCode,
+            categoryId: product?.kategoriId,
+          });
+
+          if (validated && validated.status && validated.voucherId) {
+            await tx.voucher.update({
+              where: { id: validated.voucherId },
+              data: { usageCount: { increment: 1 } },
+            });
+
+            await tx.voucherUsage.create({
+              data: {
+                amount: discountAmount,
+                orderId: merchantOrderId,
+                voucherId: validated.voucherId as number,
+                username: user?.session.username,
+                whatsapp: noWa,
+              },
+            });
+
+            price = validated.finalPrice as number;
+            discountAmount = validated.discountAmount as number;
+            appliedVoucherId = validated.voucherId;
+          } else {
+            return NextResponse.json(
+              {
+                status: false,
+                message: validated.message,
+                code: 400,
+              },
+              { status: 400 }
+            );
+          }
+        }
+
+        let pembelian;
+        try {
+          pembelian = await tx.pembelian.create({
+            data: {
+              harga: price,
+              profit,
+              isDigi: true,
+              layanan: product.layanan,
+              status: TRANSACTION_FLOW.PENDING,
+              successReportSended: false,
+              log: "Pembelian Pending",
+              nickname,
+              orderId: merchantOrderId,
+              tipeTransaksi: "TOPUP",
+              userId,
+              zone,
+              providerOrderId: productCode,
+              username: user?.session.username ?? "Anonymous",
+              createdAt: new Date(),
+            },
+          });
+        } catch (e) {
+          console.error("Failed to create purchase record:", e);
+          return NextResponse.json(
+            {
+              status: false,
+              message: "Failed to create purchase record",
+              code: 500,
+            },
+            { status: 500 }
+          );
+        }
+
+        // Process payment using balance if applicable
+        if (user?.session.username && paymentCode === "SALDO") {
+          const data = await PaymentUsingSaldo({
+            amount: price,
+            noWa,
+            orderId: merchantOrderId,
+            productCode: productCode,
+            productName: product.layanan,
+            tx,
+            userId: userId,
+            username: user.session.username,
+            serverId: zone,
+          });
+
+          return {
             status: data.status,
             message: data.message,
             code: data.status ? 200 : 400,
@@ -182,106 +227,83 @@ export async function POST(req: NextRequest) {
               timestamp: new Date().toISOString(),
               transactionDetails: data.data,
             },
-          },
-          { status: data.status ? 200 : 400 }
-        );
-      }
+          };
+        }
 
-      // Process payment using Duitku
-      else {
-        // Validate payment method
-        const method = await ValidationMethodPayment({
-          amount: price,
-          paymentCode,
-          tx,
-        });
+        // Process payment using Duitku
+        else {
+          // Validate payment method
+          const method = await ValidationMethodPayment({
+            amount: price,
+            paymentCode,
+            tx,
+          });
 
-        price = method.totalAmount;
+          price = method.totalAmount;
 
-        // Get base URL
-        const baseUrl = new URL(req.url).origin;
+          const baseUrl = req.headers.get("origin") || new URL(req.url).origin;
 
-        // Create Duitku transaction
-        const toDuitku = await duitku.CreateTransaction({
-          paymentAmount: price,
-          paymentCode,
-          merchantOrderId,
-          productDetails: product.layanan,
-          baseUrl,
-          cust: user?.session.username ?? "Anonymous",
-          noWa,
-        });
+          const toDuitku = await duitku.CreateTransaction({
+            paymentAmount: price,
+            paymentCode,
+            merchantOrderId,
+            productDetails: product.layanan,
+            returnUrl: `${baseUrl}/invoice?=invoice=${merchantOrderId}`,
+            cust: user?.session.username ?? "Anonymous",
+            noWa,
+          });
 
-        if (!toDuitku.status) {
-          return NextResponse.json(
-            {
+          if (!toDuitku || !toDuitku.status) {
+            return {
               status: false,
               message: "Failed to create payment gateway transaction",
               code: 500,
-              error: toDuitku.message,
+              error: toDuitku?.message || "API connection error",
+            };
+          }
+
+          // Determine payment details based on payment method
+          const urlPaymentMethods = ["DA", "OV", "SA"];
+          const vaPaymentMethods = ["I1", "BR", "B1", "BT", "FT", "M2", "VA"];
+
+          let paymentDetails = {};
+          let noPembayaran = "";
+
+          if (urlPaymentMethods.includes(paymentCode)) {
+            noPembayaran = toDuitku.data.paymentUrl;
+            paymentDetails = { paymentUrl: toDuitku.data.paymentUrl };
+          } else if (vaPaymentMethods.includes(paymentCode)) {
+            noPembayaran = toDuitku.data.vaNumber || "";
+            paymentDetails = {
+              vaNumber: toDuitku.data.vaNumber,
+              bankName: toDuitku.data.bankName || "",
+            };
+          } else {
+            noPembayaran = toDuitku.data.qrString || toDuitku.data.qr_string;
+            paymentDetails = {
+              qrString: toDuitku.data.qrString,
+              qrCode: toDuitku.data.qrCode,
+            };
+          }
+
+          // Create payment record
+          await tx.pembayaran.create({
+            data: {
+              orderId: merchantOrderId,
+              harga: price.toString(),
+              metode: paymentCode,
+              noPembeli: noWa,
+              status: "PENDING",
+              reference: toDuitku.data.reference,
+              noPembayaran,
+              createdAt: new Date(),
             },
-            { status: 500 }
-          );
-        }
+          });
 
-        // Determine payment details based on payment method
-        const urlPaymentMethods = ["DA", "OV", "SA"];
-        const vaPaymentMethods = ["I1", "BR", "B1", "BT", "FT", "M2", "VA"];
+          const invoiceUrl = `${baseUrl}/invoice?invoice=${merchantOrderId}`;
 
-        let paymentDetails = {};
-        let noPembayaran = "";
-
-        if (urlPaymentMethods.includes(paymentCode)) {
-          noPembayaran = toDuitku.data.paymentUrl;
-          paymentDetails = { paymentUrl: toDuitku.data.paymentUrl };
-        } else if (vaPaymentMethods.includes(paymentCode)) {
-          noPembayaran = toDuitku.data.vaNumber || "";
-          paymentDetails = {
-            vaNumber: toDuitku.data.vaNumber,
-            bankName: toDuitku.data.bankName || "",
-          };
-        } else {
-          noPembayaran = toDuitku.data.qrString || toDuitku.data.qr_string;
-          paymentDetails = {
-            qrString: toDuitku.data.qrString,
-            qrCode: toDuitku.data.qrCode,
-          };
-        }
-
-        // Create payment record
-        await tx.pembayaran.create({
-          data: {
-            orderId: merchantOrderId,
-            harga: price.toString(),
-            metode: paymentCode,
-            noPembeli: noWa,
-            status: "PENDING",
-            reference: toDuitku.data.reference,
-            noPembayaran,
-            createdAt: new Date(),
-          },
-        });
-
-        const invoiceUrl = `${baseUrl}/invoice?invoice=${merchantOrderId}`;
-
-        // Send WhatsApp notification
-        await handleOrderStatusChange({
-          orderData: {
-            amount: price,
-            link: invoiceUrl,
-            productName: product.layanan,
-            status: "PENDING",
-            customerName: user?.session.username || "Anonymous",
-            method: paymentCode,
-            orderId: merchantOrderId,
-            whatsapp: noWa,
-          },
-        });
-
-        // Return successful response
-        return NextResponse.json(
-          {
-            status: true,
+          return {
+            success: true,
             message: "Transaction created successfully",
             code: 201,
             data: {
@@ -296,13 +318,24 @@ export async function POST(req: NextRequest) {
               timestamp: new Date().toISOString(),
               ...paymentDetails,
             },
-          },
-          { status: 201 }
-        );
-      }
-    });
+          };
+        }
+      },
+      { timeout: 15000 }
+    ); // Set Prisma transaction timeout
+    const result = await Promise.race([transactionPromise, timeoutPromise]);
+    return NextResponse.json(result, { status: 200 });
   } catch (error) {
     console.error("Transaction error:", error);
+
+    if (error instanceof Error) {
+      console.error({
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      });
+    }
+
     return NextResponse.json(
       {
         status: false,

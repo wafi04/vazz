@@ -1,35 +1,24 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import { useState, useEffect } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useMidtransPayment } from "@/hooks/use-payment";
-import {
-  AlertCircle,
-  CheckCircle,
-  CreditCard,
-  Loader2,
-  Phone,
-  ShieldCheck,
-  Smartphone,
-} from "lucide-react";
-import { FormatPrice } from "@/utils/formatPrice";
-import { toast } from "sonner";
-import { CheckNickName } from "@/lib/check-nickname";
+import { CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
 import { useParams } from "next/navigation";
-import { Separator } from "@/components/ui/separator";
-import { GAMES_WITH_VALIDATION, GameType } from "@/data/check-code";
+import { GameType } from "@/data/check-code";
 import { useOrderStore } from "@/hooks/use-order";
+import { usePaymentDialog } from "@/hooks/payment/usePaymentDialog";
+import { useVoucherValidator } from "@/hooks/payment/use-payment";
+import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { PaymentSummary } from "@/hooks/payment/paymentSummary";
+import { AccountInfoSection } from "@/hooks/payment/accountInfoSection";
 
-export function DialogPayment() {
+export function DialogPayment({ className }: { className?: string }) {
   const {
     userId,
     zone,
@@ -38,295 +27,222 @@ export function DialogPayment() {
     productDetails,
     voucherCode,
     whatsAppNumber,
-    setWhatsAppNumber,
     resetOrder,
+    discount,
+    finalPrice,
   } = useOrderStore();
 
-  const payment = useMidtransPayment();
-  const [isLoading, setIsLoading] = useState(false);
-  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [nicknameData, setNicknameData] = useState<string | null>(null);
   const { name } = useParams();
-  const [isCheckingNickname, setIsCheckingNickname] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [requiresValidation, setRequiresValidation] = useState(false);
 
-  // Determine if game needs validation
-  useEffect(() => {
-    const gameType = name as GameType;
-    const needsValidation = GAMES_WITH_VALIDATION.includes(gameType);
-    setRequiresValidation(needsValidation);
-  }, [name]);
+  const [voucherApplied, setVoucherApplied] = useState(false);
+  const [voucherError, setVoucherError] = useState<string | null>(null);
+  const [isCheckingVoucher, setIsCheckingVoucher] = useState(false);
 
-  // Check nickname validity when dialog opens
+  const { validateVoucher } = useVoucherValidator();
+  const formatCategoryName = (name: string) => {
+    return name.toUpperCase().replace("-", " ");
+  };
+
+  const {
+    isDialogOpen,
+    setIsDialogOpen,
+    isLoading,
+    error,
+    nicknameData,
+    isCheckingNickname,
+    requiresValidation,
+    isPaymentDisabled,
+    handlePayment,
+  } = usePaymentDialog({
+    userId,
+    zone,
+    method,
+    productDetails,
+    voucherCode,
+    whatsAppNumber,
+    name: name as GameType,
+    resetOrder,
+  });
+
+  // Check voucher when dialog opens and voucher code exists
   useEffect(() => {
-    async function checkNickname() {
-      if (!isDialogOpen || !userId || !requiresValidation) {
+    async function checkVoucher() {
+      if (
+        !isDialogOpen ||
+        !voucherCode ||
+        voucherApplied ||
+        isCheckingVoucher
+      ) {
         return;
       }
 
-      if (requiresValidation && name === "mobile-legend" && !zone) {
-        setError("Server ID is required for this game");
+      if (!productDetails?.code || !method?.code) {
         return;
       }
 
       try {
-        setIsCheckingNickname(true);
-        setNicknameData(null);
-        setError(null);
-
-        const nicknameResult = await CheckNickName({
-          type: name as GameType,
-          userId: userId,
-          serverId: zone as string,
-        });
-
-        if (nicknameResult.success) {
-          setNicknameData(nicknameResult.name || "Account found");
-        } else {
-          setError("User account not found");
-        }
-      } catch (err) {
-        setError("Failed to check nickname. Please try again.");
+        setIsCheckingVoucher(true);
+        setVoucherError(null);
+        await validateVoucher();
+        setVoucherApplied(true);
+      } catch (err: any) {
+        setVoucherError(err.message || "Failed to validate voucher");
       } finally {
-        setIsCheckingNickname(false);
+        setIsCheckingVoucher(false);
       }
     }
 
-    checkNickname();
-  }, [isDialogOpen, userId, zone, name, requiresValidation]);
+    checkVoucher();
+  }, [
+    isDialogOpen,
+    voucherCode,
+    productDetails,
+    method,
+    voucherApplied,
+    isCheckingVoucher,
+    validateVoucher,
+  ]);
 
-  const handlePayment = async () => {
-    if (!whatsAppNumber || !method?.code || !productDetails?.code) {
-      setError("Missing required payment information");
-      return;
+  // Reset voucher status when dialog closes
+  useEffect(() => {
+    if (!isDialogOpen) {
+      setVoucherApplied(false);
+      setVoucherError(null);
     }
-
-    if (requiresValidation && !nicknameData && !isCheckingNickname) {
-      setError("Please wait for account verification or try again");
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await payment.initiatePayment({
-        noWa: parseInt(whatsAppNumber),
-        paymentCode: method.code,
-        layanan: productDetails.name,
-        accountId: userId,
-        serverId: zone || "",
-        voucherCode: voucherCode,
-        game: name as string,
-        typeTransaksi: method.name,
-        nickname: nicknameData ?? "not-found",
-      });
-
-      if (response.success) {
-        if (response.paymentUrl) {
-          setPaymentUrl(response.paymentUrl);
-          window.open(response.paymentUrl, "_blank");
-        }
-
-        // Reset order data after successful payment
-        resetOrder();
-        setWhatsAppNumber("");
-
-        toast.success("Payment created successfully!");
-      }
-    } catch (err) {
-      setError("An error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const isPaymentDisabled =
-    isLoading ||
-    !whatsAppNumber ||
-    (requiresValidation && isCheckingNickname) ||
-    (requiresValidation && !nicknameData && !error);
+  }, [isDialogOpen]);
 
   return (
-    <Dialog onOpenChange={(open) => setIsDialogOpen(open)}>
+    <Dialog onOpenChange={(open) => setIsDialogOpen(open)} open={isDialogOpen}>
       <DialogTrigger asChild>
         <Button
-          className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 px-6 rounded-md transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+          className="w-full mt-4 bg-gradient-to-br from-indigo-600 to-blue-500 hover:from-indigo-500 hover:to-blue-400 text-white py-2 px-4 rounded-lg transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed font-medium"
           disabled={!userId || (name === "mobile-legend" && !zone)}
         >
           Continue To Payment
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-gradient-to-b from-[#001435] to-[#00102b] border-2 border-blue-800/50 text-blue-100 p-0 max-w-md rounded-xl shadow-2xl">
-        <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-blue-600 rounded-full p-3 shadow-lg border-4 border-[#001435]">
-          <CreditCard className="h-6 w-6 text-white" />
-        </div>
-
-        <DialogHeader className="pt-8 px-6 text-center">
-          <DialogTitle className="text-xl font-bold text-blue-100">
+      <DialogContent
+        className={cn(
+          "bg-gradient-to-b from-slate-900 to-indigo-950 border border-indigo-500/30 text-white p-0 max-w-md rounded-xl shadow-2xl backdrop-blur-sm overflow-y-auto max-h-[90vh]",
+          className
+        )}
+      >
+        <DialogHeader className="pt-6 pb-2 px-4 text-center">
+          <DialogTitle className="text-lg font-bold text-white">
             Complete Your Payment
           </DialogTitle>
-          <DialogDescription className="text-blue-300 mt-1">
+          <p className="text-blue-200 text-xs">
             Verify your details and proceed to payment
-          </DialogDescription>
+          </p>
         </DialogHeader>
 
-        {/* Game info section */}
-        {productDetails?.name && (
-          <div className="px-6 py-3">
-            <div>
-              <h3 className="font-medium text-blue-100">{name}</h3>
-              <p className="text-xs text-blue-300">
-                {productDetails.name || "Product"}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Payment details */}
-        <div className="px-6 py-4">
-          <h4 className="text-sm font-medium text-blue-300 mb-3">
-            Payment Details
-          </h4>
-
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mr-3">
-                  <Smartphone className="h-4 w-4 text-blue-400" />
+        {/* Content Container with compact spacing */}
+        <div className="space-y-2">
+          {/* Game info section */}
+          {productDetails?.name && (
+            <div className="px-4 py-2 bg-white/5 border-t border-b border-indigo-500/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-white text-sm capitalize">
+                    {formatCategoryName(name as string)}
+                  </h3>
+                  <p className="text-xs text-blue-200">
+                    {productDetails.name || "Product"}
+                  </p>
                 </div>
-                <span className="text-sm text-blue-300">Account</span>
               </div>
-              <div className="text-right">
-                <span className="font-medium text-blue-100">
-                  {requiresValidation ? (
-                    isCheckingNickname ? (
-                      <span className="flex items-center">
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        Checking...
-                      </span>
-                    ) : nicknameData ? (
-                      <span className="flex items-center">
-                        <CheckCircle className="mr-1 h-3 w-3 text-green-400" />
-                        {nicknameData}
-                      </span>
-                    ) : (
-                      <span className="text-red-300">Not verified</span>
-                    )
-                  ) : (
-                    <span className="text-blue-100">
-                      No verification needed
-                    </span>
-                  )}
-                </span>
-                <p className="text-xs text-blue-400">
-                  {userId}
-                  {zone ? ` (${zone})` : ""}
+            </div>
+          )}
+
+          {/* Account Information Section - Compact */}
+          <AccountInfoSection
+            isCheckingNickname={isCheckingNickname}
+            method={method}
+            nicknameData={nicknameData}
+            requiresValidation={requiresValidation}
+            userId={userId}
+            voucherCode={voucherCode}
+            whatsAppNumber={whatsAppNumber}
+            zone={zone}
+          />
+
+          {/* Voucher status section - horizontal layout for compactness */}
+          {voucherCode && (
+            <div className="px-4 py-2 bg-white/5 border-t border-b border-indigo-500/20">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center">
+                  <Sparkles className="h-3 w-3 text-indigo-300 mr-1.5" />
+                  <span className="text-xs font-medium text-indigo-200">
+                    Voucher: {voucherCode}
+                  </span>
+                </div>
+
+                {voucherApplied && discount && discount > 0 && (
+                  <span className="text-xs font-medium text-green-400">
+                    {new Intl.NumberFormat("id-ID", {
+                      style: "currency",
+                      currency: "IDR",
+                      minimumFractionDigits: 0,
+                    }).format(discount)}
+                  </span>
+                )}
+              </div>
+
+              {isCheckingVoucher && (
+                <p className="text-xs text-indigo-300 flex items-center">
+                  <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full mr-1.5 animate-pulse"></span>
+                  Validating voucher code...
+                </p>
+              )}
+
+              {voucherApplied && discount && discount > 0 && (
+                <div className="flex items-center text-green-400 text-xs">
+                  <CheckCircle2 className="h-3 w-3 mr-1.5" />
+                  Silahkan Lakukan Pembayaran Sebelum Kehabisan
+                </div>
+              )}
+
+              {voucherError && (
+                <div className="flex items-center text-red-400 text-xs">
+                  <AlertCircle className="h-3 w-3 mr-1.5" />
+                  {voucherError}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Payment Summary - Horizontal layout for key items */}
+          <PaymentSummary
+            price={price}
+            discount={discount}
+            finalPrice={finalPrice}
+          />
+          {/* Payment Action Button */}
+          <div className="px-4 pb-4 pt-1">
+            <Button
+              onClick={handlePayment}
+              disabled={isPaymentDisabled || isCheckingVoucher}
+              className="w-full bg-gradient-to-br from-indigo-600 to-blue-500 hover:from-indigo-500 hover:to-blue-400 text-white py-2 rounded-lg transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed font-medium text-sm focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-indigo-900 flex items-center justify-center"
+            >
+              {isLoading ? (
+                <>
+                  <div className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin mr-2"></div>
+                  Processing...
+                </>
+              ) : (
+                <>Pay Now</>
+              )}
+            </Button>
+
+            {error && (
+              <div className="mt-2 px-3 py-1.5 bg-red-900/30 border border-red-500/30 rounded">
+                <p className="text-red-400 text-xs flex items-center">
+                  <AlertCircle className="h-3 w-3 mr-1.5" />
+                  {error}
                 </p>
               </div>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mr-3">
-                  <CreditCard className="h-4 w-4 text-blue-400" />
-                </div>
-                <span className="text-sm text-blue-300">Payment</span>
-              </div>
-              <span className="font-medium text-blue-100">
-                {method?.name || "Payment Belum Dipilih"}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mr-3">
-                  <Phone className="h-4 w-4 text-blue-400" />
-                </div>
-                <span className="text-sm text-blue-300">Phone Number</span>
-              </div>
-              <span className="font-medium text-blue-100">
-                {whatsAppNumber || "Belum Diisi"}
-              </span>
-            </div>
-
-            {voucherCode && (
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mr-3">
-                    <CheckCircle className="h-4 w-4 text-blue-400" />
-                  </div>
-                  <span className="text-sm text-blue-300">Voucher</span>
-                </div>
-                <span className="font-medium text-blue-100">{voucherCode}</span>
-              </div>
             )}
           </div>
-        </div>
-
-        <Separator className="bg-blue-800/50" />
-
-        {/* Total amount */}
-        <div className="px-6 py-4 bg-blue-900/20">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-blue-300">
-              Total Amount
-            </span>
-            <span className="text-xl font-bold text-blue-100">
-              {price ? FormatPrice(price) : "N/A"}
-            </span>
-          </div>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div className="mx-6 p-3 bg-red-900/20 border border-red-800 rounded-md text-red-300 text-sm flex items-start">
-            <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Success message */}
-        {paymentUrl && (
-          <div className="mx-6 p-3 bg-green-900/20 border border-green-800 rounded-md text-green-300 text-sm flex items-start">
-            <CheckCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-            <div>
-              Payment initiated successfully!
-              <a
-                href={paymentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block mt-2 text-blue-400 hover:text-blue-300 underline"
-              >
-                Click here if you&apos;re not redirected automatically
-              </a>
-            </div>
-          </div>
-        )}
-
-        {/* Security note */}
-        <div className="px-6 py-2 flex items-center justify-center text-xs text-blue-400">
-          <ShieldCheck className="h-3 w-3 mr-1" />
-          <span>Secure payment processing</span>
-        </div>
-
-        {/* Action button */}
-        <div className="p-6 pt-3">
-          <Button
-            onClick={handlePayment}
-            disabled={isPaymentDisabled}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-6 rounded-md transition-all shadow-lg disabled:opacity-70 h-12"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              "Proceed to Payment"
-            )}
-          </Button>
         </div>
       </DialogContent>
     </Dialog>

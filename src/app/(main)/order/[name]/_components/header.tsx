@@ -1,10 +1,16 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
-import { SubCategories } from "@/types/category";
+import type { SubCategories } from "@/types/category";
 import { motion } from "framer-motion";
 import { useFilterProduct } from "@/hooks/use-filterProduct";
 import { useState } from "react";
 
-export function HeaderFilterProduct({ subCategories }: { subCategories?: SubCategories[] }) {
+export function HeaderFilterProduct({
+  subCategories,
+}: {
+  subCategories?: SubCategories[];
+}) {
   const { setFilter } = useFilterProduct();
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -15,28 +21,32 @@ export function HeaderFilterProduct({ subCategories }: { subCategories?: SubCate
 
   return (
     <div className="p-5">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {subCategories?.map((subCategory, idx) => (
-          <motion.div
-            key={subCategory.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: idx * 0.07 }}
-          >
-            <Button
-              variant="outline"
-              onClick={() => handleSelect(subCategory.code)}
-              className={`w-full justify-start px-5 py-3 rounded-xl transition-all
-                ${selected === subCategory.code
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card hover:bg-primary/10 hover:text-primary"
-                }
-              `}
+      <div className="overflow-x-auto custom-scrollbar pb-2 -mx-1 px-1">
+        <div className="flex flex-nowrap gap-3 min-w-full">
+          {subCategories?.map((subCategory, idx) => (
+            <motion.div
+              key={subCategory.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: idx * 0.07 }}
+              className="flex-shrink-0"
             >
-              {subCategory.name}
-            </Button>
-          </motion.div>
-        ))}
+              <Button
+                variant="outline"
+                onClick={() => handleSelect(subCategory.code)}
+                className={`whitespace-nowrap min-w-[140px] justify-start px-5 py-3 rounded-xl transition-all
+                  ${
+                    selected === subCategory.code
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card hover:bg-primary/10 hover:text-primary"
+                  }
+                `}
+              >
+                {subCategory.name}
+              </Button>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
+"use client";
+
 import { HeaderNumber } from "@/components/ui/headernumber";
 import { useOrderStore } from "@/hooks/use-order";
-import { PaymentMethod } from "@/types/payment";
+import type { PaymentMethod } from "@/types/payment";
 import { FormatPrice } from "@/utils/formatPrice";
 import { trpc } from "@/utils/trpc";
 import Image from "next/image";
@@ -8,7 +10,7 @@ import { useState } from "react";
 
 export function MethodSection() {
   const { data, isLoading, error } = trpc.method.getAll.useQuery({
-    isActive: true,
+    isActive: "Active",
     isAll: true,
   });
 
@@ -52,11 +54,11 @@ export function MethodSection() {
     <div className="bg-card rounded-lg overflow-hidden shadow-lg border border-border">
       <HeaderNumber number={"3"} title="Metode Pembayaran" />
 
-      <div className="bg-card p-4 relative ">
+      <div className="bg-card p-4 relative">
         <div className="absolute top-4 right-4 bg-accent text-accent-foreground text-xs py-1 px-3 rounded-bl-lg font-medium">
           TERBAIK
         </div>
-        <div className="flex justify-between  items-center bg-blue-800/90 p-4 rounded-lg shadow-md">
+        <div className="flex justify-between items-center bg-blue-800/90 p-4 rounded-lg shadow-md">
           <div className="flex items-center">
             <div className="w-10 h-10 bg-accent bg-opacity-20 rounded-full flex items-center justify-center mr-3 shadow-md">
               <span className="text-accent text-xl">🪙</span>
@@ -104,25 +106,25 @@ export function MethodSection() {
                     method.images && (
                       <Image
                         key={idx}
-                        src={method.images}
+                        src={method.images || "/placeholder.svg"}
                         alt={method.name}
                         width={50}
                         height={40}
-                        className="object-cover "
+                        className="object-cover"
                       />
                     )
                 )}
               </div>
             </div>
             <div
-              className={`bg-popover  overflow-hidden transition-all duration-300 ease-in-out ${
+              className={`bg-popover overflow-hidden transition-all duration-300 ease-in-out ${
                 expandedSections[type as keyof typeof expandedSections]
                   ? "max-h-screen opacity-100"
                   : "max-h-0 opacity-0"
               }`}
             >
               <div className="p-3">
-                <div className="grid grid-cols-2 w-full gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-3">
                   {groupedMethods[type].map((method, idx) => {
                     const isSelected = metode.code === method.code;
                     return (
@@ -134,36 +136,38 @@ export function MethodSection() {
                             name: method.name,
                           })
                         }
-                        className={`p-3 relative w-full rounded-lg flex flex-row items-center transition-colors cursor-pointer border shadow-sm gap-6
+                        className={`p-3 relative w-full rounded-lg flex flex-row items-center transition-colors cursor-pointer border shadow-sm
                             ${
                               isSelected
                                 ? "border-primary bg-muted"
                                 : "border-border bg-card hover:bg-muted"
                             }`}
                       >
-                        {/* <div className="relati"> */}
-                        <Image
-                          src={method.images}
-                          alt={method.name}
-                          className="object-cover rounded"
-                          width={50}
-                          height={50}
-                        />
+                        <div className="flex-shrink-0 mr-3">
+                          <Image
+                            src={method.images || "/placeholder.svg"}
+                            alt={method.name}
+                            className="object-cover rounded"
+                            width={40}
+                            height={40}
+                          />
+                        </div>
+
                         {isSelected && (
-                          <div className="absolute top-3 right-3 bg-primary text-primary-foreground text-xs rounded-full py-0.5 px-1.5">
+                          <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs rounded-full py-0.5 px-1.5">
                             ✓
                           </div>
                         )}
 
-                        <div className="flex flex-col items-start">
-                          <span className="text-card-foreground text-md ">
+                        <div className="flex flex-col items-start min-w-0">
+                          <span className="text-card-foreground text-sm sm:text-md font-medium truncate w-full">
                             {method.name}
                           </span>
-                          <span className="text-blue-400 text-sm font-medium">
+                          <span className="text-blue-400 text-xs sm:text-sm font-medium truncate w-full">
                             {method.keterangan}
                           </span>
                           {method.min && (
-                            <span className="text-xs text-muted-foreground mt-1">
+                            <span className="text-xs text-muted-foreground mt-1 truncate w-full">
                               Min: {FormatPrice(method.min)}
                             </span>
                           )}

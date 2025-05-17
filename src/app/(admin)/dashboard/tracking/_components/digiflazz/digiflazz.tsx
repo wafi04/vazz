@@ -1,65 +1,55 @@
 "use client";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+
+import React, { useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { CLIENT_DIGI_USERNAME, CLIENT_DIGI_KEY } from "@/constants";
-import { Digiflazz } from "@/lib/digiflazz";
-import {
-  Wallet,
-  ListChecks,
-  Search,
-  ArrowRight,
-  RefreshCw,
-  Copy,
-} from "lucide-react";
+import { Wallet, ListChecks, Search } from "lucide-react";
+import { useCheckSaldoDIgiflazz } from "./useHooks";
+import { AnimatePresence } from "framer-motion";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { SaldoContent } from "./saldoContent";
+import { ContentDisplay } from "./contentDisaplay";
+import { OptionCard } from "./optionCard";
 
-export function DigiflazzPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [dialogContent, setDialogContent] = useState<{
-    title: string;
-    content: any;
-  } | null>(null);
+// Type definitions
+export interface ContentData {
+  message: string;
+  data: number | null;
+  code: number;
+}
 
-  const digiflazz = new Digiflazz(CLIENT_DIGI_USERNAME, CLIENT_DIGI_KEY);
+export interface DigiflazzOption {
+  name: string;
+  icon: React.ElementType;
+  description: string;
+  action: () => Promise<void>;
+  color: string;
+}
 
-  const options = [
+export const DefaultContent: React.FC<{ message: string }> = ({ message }) => (
+  <div className="text-center py-8">
+    <p className="text-lg">{message}</p>
+  </div>
+);
+
+// Main component
+export function DigiflazzPage(): JSX.Element {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [contentData, setContentData] = useState<ContentData | null>(null);
+
+  const options: DigiflazzOption[] = [
     {
       name: "Cek Saldo",
       icon: Wallet,
       description: "Periksa saldo akun Digiflazz Anda",
+      color: "bg-blue-500",
       action: async () => {
         try {
-          const data = await digiflazz.checkDeposit();
-          setDialogContent({
-            title: "Informasi Saldo",
-            content: (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">Saldo Tersedia:</span>
-                  <span className="text-primary font-bold">
-                    Rp {data.deposit.toLocaleString("id-ID")}
-                  </span>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(data.deposit.toString());
-                    toast.success("Saldo disalin");
-                  }}
-                  className="w-full"
-                >
-                  <Copy className="mr-2 h-4 w-4" /> Salin Saldo
-                </Button>
-              </div>
-            ),
+          const data = await useCheckSaldoDIgiflazz();
+          setContentData({
+            message: data.message,
+            code: data.code,
+            data: data.data.deposit,
           });
         } catch (error) {
           toast.error("Gagal mengambil saldo");
@@ -70,16 +60,13 @@ export function DigiflazzPage() {
       name: "Cek Transaksi",
       icon: ListChecks,
       description: "Lihat riwayat transaksi terakhir",
+      color: "bg-green-500",
       action: async () => {
         try {
-          // Placeholder for transaction check
-          setDialogContent({
-            title: "Riwayat Transaksi",
-            content: (
-              <div className="text-center">
-                <p>Fitur dalam pengembangan</p>
-              </div>
-            ),
+          setContentData({
+            message: "Fitur dalam pengembangan",
+            code: 200,
+            data: null,
           });
         } catch (error) {
           toast.error("Gagal mengambil riwayat transaksi");
@@ -90,16 +77,13 @@ export function DigiflazzPage() {
       name: "Cek Status",
       icon: Search,
       description: "Periksa status transaksi spesifik",
+      color: "bg-purple-500",
       action: async () => {
         try {
-          // Placeholder for status check
-          setDialogContent({
-            title: "Cek Status Transaksi",
-            content: (
-              <div className="text-center">
-                <p>Fitur dalam pengembangan</p>
-              </div>
-            ),
+          setContentData({
+            message: "Fitur dalam pengembangan",
+            code: 200,
+            data: null,
           });
         } catch (error) {
           toast.error("Gagal memeriksa status");
@@ -108,11 +92,12 @@ export function DigiflazzPage() {
     },
   ];
 
-  const handleClick = async (option: {
-    name: string;
-    action: () => Promise<void>;
-  }) => {
+  const handleOptionClick = async (
+    option: DigiflazzOption,
+    index: number
+  ): Promise<void> => {
     setIsLoading(true);
+    setSelectedOption(index);
     try {
       await option.action();
     } catch (error) {
@@ -122,56 +107,59 @@ export function DigiflazzPage() {
     }
   };
 
-  return (
-    <section className="w-full mt-4">
-      <h1 className="text-2xl font-bold text-white mb-6">
-        Pilih Menu Digiflazz
-      </h1>
+  const closeContent = (): void => {
+    setSelectedOption(null);
+    setContentData(null);
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {options.map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <Dialog key={index}>
-              <DialogTrigger asChild>
-                <Card
-                  className="hover:shadow-lg transition-all cursor-pointer 
-                    border-2 border-transparent hover:border-primary 
-                    bg-card text-card-foreground"
-                  onClick={() => handleClick(item)}
-                >
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Icon className="w-6 h-6 text-primary" />
-                        <span>{item.name}</span>
-                      </div>
-                      <ArrowRight className="w-5 h-5 text-muted-foreground" />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      {item.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{dialogContent?.title}</DialogTitle>
-                </DialogHeader>
-                {dialogContent?.content}
-              </DialogContent>
-            </Dialog>
-          );
-        })}
+  const renderContent = (): ReactNode => {
+    if (selectedOption === null) return null;
+
+    const option = options[selectedOption];
+
+    switch (option.name) {
+      case "Cek Saldo":
+        return <SaldoContent contentData={contentData} />;
+      case "Cek Transaksi":
+      case "Cek Status":
+      default:
+        return (
+          <DefaultContent
+            message={contentData?.message || "Fitur dalam pengembangan"}
+          />
+        );
+    }
+  };
+
+  return (
+    <section className="w-full mt-4 p-6 rounded-xl">
+      <h1 className="text-3xl font-bold mb-8">Menu Digiflazz</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {options.map((item, index) => (
+          <OptionCard
+            key={index}
+            option={item}
+            index={index}
+            isSelected={selectedOption === index}
+            onClick={() => handleOptionClick(item, index)}
+          />
+        ))}
       </div>
 
-      {isLoading && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <RefreshCw className="animate-spin w-10 h-10 text-white" />
-        </div>
-      )}
+      {/* Content display area with animation */}
+      <AnimatePresence>
+        {selectedOption !== null && (
+          <ContentDisplay
+            selectedOption={options[selectedOption]}
+            contentData={contentData}
+            onClose={closeContent}
+            renderContent={renderContent}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Loading overlay */}
+      <AnimatePresence>{isLoading && <LoadingOverlay />}</AnimatePresence>
     </section>
   );
 }

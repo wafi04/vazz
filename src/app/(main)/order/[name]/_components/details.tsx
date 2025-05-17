@@ -89,7 +89,7 @@ export default function DetailsCategories({ name }: { name: string }) {
           <MethodSection />
           <WhatsAppInput />
           <KodeVoucherInput />
-          <CartDetails className="md:hidden block" />
+          <CartDetails />
         </div>
       </section>
     </main>
@@ -98,5 +98,5 @@ export default function DetailsCategories({ name }: { name: string }) {
 
 // Helper buat format ProviderID
 function formatProviderId(providerId: string) {
-  return providerId.toUpperCase().replace(/\s+/g, ""); // contoh sederhana
+  return providerId.toUpperCase().replace(/\s+/g, "");
 }

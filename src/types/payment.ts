@@ -13,47 +13,50 @@ export interface PaymentMethod {
   minExpired: number | null;
   maxExpired: number | null;
   max: number | null;
-  isActive: boolean
-  }
-  
-  export type PaymentDetails = {
-    success: boolean;
-    paymentUrl: string;
-    reference: string;
-    statusCode: string;
-    statusMessage: string;
-    merchantOrderId: string;
-    transactionId: number;
-    amount: number;
-    data: {
-      status_code: string;
-      status_message: string;
-      transaction_id: string;
-      order_id: string;
-      merchant_id: string;
-      gross_amount: string;
-      currency: string;
-      payment_type: string;
-      transaction_time: string;
-      transaction_status: string;
-      fraud_status: string;
-      va_numbers?: [
-        {
-          bank: string;
-          va_number: string;
-        }
-      ];
-      expiry_time: string;
-    };
+  isActive: boolean;
+}
+
+export type checkingVoucher = {
+  message: string;
+  code: number;
+  status: boolean;
+  data: {
+    status: boolean;
+    discountAmount: number;
+    finalPrice: number;
+    voucherId: number;
+    message: string;
   };
-  
-  export interface DuitkuResponse {
-    merchantCode: string;
-    reference: string;
+};
+
+export type PaymentDetails = {
+  success: boolean;
+  paymentUrl: string;
+  reference: string;
+  statusCode: string;
+  message: string;
+  merchantOrderId: string;
+  transactionId: number;
+  amount: number;
+  data: {
+    orderId: string;
     paymentUrl: string;
-    vaNumber: string;
-    amount: string;
-    statusCode: string;
-    statusMessage: string;
-  }
-  
+    va_numbers?: [
+      {
+        bank: string;
+        va_number: string;
+      }
+    ];
+    expiry_time: string;
+  };
+};
+
+export interface DuitkuResponse {
+  merchantCode: string;
+  reference: string;
+  paymentUrl: string;
+  vaNumber: string;
+  amount: string;
+  statusCode: string;
+  statusMessage: string;
+}

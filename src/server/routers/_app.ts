@@ -20,7 +20,6 @@ export const appRouter = router({
   categories: categoriesRouter,
   method: Methods,
   subCategory: subCategories,
-  methods: methods,
   products: Products,
   layanans: Layanans,
   sub: subCategory,

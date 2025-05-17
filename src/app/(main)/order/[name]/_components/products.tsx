@@ -28,16 +28,6 @@ export function ProductPage({ products }: { products: ProductData[] }) {
   );
 }
 function ProductCard({ product }: { product: ProductData }) {
-  let gameName = product.layanan;
-  let diamondInfo = "";
-
-  if (product.layanan) {
-    const match = product.layanan.match(/(.*?)(\d+\s*[a-zA-Z]*)$/);
-    if (match) {
-      gameName = match[1].trim().replace("-", " ");
-      diamondInfo = match[2].trim();
-    }
-  }
   const { setProduct, productDetails, setPrice } = useOrderStore();
   const isSelected = product.providerId === productDetails.code;
   return (

@@ -1,35 +1,31 @@
-"use client"
-import { CreditCard, Truck, DollarSign } from 'lucide-react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { DigiflazzPage } from './digiflazz/digiflazz';
+"use client";
+import { CreditCard, DollarSign } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { DigiflazzPage } from "./digiflazz/digiflazz";
+import { DuitkuServices } from "./duitku/duitku";
 
 export function OthersPage() {
-    const data = [
+  const data = [
     {
-      name: 'Digiflazz',
-      path: '/dashboard/tracking?type=digiflazz',
+      name: "Digiflazz",
+      path: "/dashboard/tracking?type=digiflazz",
       icon: CreditCard,
     },
     {
-      name: 'Duitku',
-      path: '/dashboard/tracking?type=duitku',
+      name: "Duitku",
+      path: "/dashboard/tracking?type=duitku",
       icon: DollarSign,
-    },
-    {
-      name: 'Tracking',
-      path: '/dashboard/tracking?type=tracking',
-      icon: Truck,
     },
   ];
 
-    const searchParams = useSearchParams() ?? undefined
-    const type = searchParams?.get('type')
-    return (
-        <>
-    <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  const searchParams = useSearchParams() ?? undefined;
+  const type = searchParams?.get("type");
+  return (
+    <>
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {data.map((item, index) => {
-            const Icon = item.icon;
+          const Icon = item.icon;
           return (
             <Link
               key={index}
@@ -46,12 +42,9 @@ export function OthersPage() {
             </Link>
           );
         })}
-
       </section>
-            {
-              type === 'digiflazz' && <DigiflazzPage />
-            }
-        
-        </>
-    )
+      {type === "digiflazz" && <DigiflazzPage />}
+      {type === "duitku" && <DuitkuServices />}
+    </>
+  );
 }

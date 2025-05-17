@@ -24,19 +24,19 @@ model Deposits {
   id           Int       @id @default(autoincrement()) @map("id")
   username     String    @map("username")
   metode       String    @map("metode") @db.VarChar(50)
-  depositId    String?   @map("deposit_id")
+  depositId    String?   @unique() @map("deposit_id")
   noPembayaran String    @map("no_pembayaran")
   jumlah       Int       @map("jumlah")
   status       String    @map("status") @db.VarChar(20)
   createdAt    DateTime? @default(now()) @map("created_at")
   updatedAt    DateTime? @updatedAt @map("updated_at")
+  log          String?   @db.Text()
 
   user Users? @relation(fields: [username], references: [username])
 
   @@index([username, status])
   @@index([status, createdAt])
   @@index([noPembayaran])
-  @@index([depositId])
   @@map("deposits")
 }
 
@@ -80,21 +80,27 @@ model Categories {
 }
 
 model Layanan {
-  id               Int       @id @default(autoincrement()) @map("id")
-  kategoriId       Int       @map("kategori_id")
-  subCategoryId    Int       @default(0) @map("sub_category_id")
-  layanan          String    @map("layanan")
-  providerId       String    @map("provider_id")
-  harga            Int       @map("harga")
-  hargaReseller    Int       @map("harga_reseller")
-  hargaPlatinum    Int       @map("harga_platinum")
-  hargaGold        Int       @map("harga_gold")
-  hargaFlashSale   Int?      @default(0) @map("harga_flash_sale")
-  profit           Int       @map("profit")
-  profitReseller   Int       @map("profit_reseller")
-  profitPlatinum   Int       @map("profit_platinum")
-  profitGold       Int       @map("profit_gold")
-  isFlashSale      Boolean   @map("is_flash_sale")
+  id         Int    @id @default(autoincrement()) @map("id")
+  kategoriId Int    @map("kategori_id")
+  providerId String @map("provider_id")
+  layanan    String @map("layanan")
+
+  harga          Int  @map("harga")
+  hargaFromDigi  Int  @map("hargaFromDigi")
+  hargaReseller  Int  @map("harga_reseller")
+  hargaPlatinum  Int  @map("harga_platinum")
+  hargaFlashSale Int? @default(0) @map("harga_flash_sale")
+  hargaSuggest   Int  @map("harga_suggest")
+
+  profit         Int @map("profit")
+  profitReseller Int @map("profit_reseller")
+  profitPlatinum Int @map("profit_platinum")
+  profitSuggest  Int @map("profit_sugggest")
+
+  isProfitFixed Boolean @default(false) @map("profit_fixed")
+  isFlashSale   Boolean @default(false) @map("is_flash_sale")
+  isSuggest     Boolean @default(false) @map("is_suggest")
+
   judulFlashSale   String?   @map("judul_flash_sale") @db.VarChar(255)
   bannerFlashSale  String?   @map("banner_flash_sale") @db.VarChar(255)
   expiredFlashSale DateTime? @map("expired_flash_sale") @db.Date
@@ -102,14 +108,13 @@ model Layanan {
   status           Boolean   @map("status")
   provider         String    @map("provider")
   productLogo      String?   @map("product_logo")
-  createdAt        DateTime? @default(now()) @map("created_at")
-  updatedAt        DateTime? @updatedAt @map("updated_at")
 
-  kategori    Categories   @relation(fields: [kategoriId], references: [id])
-  subCategory SubCategory? @relation(fields: [subCategoryId], references: [id])
+  createdAt DateTime? @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  kategori Categories @relation(fields: [kategoriId], references: [id])
 
   @@index([kategoriId, status])
-  @@index([subCategoryId, status])
   @@index([providerId, status])
   @@index([isFlashSale, expiredFlashSale])
   @@index([status, isFlashSale])
@@ -135,17 +140,6 @@ model Method {
 
   @@index([code, name, isActive])
   @@map("methods")
-}
-
-model Ovo {
-  id                Int       @id @default(autoincrement()) @map("id")
-  refId             String    @map("RefId")
-  updateAccessToken String    @map("UpdateAccessToken") @db.VarChar(1000)
-  authToken         String    @map("AuthToken") @db.VarChar(1000)
-  createdAt         DateTime? @default(now()) @map("created_at")
-  updatedAt         DateTime? @updatedAt @map("updated_at")
-
-  @@map("ovos")
 }
 
 model Pembayaran {
@@ -187,6 +181,7 @@ model Pembelian {
   status              String         @map("status") @db.VarChar(20)
   log                 String?        @map("log") @db.VarChar(1000)
   sn                  String?        @map("sn")
+  isReOrder           Boolean        @default(false) @map("is_re_order")
   tipeTransaksi       String         @default("game") @map("tipe_transaksi") @db.VarChar(20)
   isDigi              Boolean        @map("is_digi")
   refId               String?        @map("ref_id")
@@ -203,6 +198,33 @@ model Pembelian {
   @@index([status, createdAt])
   @@index([orderId, username, status])
   @@map("pembelians")
+}
+
+model PembelianManual {
+  id                Int     @id @default(autoincrement())
+  orderId           String  @map("order_id")
+  pembelianManualId String  @map("pembelian_manual_id")
+  createdBy         String? @map("created_by")
+  reason            String?
+  status            String  @default("PENDING")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updateAt  DateTime @updatedAt() @map("updated_at")
+
+  @@index([orderId])
+  @@index([pembelianManualId])
+  @@index([status])
+}
+
+model Membership {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String  @db.Text()
+  price       Int
+  benefit     String? @db.Text()
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
 }
 
 model WebsiteConfig {
@@ -287,7 +309,6 @@ model SubCategory {
   updatedAt  DateTime? @updatedAt @map("updated_at")
 
   category Categories @relation(fields: [categoryId], references: [id])
-  layanan  Layanan[]
 
   @@index([code, categoryId, active])
   @@index([categoryId])
@@ -398,7 +419,7 @@ model VoucherCategory {
 model VoucherUsage {
   id        Int       @id @default(autoincrement())
   voucherId Int       @map("voucher_id")
-  orderId   Int       @map("order_id")
+  orderId   String    @map("order_id")
   username  String?   @map("username")
   whatsapp  String?   @map("whatsapp")
   amount    Int
@@ -406,7 +427,7 @@ model VoucherUsage {
   expiresAt DateTime? @map("expires_at")
 
   voucher   Voucher   @relation(fields: [voucherId], references: [id])
-  pembelian Pembelian @relation(fields: [orderId], references: [id])
+  pembelian Pembelian @relation(fields: [orderId], references: [orderId])
 
   @@index([voucherId])
   @@index([orderId])

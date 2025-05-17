@@ -19,12 +19,16 @@ export type OrderState = {
   productDetails: ProductDetails;
   voucherCode: string;
   whatsAppNumber: string;
+  discount: number | undefined;
+  finalPrice: number | undefined;
   method: PaymentMethod;
   price: number;
 };
 
 export type OrderActions = {
   setUserId: (userId: string) => void;
+  setFinalPrice: (fp: number | undefined) => void;
+  setDiscount: (disc: number | undefined) => void;
   setZone: (zone: string) => void;
   setProduct: (product: ProductDetails) => void;
   setMethod: (method: PaymentMethod) => void;
@@ -38,6 +42,8 @@ export type OrderStore = OrderState & OrderActions;
 
 const initialState: OrderState = {
   userId: "",
+  discount: undefined,
+  finalPrice: undefined,
   zone: undefined,
   whatsAppNumber: "",
   productDetails: {
@@ -56,6 +62,8 @@ const initialState: OrderState = {
 // Solution 1: Use without persist middleware (memory only storage)
 export const useOrderStore = create<OrderStore>()((set) => ({
   ...initialState,
+  setDiscount: (disc) => set({ discount: disc }),
+  setFinalPrice: (fp) => set({ finalPrice: fp }),
   setWhatsAppNumber: (wa) => set({ whatsAppNumber: wa }),
   setUserId: (userId) => set({ userId }),
   setZone: (zone) => set({ zone }),
@@ -65,32 +73,3 @@ export const useOrderStore = create<OrderStore>()((set) => ({
   setPrice: (price) => set({ price }),
   resetOrder: () => set(initialState),
 }));
-
-// Solution 2 (Alternative): Use with persist but disable storage
-// Uncomment this and comment out the above if you want to keep the persist middleware structure
-/*
-export const useOrderStore = create<OrderStore>()(
-  persist(
-    (set) => ({
-      ...initialState,
-      setWhatsAppNumber: (wa) => set({ whatsAppNumber: wa }),
-      setUserId: (userId) => set({ userId }),
-      setZone: (zone) => set({ zone }),
-      setProduct: (productDetails) => set({ productDetails }),
-      setMethod: (method) => set({ method }),
-      setVoucherCode: (voucherCode) => set({ voucherCode }),
-      setPrice: (price) => set({ price }),
-      resetOrder: () => set(initialState),
-    }),
-    {
-      name: "order-storage",
-      // Use memory storage instead of localStorage
-      storage: {
-        getItem: () => null,
-        setItem: () => {},
-        removeItem: () => {},
-      },
-    }
-  )
-);
-*/

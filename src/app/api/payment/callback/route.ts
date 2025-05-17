@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       merchantOrderId,
       productDetail,
       resultCode,
+      refId,
       signature,
     } = callbackData;
     const baseUrl = process.env.NEXTAUTH_URL || "";
@@ -261,6 +262,7 @@ export async function POST(req: NextRequest) {
                 orderId: merchantOrderId,
               },
               data: {
+                reference: refId,
                 status: "PAID",
                 updatedAt: new Date(),
               },

@@ -1,19 +1,19 @@
-import { NextResponse } from 'next/server';
-import { Digiflazz } from '@/lib/digiflazz';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { Digiflazz } from "@/lib/digiflazz";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    console.log('Starting Digiflazz price check process...');
+    console.log("Starting Digiflazz price check process...");
 
     // Get credentials
     const username = process.env.DIGI_USERNAME;
     const apiKey = process.env.DIGI_API_KEY;
 
-    if (!username || !apiKey ) {
-      console.error('Missing Digiflazz credentials');
+    if (!username || !apiKey) {
+      console.error("Missing Digiflazz credentials");
       return NextResponse.json(
-        { error: 'Missing API credentials' },
+        { error: "Missing API credentials" },
         { status: 500 }
       );
     }
@@ -24,30 +24,33 @@ export async function GET() {
     let rawResponse;
     try {
       rawResponse = await digiflazz.checkPrice();
-    } catch (e ) {
+    } catch (e) {
       return NextResponse.json(
-        { error: 'Failed to fetch price list: ' + (e instanceof Error ?  e.message : e) },
+        {
+          error:
+            "Failed to fetch price list: " +
+            (e instanceof Error ? e.message : e),
+        },
         { status: 500 }
       );
     }
-
 
     // Extract the data array
     let dataArray;
 
     // Try different response formats
-    if (typeof rawResponse === 'string') {
+    if (typeof rawResponse === "string") {
       try {
         rawResponse = JSON.parse(rawResponse);
       } catch (e) {
-        console.error('Failed to parse response as JSON:', e);
+        console.error("Failed to parse response as JSON:", e);
       }
     }
 
     // Check if response is direct array or has a data property
     if (Array.isArray(rawResponse)) {
       dataArray = rawResponse;
-    } else if (rawResponse && typeof rawResponse === 'object') {
+    } else if (rawResponse && typeof rawResponse === "object") {
       if (Array.isArray(rawResponse.data)) {
         dataArray = rawResponse.data;
       } else if (
@@ -55,42 +58,40 @@ export async function GET() {
         Array.isArray(rawResponse.response.data)
       ) {
         dataArray = rawResponse.response.data;
-      } else {        
+      } else {
         return NextResponse.json(
-          { error: 'Invalid response format - data array not found' },
+          { error: "Invalid response format - data array not found" },
           { status: 500 }
         );
       }
     } else {
-      console.error('Unexpected response type:', rawResponse);
+      console.error("Unexpected response type:", rawResponse);
       return NextResponse.json(
-        { error: 'Invalid response format' },
+        { error: "Invalid response format" },
         { status: 500 }
       );
     }
 
-   
-
     // Sample a few items to verify structure
     if (dataArray.length > 0) {
-      console.log('First item sample:', JSON.stringify(dataArray[0]));
+      console.log("First item sample:", JSON.stringify(dataArray[0]));
     }
 
     // Get all categories from database
-    console.log('Fetching categories from database...');
+    console.log("Fetching categories from database...");
     const categories = await prisma.categories.findMany();
 
     if (categories.length === 0) {
-      console.warn('No categories found in database, nothing to process');
+      console.warn("No categories found in database, nothing to process");
       return NextResponse.json({
-        message: 'No categories to process',
+        message: "No categories to process",
         stats: { processed: 0, created: 0, updated: 0 },
       });
     }
 
     // Log a few categories for debugging
     console.log(
-      'Category samples:',
+      "Category samples:",
       categories.slice(0, 3).map((c) => ({ id: c.id, brand: c.brand }))
     );
 
@@ -102,7 +103,7 @@ export async function GET() {
     for (const category of categories) {
       console.log(
         `Processing category ID: ${category.id}, Brand: ${
-          category.brand || 'N/A'
+          category.brand || "N/A"
         }`
       );
 
@@ -114,7 +115,7 @@ export async function GET() {
       let matchCount = 0;
 
       for (const item of dataArray) {
-        if (!item || typeof item !== 'object') {
+        if (!item || typeof item !== "object") {
           continue;
         }
 
@@ -129,7 +130,7 @@ export async function GET() {
             profitGold: 2,
           };
 
-          if (item.category === 'Voucher' || item.category === 'PLN') {
+          if (item.category === "Voucher" || item.category === "PLN") {
             defaultProfits = {
               profit: 4,
               profitReseller: 4,
@@ -144,7 +145,7 @@ export async function GET() {
               where: { providerId: item.buyer_sku_code },
             });
 
-            if (!existingService) {              
+            if (!existingService) {
               try {
                 const regularPrice = Math.round(
                   item.price + (item.price * defaultProfits.profit) / 100
@@ -169,17 +170,17 @@ export async function GET() {
                     providerId: item.buyer_sku_code,
                     harga: regularPrice,
                     hargaReseller: resellerPrice,
+                    hargaSuggest: 0,
+                    profitSuggest: 0,
+                    isSuggest: false,
                     hargaPlatinum: platinumBasePrice,
-                    hargaGold: goldPrice,
                     profit: defaultProfits.profit,
                     profitReseller: defaultProfits.profitReseller,
                     profitPlatinum: defaultProfits.profitPlatinum,
-                    profitGold: defaultProfits.profitGold,
-                    catatan: item.desc || '',
+                    catatan: item.desc || "",
                     status: item.seller_product_status,
-                    provider: 'digiflazz',
+                    provider: "digiflazz",
                     productLogo: null,
-                    subCategoryId: 1,
                     isFlashSale: false,
                   },
                 });
@@ -191,8 +192,6 @@ export async function GET() {
                 );
               }
             } else {
-            
-
               try {
                 // Calculate regular prices with profit margins
                 const regularPrice = Math.round(
@@ -202,21 +201,18 @@ export async function GET() {
                   item.price +
                     (item.price * existingService.profitReseller) / 100
                 );
-                const goldPrice = Math.round(
-                  item.price + (item.price * existingService.profitGold) / 100
-                );
 
                 const platinumBasePrice = Math.round(
-                  item.price + (item.price * defaultProfits.profitPlatinum) / 100
+                  item.price +
+                    (item.price * defaultProfits.profitPlatinum) / 100
                 );
-                
+
                 await prisma.layanan.update({
                   where: { id: existingService.id },
                   data: {
                     harga: regularPrice,
                     hargaReseller: resellerPrice,
-                    hargaPlatinum: platinumBasePrice, 
-                    hargaGold: goldPrice,
+                    hargaPlatinum: platinumBasePrice,
                     status: item.seller_product_status,
                   },
                 });
@@ -237,20 +233,19 @@ export async function GET() {
       categoryMatches[category.brand] = matchCount;
     }
 
-   
-    console.log('Final statistics:', stats);
+    console.log("Final statistics:", stats);
 
     return NextResponse.json({
-      message: 'Data processed successfully',
+      message: "Data processed successfully",
       stats,
       categoryMatches,
     });
   } catch (error) {
-    console.error('Unhandled error in API route:', error);
+    console.error("Unhandled error in API route:", error);
     return NextResponse.json(
       {
         error: String(error),
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
       },
       { status: 500 }
     );
