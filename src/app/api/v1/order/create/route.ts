@@ -13,7 +13,7 @@ import { z } from "zod";
 export const CreateOrder = z.object({
   nickname: z.string().optional(),
   userId: z.string().min(3),
-  voucherCode: z.string().optional().default(""),
+  voucherCode: z.string().optional(),
   zone: z.string(),
   productCode: z.string(),
   paymentCode: z.string(),
@@ -54,26 +54,13 @@ export async function POST(req: NextRequest) {
 
     // Get authenticated user
     const user = await getProfile();
-    const merchantOrderId = GenerateRandomId();
+    const merchantOrderId = GenerateRandomId("TEST");
 
     // Initialize Duitku with proper error handling
     const duitku = new Duitku(
       DUITKU_API_KEY as string,
       DUITKU_MERCHANT_CODE as string
     );
-
-    // Validate Duitku configuration
-    if (!DUITKU_API_KEY || !DUITKU_MERCHANT_CODE) {
-      console.error("Missing Duitku configuration");
-      return NextResponse.json(
-        {
-          status: false,
-          message: "Payment gateway configuration error",
-          code: 500,
-        },
-        { status: 500 }
-      );
-    }
 
     // Use a timeout to prevent long-running transactions
     const timeoutPromise = new Promise((_, reject) => {
@@ -141,6 +128,9 @@ export async function POST(req: NextRequest) {
               data: { usageCount: { increment: 1 } },
             });
 
+            price = validated.finalPrice as number;
+            discountAmount = validated.discountAmount as number;
+            appliedVoucherId = validated.voucherId;
             await tx.voucherUsage.create({
               data: {
                 amount: discountAmount,
@@ -150,10 +140,6 @@ export async function POST(req: NextRequest) {
                 whatsapp: noWa,
               },
             });
-
-            price = validated.finalPrice as number;
-            discountAmount = validated.discountAmount as number;
-            appliedVoucherId = validated.voucherId;
           } else {
             return NextResponse.json(
               {
@@ -188,7 +174,6 @@ export async function POST(req: NextRequest) {
             },
           });
         } catch (e) {
-          console.error("Failed to create purchase record:", e);
           return NextResponse.json(
             {
               status: false,
@@ -253,6 +238,8 @@ export async function POST(req: NextRequest) {
             noWa,
           });
 
+          console.log(toDuitku);
+
           if (!toDuitku || !toDuitku.status) {
             return {
               status: false,
@@ -291,7 +278,7 @@ export async function POST(req: NextRequest) {
             data: {
               orderId: merchantOrderId,
               harga: price.toString(),
-              metode: paymentCode,
+              metode: method.method?.name ?? "",
               noPembeli: noWa,
               status: "PENDING",
               reference: toDuitku.data.reference,

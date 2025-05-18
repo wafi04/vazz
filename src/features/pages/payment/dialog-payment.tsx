@@ -26,6 +26,7 @@ export function DialogPayment({ className }: { className?: string }) {
     price,
     productDetails,
     voucherCode,
+    setHistory,
     whatsAppNumber,
     resetOrder,
     discount,

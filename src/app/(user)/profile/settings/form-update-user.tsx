@@ -1,93 +1,104 @@
-'use client';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { User } from '@/types/schema/user';
-import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { UpdateUser } from '@/types/schema/auth';
-import { toast } from 'sonner';
-import { WhatsAppInput } from '@/components/ui/wa-input';
-import { UpdateUsers } from '@/app/(auth)/auth/components/server';
+"use client";
 
-export function FormUpdateUser({ user }: { user: User }) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [updateSuccess, setUpdateSuccess] = useState(false);
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { WhatsAppInput } from "@/components/ui/wa-input";
+import type { User } from "@/types/schema/user";
+import type React from "react";
+import { useState } from "react";
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<UpdateUser>({
-    defaultValues: {
-      name: user.name ?? '',
-      whatsapp: user.whatsapp ? parseInt(user.whatsapp) : undefined,
-    },
+export function SettingsProfile({ user }: { user: User }) {
+  const [formData, setFormData] = useState({
+    name: user.name ?? "",
+    whatsapp: user.whatsapp ?? "",
   });
 
-  const onSubmit = async (data: UpdateUser) => {
-    try {
-      setIsSubmitting(true);
-      const result = await UpdateUsers({ credentials: data });
-
-      if (result.success) {
-        setUpdateSuccess(true);
-        toast.success(result.message);
-        setTimeout(() => setUpdateSuccess(false), 3000);
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Error updating profile'
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  // Custom handler for WhatsApp input
-  const handleWhatsAppChange = (value: string) => {
-    setValue('whatsapp', value ? Number.parseInt(value) : 62);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Add your submit logic here
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
-        <Input id="name" {...register('name')} type="text" />
-        {errors.name && (
-          <p className="text-sm text-red-500">
-            {errors.name.message?.toString()}
-          </p>
-        )}
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="whatsapp">WhatsApp Number</Label>
-        <WhatsAppInput
-          id="whatsapp"
-          placeholder="8123456789"
-          countryCode={62}
-          value={watch('whatsapp')}
-          onChange={(e) => handleWhatsAppChange(e.target.value)}
-          error={errors.whatsapp?.message}
-        />
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-white mb-2">
+          Profil
+        </h1>
+        <p className="text-blue-200">
+          Kelola informasi profil dan pengaturan akun Anda.
+        </p>
       </div>
 
-      {updateSuccess && (
-        <div className="bg-green-100 text-green-700 px-4 py-2 rounded-md">
-          Profile Update Berhasil
-        </div>
-      )}
+      <div className="space-y-6">
+        {/* Basic Information */}
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-lg border border-blue-900 bg-[#00184a] p-6 shadow-xl"
+        >
+          <div className="mb-6 border-b border-blue-900 pb-4">
+            <h3 className="text-lg font-medium text-white">Informasi Dasar</h3>
+            <p className="text-sm text-blue-200 mt-1">
+              Perbarui informasi profil Anda.
+            </p>
+          </div>
 
-      <Button
-        type="submit"
-        className="bg-orange-500 hover:bg-orange-700"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? 'Menyimpan' : 'Simpan Perubahan'}
-      </Button>
-    </form>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="name"
+                  className="text-sm font-medium text-blue-100"
+                >
+                  Full Name
+                </Label>
+                <Input
+                  type="text"
+                  id="name"
+                  name="name"
+                  placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-blue-900 bg-[#002966] px-4 py-2 text-white shadow-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 placeholder:text-blue-300/50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="whatsapp"
+                  className="text-sm font-medium text-blue-100"
+                >
+                  WhatsApp
+                </Label>
+                <WhatsAppInput
+                  type="text"
+                  placeholder="81234567890"
+                  id="whatsapp"
+                  name="whatsapp"
+                  value={formData.whatsapp}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-blue-900 bg-[#002966] px-4 py-2 text-white shadow-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 placeholder:text-blue-300/50"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex justify-end">
+            <button
+              type="submit"
+              className="rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-md transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#001435]"
+            >
+              Simpan Perubahan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

@@ -41,6 +41,9 @@ export const Vouchers = router({
         }
         return await ctx.prisma.voucher.findMany({
           where,
+          include : {
+            usage : true
+          },
           orderBy: {
             createdAt: "desc",
           },

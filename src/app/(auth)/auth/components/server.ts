@@ -1,12 +1,12 @@
-'use server';
-import authConfig from '@/auth.config';
-import { prisma } from '@/lib/prisma';
-import { RegisterAuth, UpdateUser } from '@/types/schema/auth';
-import { User } from '@/types/schema/user';
-import { hashSync } from 'bcryptjs';
-import { randomBytes, randomInt } from 'crypto';
-import { getServerSession } from 'next-auth';
-import { z } from 'zod';
+"use server";
+import authConfig from "@/auth.config";
+import { prisma } from "@/lib/prisma";
+import { RegisterAuth, UpdateUser } from "@/types/schema/auth";
+import { User } from "@/types/schema/user";
+import { hashSync } from "bcryptjs";
+import { randomBytes, randomInt } from "crypto";
+import { getServerSession } from "next-auth";
+import { z } from "zod";
 
 export type CreateUserResult = {
   success: boolean;
@@ -14,7 +14,9 @@ export type CreateUserResult = {
   user?: Partial<User>;
 };
 function generateApiKey() {
-  return randomBytes(32).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
+  return randomBytes(32)
+    .toString("base64")
+    .replace(/[^a-zA-Z0-9]/g, "");
 }
 export default async function CreateUser({
   credentials,
@@ -33,7 +35,7 @@ export default async function CreateUser({
     if (existingUser) {
       return {
         success: false,
-        message: 'Username sudah terpakai',
+        message: "Username sudah terpakai",
       };
     }
 
@@ -45,10 +47,10 @@ export default async function CreateUser({
       data: {
         ...validatedData,
         password: hashedPassword,
-        role: 'Member',
-            balance: 0,
-            apiKey: generateApiKey(),
-          },
+        role: "Member",
+        balance: 0,
+        apiKey: generateApiKey(),
+      },
       select: {
         id: true,
         username: true,
@@ -59,27 +61,27 @@ export default async function CreateUser({
 
     return {
       success: true,
-      message: 'register created succesfully',
+      message: "register created succesfully",
       user,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        message: error.errors.map((err) => err.message).join(', '),
+        message: error.errors.map((err) => err.message).join(", "),
       };
     }
 
     if (error instanceof Error) {
       return {
         success: false,
-        message: error.message || 'Failed to create user',
+        message: error.message || "Failed to create user",
       };
     }
 
     return {
       success: false,
-      message: 'An unexpected error occurred',
+      message: "An unexpected error occurred",
     };
   }
 }
@@ -93,17 +95,16 @@ export async function findUserByUsername(username: string) {
       id: true,
       createdAt: true,
       role: true,
-      otp : true,
+      otp: true,
       apiKey: true,
-      token : true,
+      token: true,
       updatedAt: true,
       whatsapp: true,
     },
   });
 }
 
-export async function findUserById(id: number
-) {
+export async function findUserById(id: number) {
   const user = await prisma.users.findUnique({
     where: { id },
     select: {
@@ -113,8 +114,8 @@ export async function findUserById(id: number
       id: true,
       createdAt: true,
       role: true,
-      otp : true,
-      token : true,
+      otp: true,
+      token: true,
       apiKey: true,
       updatedAt: true,
       whatsapp: true,
@@ -125,10 +126,7 @@ export async function findUserById(id: number
     return null;
   }
 
-  return {
-    ...user,
-    balance: user?.balance.toString(),
-  };
+  return user;
 }
 export async function UpdateUsers({
   credentials,
@@ -140,7 +138,7 @@ export async function UpdateUsers({
 
     if (!user) {
       return {
-        message: 'Unauthorized: User Tidak Ditemukan',
+        message: "Unauthorized: User Tidak Ditemukan",
         success: false,
       };
     }
@@ -156,28 +154,27 @@ export async function UpdateUsers({
     });
 
     return {
-      message: 'Profile updated successfully',
+      message: "Profile updated successfully",
       success: true,
-      user: { ...data, balance: data.balance.toString() },
+      user: { ...data, balance: data.balance, createdAt : data.createdAt?.toISOString(),updatedAt : data.updatedAt?.toISOString() },
     };
   } catch (error) {
-    console.error('Error updating user:', error);
+    console.error("Error updating user:", error);
     return {
       message:
-        error instanceof Error ? error.message : 'Failed to update profile',
+        error instanceof Error ? error.message : "Failed to update profile",
       success: false,
     };
   }
 }
 
-
-export async  function getProfile() {
+export async function getProfile() {
   const session = await getServerSession(authConfig);
-  
+
   if (!session) {
-    return null
+    return null;
   }
   return {
-    session : session?.user
-  }
+    session: session?.user,
+  };
 }

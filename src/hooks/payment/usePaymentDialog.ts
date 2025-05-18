@@ -4,6 +4,8 @@ import { useDuitkuPayment } from "@/hooks/payment/use-payment";
 import { toast } from "sonner";
 import { CheckNickName } from "@/lib/check-nickname";
 import { GAMES_WITH_VALIDATION, GameType } from "@/data/check-code";
+import { useOrderStore } from "../use-order";
+import { string } from "zod";
 
 interface PaymentMethod {
   name: string;
@@ -48,6 +50,7 @@ export const usePaymentDialog = ({
   const [isCheckingNickname, setIsCheckingNickname] = useState<boolean>(false);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [requiresValidation, setRequiresValidation] = useState<boolean>(false);
+  const { setHistory, discount, finalPrice, price } = useOrderStore();
 
   // Determine if game needs validation
   useEffect(() => {
@@ -111,7 +114,6 @@ export const usePaymentDialog = ({
 
       const response = await payment.initiatePayment({
         noWa: whatsAppNumber,
-
         paymentCode: method.code,
         productCode: productDetails.code,
         userId: userId as string,
@@ -119,14 +121,21 @@ export const usePaymentDialog = ({
         voucherCode: voucherCode ?? "",
         nickname: nicknameData ?? "not-found",
       });
-      console.log(response.data);
+      setHistory({
+        userId: userId as string,
+        zone,
+        discount,
+        finalPrice,
+        method,
+        price,
+        product: productDetails,
+        whatsAppNumber,
+      });
       if (response.success) {
         if (response.data.paymentUrl) {
           window.open(response.data.paymentUrl, "_blank");
         }
-
         resetOrder();
-
         toast.success("Payment created successfully!");
       } else {
         setError(response.message);

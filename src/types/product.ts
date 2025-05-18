@@ -4,23 +4,25 @@ export type ProductData = {
   provider: string;
   providerId: string;
   kategoriId: number;
-  subCategoryId: number;
   catatan: string;
   status: boolean;
+  hargaFromDigi: number;
   harga: number;
-  hargaGold: number;
+  hargaSuggest: number;
   hargaPlatinum: number;
   hargaReseller: number;
   profit: number;
-  profitGold: number;
+  profitSuggest: number;
   profitPlatinum: number;
   profitReseller: number;
   productLogo: string | null;
+  isSuggest: boolean;
   isFlashSale: boolean;
+  isProfitFixed: boolean;
   judulFlashSale: string | null;
   bannerFlashSale: string | null;
   expiredFlashSale: string | null;
-  hargaFlashSale: number |null
-  createdAt: string | null
-  updatedAt: string | null
+  hargaFlashSale: number | null;
+  createdAt: string | null;
+  updatedAt: string | null;
 };

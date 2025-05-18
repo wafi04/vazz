@@ -1,8 +1,19 @@
 import React, { ReactNode, useState } from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Clock, Copy, CheckCircle, ArrowLeft, Printer } from "lucide-react";
 import { formatDate } from "@/utils/formatPrice";
 import { getStatusConfig, useLogicTransaksi } from "./utils";
@@ -15,14 +26,20 @@ interface TransactionDetailsProps {
   onViewDetails?: () => void;
 }
 
-export function TransactionDetails({ data, onBack}: TransactionDetailsProps) {
-  const { copy, url, copied, timeLeft, paymentType } = useLogicTransaksi({ data });
+export function TransactionDetails({ data, onBack }: TransactionDetailsProps) {
+  const { copy, url, copied, timeLeft, paymentType } = useLogicTransaksi({
+    data,
+  });
   const statusConfig = getStatusConfig(data.status);
-  const paymentStatusConfig = data.pembayaran ? getStatusConfig(data.pembayaran.status) : statusConfig;
+  const paymentStatusConfig = data.pembayaran
+    ? getStatusConfig(data.pembayaran.status)
+    : statusConfig;
   const isPending = data.pembayaran?.status === "PENDING";
-  const isFailed = data.pembayaran?.status === "FAILED"
-  const timeLeftParts = timeLeft ? timeLeft.split(":").map((part) => part.trim()) : ["00", "00", "00"];
-  const [hours, minutes, seconds] = timeLeftParts.length === 3 ? timeLeftParts : ["00", ...timeLeftParts];
+  const timeLeftParts = timeLeft
+    ? timeLeft.split(":").map((part) => part.trim())
+    : ["00", "00", "00"];
+  const [hours, minutes, seconds] =
+    timeLeftParts.length === 3 ? timeLeftParts : ["00", ...timeLeftParts];
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-8">
@@ -31,7 +48,9 @@ export function TransactionDetails({ data, onBack}: TransactionDetailsProps) {
         {/* Kartu Informasi Pembelian */}
         <Card className="shadow-md border-0 overflow-hidden rounded-lg">
           <CardHeader>
-            <CardTitle className="text-xl font-semibold">Informasi Pembelian</CardTitle>
+            <CardTitle className="text-xl font-semibold">
+              Informasi Pembelian
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Detail Layanan */}
@@ -40,11 +59,21 @@ export function TransactionDetails({ data, onBack}: TransactionDetailsProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <h3 className="text-md font-medium text-muted-foreground mb-3">Detail Layanan</h3>
+              <h3 className="text-md font-medium text-muted-foreground mb-3">
+                Detail Layanan
+              </h3>
               <div className="space-y-3">
                 <DetailItem label="Pembelian " value={data.layanan} />
-                <DetailItem label="Tipe Transaksi" value={data.tipeTransaksi} valueClassName="text-md"/>
-                <DetailItem label="Status Pemesanan"  value={<Badge status={data.status}/>} valueClassName="text-md"/>
+                <DetailItem
+                  label="Tipe Transaksi"
+                  value={data.tipeTransaksi}
+                  valueClassName="text-md"
+                />
+                <DetailItem
+                  label="Status Pemesanan"
+                  value={<Badge status={data.status} />}
+                  valueClassName="text-md"
+                />
                 <DetailItem
                   label="Harga"
                   value={`Rp ${data.harga.toLocaleString("id-ID")}`}
@@ -59,13 +88,27 @@ export function TransactionDetails({ data, onBack}: TransactionDetailsProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">Detail Pengguna</h3>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                Detail Pengguna
+              </h3>
               <div className="space-y-3">
-                <DetailItem label="Username" value={data.username || "-"} valueClassName="text-lg" />
+                <DetailItem
+                  label="Username"
+                  value={data.username || "-"}
+                  valueClassName="text-lg"
+                />
                 <DetailItem label="Nickname" value={data.nickname || "-"} />
-                {data.userId && <DetailItem label="User Id" value={data.userId} />}
+                {data.userId && (
+                  <DetailItem label="User Id" value={data.userId} />
+                )}
                 {data.zone && <DetailItem label="Zone" value={data.zone} />}
-                {data.log && <DetailItem label="Message" value={data.log} valueClassName="items-end text-end"/>}
+                {data.log && (
+                  <DetailItem
+                    label="Message"
+                    value={data.log}
+                    valueClassName="items-end text-end"
+                  />
+                )}
               </div>
             </motion.div>
           </CardContent>
@@ -75,7 +118,9 @@ export function TransactionDetails({ data, onBack}: TransactionDetailsProps) {
         {data.pembayaran && (
           <Card className="shadow-md border-0 overflow-hidden rounded-lg">
             <CardHeader>
-              <CardTitle className="text-xl font-semibold">Informasi Pembayaran</CardTitle>
+              <CardTitle className="text-xl font-semibold">
+                Informasi Pembayaran
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Timer untuk pembayaran pending */}
@@ -85,12 +130,16 @@ export function TransactionDetails({ data, onBack}: TransactionDetailsProps) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                <div className={`p-4 rounded-lg bg-[hsl(217,100%,16%)] border border-[hsl(217,100%,20%)]`}>
+                  <div
+                    className={`p-4 rounded-lg bg-[hsl(217,100%,16%)] border border-[hsl(217,100%,20%)]`}
+                  >
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                       {/* Bagian Kiri: Label "Batas Waktu Pembayaran" */}
                       <div className="flex items-center">
                         <Clock className="h-5 w-5 mr-2 text-white" />
-                        <span className="font-medium text-white">Batas Waktu Pembayaran:</span>
+                        <span className="font-medium text-white">
+                          Batas Waktu Pembayaran:
+                        </span>
                       </div>
 
                       {/* Bagian Kanan: Timer */}
@@ -98,31 +147,47 @@ export function TransactionDetails({ data, onBack}: TransactionDetailsProps) {
                         {/* Jam */}
                         <div className="flex flex-col items-center">
                           <div className="">
-                            <span className="text-2xl font-bold text-white">{hours}</span>
+                            <span className="text-2xl font-bold text-white">
+                              {hours}
+                            </span>
                           </div>
-                          <span className="text-xs mt-1 text-gray-300">Jam</span>
+                          <span className="text-xs mt-1 text-gray-300">
+                            Jam
+                          </span>
                         </div>
 
                         {/* Separator ":" */}
-                        <span className="text-xl font-bold text-white mt-[-0.5rem]">:</span>
+                        <span className="text-xl font-bold text-white mt-[-0.5rem]">
+                          :
+                        </span>
 
                         {/* Menit */}
                         <div className="flex flex-col items-center">
                           <div className="">
-                            <span className="text-2xl font-bold text-white">{minutes}</span>
+                            <span className="text-2xl font-bold text-white">
+                              {minutes}
+                            </span>
                           </div>
-                          <span className="text-xs mt-1 text-gray-300">Menit</span>
+                          <span className="text-xs mt-1 text-gray-300">
+                            Menit
+                          </span>
                         </div>
 
                         {/* Separator ":" */}
-                        <span className="text-xl font-bold text-white mt-[-0.5rem]">:</span>
+                        <span className="text-xl font-bold text-white mt-[-0.5rem]">
+                          :
+                        </span>
 
                         {/* Detik */}
                         <div className="flex flex-col items-center">
                           <div className="">
-                            <span className="text-2xl font-bold text-white">{seconds}</span>
+                            <span className="text-2xl font-bold text-white">
+                              {seconds}
+                            </span>
                           </div>
-                          <span className="text-xs mt-1 text-gray-300">Detik</span>
+                          <span className="text-xs mt-1 text-gray-300">
+                            Detik
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -136,62 +201,91 @@ export function TransactionDetails({ data, onBack}: TransactionDetailsProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <h3 className="text-sm font-medium text-muted-foreground mb-3">Detail Pembayaran</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                  Detail Pembayaran
+                </h3>
                 <div className="space-y-3">
                   <DetailItem label="Metode" value={data.pembayaran.metode} />
                   {/* Virtual Account */}
                   {paymentType === "VA" && data.pembayaran.noPembayaran && (
                     <div className="mt-2 mb-3">
-                      <div className="text-sm text-muted-foreground mb-1">No. Virtual Account:</div>
+                      <div className="text-sm text-muted-foreground mb-1">
+                        No. Virtual Account:
+                      </div>
                       <div className="flex items-center justify-between bg-blue-600 p-2 rounded-md">
-                        <span className="font-mono text-base font-medium">{data.pembayaran.noPembayaran}</span>
-                       
+                        <span className="font-mono text-base font-medium">
+                          {data.pembayaran.noPembayaran}
+                        </span>
                       </div>
                     </div>
                   )}
                   {/* Payment URL */}
-                  {paymentType === "URL" && data.pembayaran.noPembayaran &&  isPending && (
-                    <div className="mt-2 mb-3">
-                      <div className="text-sm text-muted-foreground mb-1">Link Pembayaran:</div>
-                      <Button
-                        variant="outline"
-                        onClick={url}
-                        className="w-full justify-center text-sm py-2 h-10 gap-2  bg-blue-800"
-                      >
-                        Buka Link Pembayaran
-                      </Button>
-                    </div>
+                  {paymentType === "URL" &&
+                    data.pembayaran.noPembayaran &&
+                    isPending && (
+                      <div className="mt-2 mb-3">
+                        <div className="text-sm text-muted-foreground mb-1">
+                          Link Pembayaran:
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={url}
+                          className="w-full justify-center text-sm py-2 h-10 gap-2  bg-blue-800"
+                        >
+                          Buka Link Pembayaran
+                        </Button>
+                      </div>
+                    )}
+                  <DetailItem
+                    label="Status"
+                    value={<Badge status={data.pembayaran.status} />}
+                  />
+                  <DetailItem
+                    label="Waktu"
+                    value={formatDate(data.pembayaran.createdAt as string)}
+                  />
+                  <DetailItem
+                    label="No. Pembeli"
+                    value={`${data.pembayaran.noPembeli}`}
+                    valueClassName=""
+                  />
+                  {data.sn && (
+                    <DetailItem
+                      label="Sn"
+                      value={`${data.sn}`}
+                      valueClassName=""
+                    />
                   )}
-                  <DetailItem  label="Status"  value={<Badge status={data.pembayaran.status}/>}/>
-                  <DetailItem label="Waktu" value={formatDate(data.pembayaran.createdAt as string)} />
-                  <DetailItem label="No. Pembeli" value={`${data.pembayaran.noPembeli}`} valueClassName="" />
-                  {
-                    data.sn && 
-                  <DetailItem label="Sn" value={`${data.sn}`} valueClassName="" />
-                  }
                 </div>
               </motion.div>
             </CardContent>
             <CardFooter className="flex justify-between border-t p-6  dark:bg-slate-900">
-                <InvoicePrint data={data}/>
-          </CardFooter>
+              <InvoicePrint data={data} />
+            </CardFooter>
           </Card>
         )}
-        
       </div>
     </div>
   );
 }
 
 // Komponen DetailItem
-export function DetailItem({ label, value, valueClassName = "" }  : {label : string,value : string | ReactNode,valueClassName? : string}) {
+export function DetailItem({
+  label,
+  value,
+  valueClassName = "",
+}: {
+  label: string;
+  value: string | ReactNode;
+  valueClassName?: string;
+}) {
   return (
     <div className="flex justify-between items-center">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className={cn("text-sm", valueClassName)}>{value}</span>    </div>
+      <span className={cn("text-sm", valueClassName)}>{value}</span>{" "}
+    </div>
   );
 }
-
 
 type BadgeProps = {
   status: string;

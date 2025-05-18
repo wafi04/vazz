@@ -41,7 +41,6 @@ export interface VoucherCheckRequest {
 export function useDuitkuPayment() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { push } = useRouter();
 
   /**
    * Initiates a payment transaction
@@ -59,7 +58,6 @@ export function useDuitkuPayment() {
         "/api/v1/order/create",
         orderDetails
       );
-      console.log(response.data);
       return response.data;
     } catch (err: any) {
       const errorMessage =

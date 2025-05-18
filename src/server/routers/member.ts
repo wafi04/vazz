@@ -1,223 +1,256 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../trpc";
 import { Prisma } from "@prisma/client";
-import { findUserById, findUserByUsername, getProfile } from "@/app/(auth)/auth/components/server";
+import {
+  findUserById,
+  findUserByUsername,
+  getProfile,
+} from "@/app/(auth)/auth/components/server";
 
 export const member = router({
-  findAll: publicProcedure.input(
-    z.object({
-      page: z.number(),
-      perPage: z.number(),
-      filter: z.string().optional()
-    }),
-  ).query(async ({ ctx, input }) => {
-    try {
-      const where: Prisma.UsersWhereInput = {}
-      
-      if (input.filter) {
-        where.username  = input.filter
-      }
-      
-      const skip = (input.page - 1) * input.perPage;
-      const take = input.perPage;
-      
-      const [data, total] = await Promise.all([
-        ctx.prisma.users.findMany({
-          where,
-          skip,
-          take,
-          orderBy: {
-            createdAt: 'desc'
-          }
-        }),
-        ctx.prisma.users.count({ where })
-      ]);
-      
-      return {
-        data,
-        meta: {
-          total,
-          page: input.page,
-          perPage: input.perPage,
-          pageCount: Math.ceil(total / input.perPage)
+  findAll: publicProcedure
+    .input(
+      z.object({
+        page: z.number(),
+        perPage: z.number(),
+        filter: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const where: Prisma.UsersWhereInput = {};
+
+        if (input.filter) {
+          where.username = input.filter;
         }
+
+        const skip = (input.page - 1) * input.perPage;
+        const take = input.perPage;
+
+        const [data, total] = await Promise.all([
+          ctx.prisma.users.findMany({
+            where,
+            skip,
+            take,
+            orderBy: {
+              createdAt: "desc",
+            },
+          }),
+          ctx.prisma.users.count({ where }),
+        ]);
+
+        return {
+          data,
+          meta: {
+            total,
+            page: input.page,
+            perPage: input.perPage,
+            pageCount: Math.ceil(total / input.perPage),
+          },
+        };
+      } catch (error) {
+        throw new Error(
+          `Failed to fetch members: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
+      }
+    }),
+  findMembership: publicProcedure.query(async ({ ctx }) => {
+    try {
+      const session = await getProfile();
+      if (!session) {
+        return {
+          status: false,
+          message: "Message retrieved successfully",
+        };
+      }
+      const membershipme = await ctx.prisma.deposits.findMany({
+        where: {
+          username: session.session.username,
+          depositId: {
+            startsWith: "MEM",
+          },
+        },
+      });
+
+      return {
+        status: true,
+        data: membershipme,
       };
     } catch (error) {
-      throw new Error(`Failed to fetch members: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return {
+        status: false,
+        message: "Error retrieving membership data",
+      };
     }
   }),
-   findMembership: publicProcedure.query(async ({ ctx }) => {
+  findMe: publicProcedure.query(async ({ ctx }) => {
+    try {
+      const session = await getProfile();
+      if (!session) {
+        return {
+          data: null,
+          status: false,
+          message: "Session not found",
+        };
+      }
+
+      const profile = await ctx.prisma.users.findUnique({
+        where: {
+          username: session.session?.username,
+        },
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          balance: true,
+          role: true,
+          otp: true,
+          whatsapp: true,
+          apiKey: true,
+          deposits: {
+            skip: 10,
+            take: 10,
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          pembelian: {
+            skip: 10,
+            take: 10,
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return {
+        status: true,
+        data: profile,
+        message: "Profile Reterived Successfully",
+      };
+    } catch (error) {
+      return {
+        message: error instanceof Error ? error.message : "unknown error",
+        status: false,
+        data: null,
+      };
+    }
+  }),
+  add: publicProcedure
+    .input(
+      z.object({
+        username: z.string(),
+        name: z.string(),
+        password: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
       try {
-        const session = await getProfile();
-        if (!session) {
+        const validate = await findUserByUsername(input.username);
+
+        if (validate) {
+          throw new Error("Username Telah Terpakai");
+        }
+
+        const create = await ctx.prisma.users.create({
+          data: {
+            ...input,
+            role: "Member",
+            balance: 0,
+          },
+        });
+
+        if (!create) {
+          throw new Error("Failed to create user");
+        }
+
+        return {
+          data: create,
+          message: "Create user successfully",
+          status: true,
+        };
+      } catch (error) {
+        throw error instanceof Error ? error : new Error("Failed Create User");
+      }
+    }),
+  edit: publicProcedure
+    .input(
+      z.object({
+        name: z.string(),
+        id: z.number(),
+        role: z.string(),
+        balance: z.number(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const create = await ctx.prisma.users.update({
+          where: {
+            id: input.id,
+          },
+          data: {
+            name: input.name,
+            role: input.role,
+            balance: input.balance,
+          },
+        });
+
+        if (!create) {
+          throw new Error("Failed to create user");
+        }
+
+        return {
+          data: create,
+          message: "Update member successfully",
+          status: true,
+        };
+      } catch (error) {
+        throw error instanceof Error ? error : new Error("Failed Update User");
+      }
+    }),
+  deleteUser: publicProcedure
+    .input(
+      z.object({
+        userId: z.number(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const user = await findUserById(input.userId);
+
+        if (!user) {
           return {
             status: false,
-            message: "Message retrieved successfully"
+            message: "user not found",
           };
         }
-        const membershipme = await ctx.prisma.deposits.findMany({
+        const userdelete = await ctx.prisma.users.delete({
           where: {
-            username: session.session.username,
-            depositId: {
-              startsWith: "MEM" 
-            }
-          }
+            id: input.userId,
+          },
         });
-        
+
+        if (!userdelete) {
+          return {
+            status: false,
+            message: "failed to delete Users",
+          };
+        }
         return {
-          status: true,
-          data: membershipme
+          status: false,
+          message: "delete user successfully",
+          data: userdelete,
         };
       } catch (error) {
         return {
           status: false,
-          message: "Error retrieving membership data",
+          message: "internal Server Erorr",
         };
       }
     }),
-  findMe : publicProcedure.query(async({ctx}) => {
-    try {
-     const session = await getProfile()
-
-     if(!session){
-      return  {
-        status : false,
-        message : "Message retreived successfully"
-      }
-     }
-     const profile  = await ctx.prisma.users.findUnique({
-      where : {
-        username : session.session?.username
-      },
-      select : {
-        role : true,
-        id : true,
-        balance : true,
-        name : true,
-        username : true
-      }
-     }) 
-
-     if(!profile){
-      return  {
-        status : false,
-        message : "Message retreived successfully"
-      }
-     }
-
-     return profile
-    } catch (error) {
-      throw new Error(`Failed to fetch members: ${error instanceof Error ? error.message : 'Unknown error'}`);
-
-    }
-  }),
-  add: publicProcedure.input(
-    z.object({
-      username: z.string(),
-      name: z.string(),
-      password: z.string()
-    })
-  ).mutation(async ({ctx, input}) => {
-    try {
-      const validate = await findUserByUsername(input.username)
-      
-      if (validate) {
-        throw new Error("Username Telah Terpakai")
-      }
-      
-      const create = await ctx.prisma.users.create({
-        data: {
-          ...input,
-          role: 'Member',
-          balance: 0 
-        }
-      })
-      
-      if(!create) {
-        throw new Error("Failed to create user")
-      }
-      
-      return {
-        data: create,
-        message: "Create user successfully",
-        status: true
-      }
-    } catch (error) {
-      throw error instanceof Error ? error : new Error("Failed Create User")
-    }
-  }),
-  edit: publicProcedure.input(
-    z.object({
-      name: z.string(),
-      id : z.number(),
-      role : z.string(),
-      balance : z.number()
-    })
-  ).mutation(async ({ctx, input}) => {
-    try {
-
-      const create = await ctx.prisma.users.update({
-        where : {
-          id : input.id
-        },
-        data: {
-          name : input.name,
-          role: input.role,
-          balance: input.balance
-        }
-      })
-      
-      if(!create) {
-        throw new Error("Failed to create user")
-      }
-      
-      return {
-        data: create,
-        message: "Update member successfully",
-        status: true
-      }
-    } catch (error) {
-      throw error instanceof Error ? error : new Error("Failed Update User")
-    }
-  }),
-  deleteUser : publicProcedure.input(
-    z.object({
-        userId : z.number()
-    })
-  ).mutation(async ({ctx,input})  => {
-    try {
-        const user =  await findUserById(input.userId)
-
-        if(!user){
-            return {
-                status : false,
-                message : 'user not found'
-            }
-        }
-        const userdelete = await ctx.prisma.users.delete({
-            where : {
-                id : input.userId
-            }
-        })   
-
-        if(!userdelete)  {
-            return {
-                 status : false,
-                message : 'failed to delete Users'
-            }
-        }
-        return {
-            status : false,
-            message : "delete user successfully",
-            data : userdelete
-        }
-    } catch (error) {
-        return {
-            status : false,
-            message : "internal Server Erorr"
-        }
-    }
-  }),
-
-
 });

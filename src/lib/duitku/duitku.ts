@@ -29,7 +29,7 @@ export class Duitku {
   private DUITKU_CALLBACK_URL?: string | undefined;
   private DUITKU_EXPIRY_PERIOD?: number;
   private BASE_URL =
-    "https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry";
+    "https://passport.duitku.com/webapi/api/merchant/v2/inquiry";
 
   private BASE_URL_GET_TRANSACTION =
     "https://passport.duitku.com/webapi/api/merchant/transactionStatus";
@@ -51,10 +51,7 @@ export class Duitku {
     merchantOrderId: string,
     amount: number
   ): string {
-    const md5 = crypto
-      .createHash("md5")
-      .update(merchantCode + merchantOrderId + amount + this.DUITKU_KEY)
-      .digest("hex");
+    const md5 = crypto.createHash("md5").update().digest("hex");
     return md5;
   }
 

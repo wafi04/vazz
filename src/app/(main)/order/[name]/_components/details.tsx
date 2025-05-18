@@ -15,13 +15,14 @@ import { MethodSection } from "./methodSection";
 import { HeaderNumber } from "@/components/ui/headernumber";
 import { KodeVoucherInput } from "./voucher";
 import { CartDetails } from "./cartDetails";
+import { CardHistory } from "@/app/(main)/_components/history";
 
 export default function DetailsCategories({ name }: { name: string }) {
   const { filter } = useFilterProduct();
   const { data, isLoading } = trpc.categories.getByCode.useQuery({
     code: name,
   });
-  const { setUserId, setZone, userId, zone } = useOrderStore();
+  const { setUserId, setZone, userId, zone, resetOrder } = useOrderStore();
   const category = data?.data;
 
   const [filteredProducts, setFilteredProducts] = useState(
@@ -30,6 +31,7 @@ export default function DetailsCategories({ name }: { name: string }) {
 
   useEffect(() => {
     if (category?.layanan) {
+      resetOrder();
       let updatedLayanan = [...category.layanan];
 
       if (filter) {
@@ -67,6 +69,7 @@ export default function DetailsCategories({ name }: { name: string }) {
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 container mx-auto max-w-7xl">
         <div className="hidden lg:block lg:sticky lg:top-6 lg:self-start">
           <SidebarOrder category={category} />
+          <CardHistory />
         </div>
 
         {/* Input Section */}

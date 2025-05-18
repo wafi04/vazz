@@ -36,7 +36,6 @@ function ProductCard({ product }: { product: ProductData }) {
         setProduct({
           code: product.providerId,
           name: product.layanan,
-          price: product.harga,
         });
         setPrice(product.harga);
       }}
