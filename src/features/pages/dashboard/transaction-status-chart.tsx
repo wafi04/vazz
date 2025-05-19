@@ -39,7 +39,7 @@ export function TransactionStatusChart({
         amount: count,
         percentage:
           totalTransactions > 0
-            ? ((count || 0) / totalTransactions * 100).toFixed(1)
+            ? (((count || 0) / totalTransactions) * 100).toFixed(1)
             : "0",
       }));
   };
@@ -56,9 +56,9 @@ export function TransactionStatusChart({
   }
 
   const statusColors = {
-    pending: "#FFB703", // Kuning cerah
-    successful: "#83C5BE", // Biru muda
-    failed: "#E63946", // Merah terang
+    pending: "#FFB703",
+    successful: "#83C5BE",
+    failed: "#E63946",
   };
 
   const statusLabels = {
@@ -75,7 +75,6 @@ export function TransactionStatusChart({
     percentage: item.percentage,
   }));
 
-
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -88,17 +87,16 @@ export function TransactionStatusChart({
             outerRadius={80}
             paddingAngle={2}
             dataKey="value"
-            label={({ name, percentage }) =>
-              `${name}: ${percentage}%`
-            }
+            label={({ name, percentage }) => `${name}: ${percentage}%`}
             labelLine={true}
           >
             {formattedData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
                 fill={
-                  statusColors[entry.name.toLowerCase() as keyof typeof statusColors] ||
-                  "#999999"
+                  statusColors[
+                    entry.name.toLowerCase() as keyof typeof statusColors
+                  ] || "#999999"
                 }
                 strokeWidth={2}
               />

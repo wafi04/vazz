@@ -12,7 +12,6 @@ import { FormTopupContent } from "../_components/form-topup";
 import { MembershipContent } from "../_components/membership";
 import { TableProfileTopup } from "../_components/table/table-profile-topup";
 import { TableDeposit } from "../_components/table/table-deposit";
-import { DepositData } from "@/types/deposits";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -23,7 +22,6 @@ export default function ProfilePage() {
     error,
   } = trpc.member.findMe.useQuery();
 
-  // Redirect if no user data and not loading
   useEffect(() => {
     if (!isLoading && (!userResponse || !userResponse.data)) {
       redirect("/");

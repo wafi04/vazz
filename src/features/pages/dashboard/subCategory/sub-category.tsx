@@ -68,7 +68,7 @@ export default function SubCategory() {
       page: currentPage,
       perPage,
       search: debouncedSearch,
-      active: status || undefined, // Send as undefined if empty string
+      active: status || undefined,
     },
     {
       retry: 1,

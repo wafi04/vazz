@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,9 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,15 +19,15 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Category } from '@/types/category';
-import { FormatPrice } from '@/utils/formatPrice';
-import { trpc } from '@/utils/trpc';
-import { Loader2 } from 'lucide-react';
-import { ReactNode, useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { PlaceholderContent } from '../../../../app/(main)/order/[name]/_components/placeholder';
-import { getServerData } from '@/data/data-server-region';
+} from "@/components/ui/select";
+import { Category } from "@/types/category";
+import { FormatPrice } from "@/utils/formatPrice";
+import { trpc } from "@/utils/trpc";
+import { Loader2 } from "lucide-react";
+import { ReactNode, useState, useEffect } from "react";
+import { toast } from "sonner";
+import { PlaceholderContent } from "../../../(main)/order/[name]/_components/placeholder";
+import { getServerData } from "@/data/data-server-region";
 
 interface DialogOrderManualProps {
   data?: Category[];
@@ -41,18 +41,18 @@ export function DialogOrderManual({
   onOrderComplete,
 }: DialogOrderManualProps) {
   const [open, setOpen] = useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
-  const [selectedService, setSelectedService] = useState<string>('');
-  const [whatsApp, setWhatsApp] = useState<string>('');
+  const [selectedService, setSelectedService] = useState<string>("");
+  const [whatsApp, setWhatsApp] = useState<string>("");
   const [isFormValid, setIsFormValid] = useState(false);
-  const [placeholder1, setPlaceholder1] = useState('');
-  const [placeholder2, setPlaceholder2] = useState('');
-  const { mutate, isLoading : isPending } = trpc.order.createManual.useMutation({
+  const [placeholder1, setPlaceholder1] = useState("");
+  const [placeholder2, setPlaceholder2] = useState("");
+  const { mutate, isLoading: isPending } = trpc.order.createManual.useMutation({
     onSuccess: () => {
-      toast.success('Order created successfully');
+      toast.success("Order created successfully");
       resetForm();
       setOpen(false);
       if (onOrderComplete) onOrderComplete();
@@ -67,8 +67,8 @@ export function DialogOrderManual({
       { category: selectedCategoryId },
       { enabled: !!selectedCategoryId }
     );
-  
-    const serverData =  getServerData(selectedCategory?.kode as string)
+
+  const serverData = getServerData(selectedCategory?.kode as string);
 
   // Find selected category object when ID changes
   useEffect(() => {
@@ -89,7 +89,7 @@ export function DialogOrderManual({
 
   const handleSubmit = async () => {
     if (!isFormValid) {
-      toast.error('Pastika semua data terisi');
+      toast.error("Pastika semua data terisi");
       return;
     }
 
@@ -102,15 +102,15 @@ export function DialogOrderManual({
         serverId: placeholder2,
       });
     } catch (error) {
-      toast.error('terjadi kesalahan')
+      toast.error("terjadi kesalahan");
     }
   };
 
   const resetForm = () => {
-    setSelectedCategoryId('');
+    setSelectedCategoryId("");
     setSelectedCategory(null);
-    setSelectedService('');
-    setWhatsApp('');
+    setSelectedService("");
+    setWhatsApp("");
   };
 
   return (
@@ -141,7 +141,7 @@ export function DialogOrderManual({
                   <SelectGroup>
                     <SelectLabel>Categories</SelectLabel>
                     {data?.map((category) => (
-                      <SelectItem key={category.id} value={category.kode || ''}>
+                      <SelectItem key={category.id} value={category.kode || ""}>
                         {category.nama}
                       </SelectItem>
                     ))}
@@ -229,7 +229,7 @@ export function DialogOrderManual({
                   Processing...
                 </>
               ) : (
-                'Submit Order'
+                "Submit Order"
               )}
             </Button>
           </div>

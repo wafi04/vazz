@@ -5,7 +5,6 @@ import { Deposits } from "./deposits";
 import { Layanans } from "./layanans";
 import { mainRouter } from "./main";
 import { member } from "./member";
-import { methods } from "./method";
 import { Methods } from "./methods/get";
 import { order } from "./order";
 import { Products } from "./products/routes";

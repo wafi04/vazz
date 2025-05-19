@@ -9,16 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionStatusChart } from "./transaction-status-chart";
 import { RevenueChart } from "./revenue-chart";
 import { trpc } from "@/utils/trpc";
-import { RecentTransactions } from "./recent-transactions";
+import { RecentTransactions } from "@/app/dashboard/_components/transactions/recent-transactions";
 export type FILTER = "ALL" | "PAYMENT" | "DEPOSIT" | "Top Up";
 
 export default function DashboardAdminPage() {
@@ -32,7 +27,11 @@ export default function DashboardAdminPage() {
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              repeatType: "reverse",
+            }}
             className="text-lg text-primary"
           >
             Loading dashboard data...
@@ -46,7 +45,9 @@ export default function DashboardAdminPage() {
     return (
       <main className="flex flex-col gap-6 p-6 bg-background">
         <div className="h-screen flex items-center justify-center">
-          <span className="text-lg text-muted-foreground">No data available</span>
+          <span className="text-lg text-muted-foreground">
+            No data available
+          </span>
         </div>
       </main>
     );
@@ -73,8 +74,6 @@ export default function DashboardAdminPage() {
       >
         <TabsList className=" rounded-lg">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -147,7 +146,9 @@ export default function DashboardAdminPage() {
                 <div className="text-2xl font-bold text-primary">
                   {data.totalTransactions
                     ? Math.round(
-                        (data.statusCounts.successful / data.totalTransactions) * 100
+                        (data.statusCounts.successful /
+                          data.totalTransactions) *
+                          100
                       )
                     : 0}
                   %
@@ -209,46 +210,6 @@ export default function DashboardAdminPage() {
             </CardHeader>
             <CardContent>
               <RecentTransactions data={data.recentTransactions} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Analytics Tab */}
-        <TabsContent value="analytics" className="space-y-4">
-          <Card className="border-primary hover:border-primary/80 transition-colors">
-            <CardHeader>
-              <CardTitle className="text-primary">
-                Transaction Analytics
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Detailed analysis of transaction data
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px] flex items-center justify-center border rounded-lg bg-secondary">
-                <p className="text-muted-foreground">
-                  Analytics visualization will appear here
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Reports Tab */}
-        <TabsContent value="reports" className="space-y-4">
-          <Card className="border-primary hover:border-primary/80 transition-colors">
-            <CardHeader>
-              <CardTitle className="text-primary">Transaction Reports</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Generate and download detailed reports
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px] flex items-center justify-center border rounded-lg bg-secondary">
-                <p className="text-muted-foreground">
-                  Report generation options will appear here
-                </p>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

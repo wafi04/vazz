@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import type React from 'react';
-import { useState, useEffect } from 'react';
-import { Search, Filter, X, Plus, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import type React from "react";
+import { useState, useEffect } from "react";
+import { Search, Filter, X, Plus, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -12,18 +12,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { trpc } from '@/utils/trpc';
-import { DialogOrderManual } from './dialog-order';
-import type { Category } from '@/types/category';
-import { cn } from '@/lib/utils';
-import { getServerData } from '@/data/data-server-region';
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { trpc } from "@/utils/trpc";
+import { DialogOrderManual } from "./dialog-order";
+import type { Category } from "@/types/category";
+import { cn } from "@/lib/utils";
 
 interface HeaderOrderManualProps {
   onChange: (term: string) => void;
-  onStatusChange: (status: 'PAID' | 'PENDING' | 'FAILED' | undefined) => void;
-  statusFilter: 'PAID' | 'PENDING' | 'FAILED' | undefined;
+  onStatusChange: (status: "PAID" | "PENDING" | "FAILED" | undefined) => void;
+  statusFilter: "PAID" | "PENDING" | "FAILED" | undefined;
 }
 
 export function HeaderOrderManual({
@@ -31,7 +30,7 @@ export function HeaderOrderManual({
   onStatusChange,
   statusFilter,
 }: HeaderOrderManualProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -42,29 +41,28 @@ export function HeaderOrderManual({
     };
 
     checkMobile();
-    window.addEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
 
-    return () => window.removeEventListener('resize', checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Fetch categories data
   const { data: categoriesData } = trpc.main.getCategories.useQuery({
-    fields: ['id', 'nama', 'kode', 'placeholder1', 'placeholder2'],
+    fields: ["id", "nama", "kode", "placeholder1", "placeholder2"],
   });
 
-  
   // Filter options
   const filterOptions = {
-    status: ['PAID', 'PENDING', 'FAILED'],
-    date: ['Today', 'This Week', 'This Month', 'Last Month'],
-    price: ['Under $50', '$50 - $100', '$100 - $200', 'Over $200'],
+    status: ["PAID", "PENDING", "FAILED"],
+    date: ["Today", "This Week", "This Month", "Last Month"],
+    price: ["Under $50", "$50 - $100", "$100 - $200", "Over $200"],
   };
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    if (e.target.value === '') {
-      onChange('');
+    if (e.target.value === "") {
+      onChange("");
     }
   };
 
@@ -74,7 +72,7 @@ export function HeaderOrderManual({
   };
 
   // Handle status filter change
-  const handleStatusChange = (status: 'PAID' | 'PENDING' | 'FAILED') => {
+  const handleStatusChange = (status: "PAID" | "PENDING" | "FAILED") => {
     onStatusChange(statusFilter === status ? undefined : status);
   };
 
@@ -82,23 +80,23 @@ export function HeaderOrderManual({
   const toggleFilter = (filter: string) => {
     setActiveFilters((prev) =>
       prev.includes(filter)
-    ? prev.filter((f) => f !== filter)
+        ? prev.filter((f) => f !== filter)
         : [...prev, filter]
     );
   };
-  
+
   // Clear all filters
   const clearFilters = () => {
     setActiveFilters([]);
     onStatusChange(undefined);
   };
-  
+
   // Clear search
   const clearSearch = () => {
-    setSearchTerm('');
-    onChange('');
+    setSearchTerm("");
+    onChange("");
   };
-  
+
   return (
     <section className="w-full space-y-4 bg-card rounded-lg p-4 shadow-sm border">
       <div className="flex flex-col md:flex-row gap-3">
@@ -110,7 +108,7 @@ export function HeaderOrderManual({
             className="pl-9 pr-10 h-10 bg-background focus-visible:ring-primary"
             value={searchTerm}
             onChange={handleSearchChange}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
+            onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
           />
           {searchTerm && (
             <Button
@@ -133,8 +131,8 @@ export function HeaderOrderManual({
               <Button
                 variant="outline"
                 className={cn(
-                  'flex gap-2 h-10 bg-background hover:bg-muted',
-                  statusFilter && 'border-primary text-primary'
+                  "flex gap-2 h-10 bg-background hover:bg-muted",
+                  statusFilter && "border-primary text-primary"
                 )}
               >
                 <Filter className="h-4 w-4" />
@@ -150,7 +148,7 @@ export function HeaderOrderManual({
                   key={status}
                   checked={statusFilter === status}
                   onCheckedChange={() =>
-                    handleStatusChange(status as 'PAID' | 'PENDING' | 'FAILED')
+                    handleStatusChange(status as "PAID" | "PENDING" | "FAILED")
                   }
                 >
                   {status}
@@ -165,9 +163,9 @@ export function HeaderOrderManual({
               <Button
                 variant="outline"
                 className={cn(
-                  'flex gap-2 h-10 bg-background hover:bg-muted',
+                  "flex gap-2 h-10 bg-background hover:bg-muted",
                   activeFilters.some((f) => filterOptions.date.includes(f)) &&
-                    'border-primary text-primary'
+                    "border-primary text-primary"
                 )}
               >
                 <Filter className="h-4 w-4" />
@@ -196,9 +194,9 @@ export function HeaderOrderManual({
               <Button
                 variant="outline"
                 className={cn(
-                  'flex gap-2 h-10 bg-background hover:bg-muted',
+                  "flex gap-2 h-10 bg-background hover:bg-muted",
                   activeFilters.some((f) => filterOptions.price.includes(f)) &&
-                    'border-primary text-primary'
+                    "border-primary text-primary"
                 )}
               >
                 <Filter className="h-4 w-4" />
@@ -280,16 +278,16 @@ export function HeaderOrderManual({
           {/* Create Order Button */}
           <div
             className={cn(
-              'ml-auto',
+              "ml-auto",
               !statusFilter &&
                 activeFilters.length === 0 &&
-                'w-full flex justify-end'
+                "w-full flex justify-end"
             )}
           >
             <DialogOrderManual data={categoriesData?.data as Category[]}>
               <Button className="gap-2 h-10 bg-primary hover:bg-primary/90 transition-colors">
                 <Plus className="h-4 w-4" />
-                <span>{isMobile ? 'New' : 'Create Order'}</span>
+                <span>{isMobile ? "New" : "Create Order"}</span>
               </Button>
             </DialogOrderManual>
           </div>

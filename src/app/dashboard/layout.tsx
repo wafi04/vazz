@@ -1,8 +1,11 @@
-import { AdminProvider, AuthProvider } from '@/components/layouts/provider/admin-provider';
-import React, { ReactNode } from 'react';
-import { User } from '@/types/schema/user';
-import { NavbarAdmin } from '@/components/layouts/navbar-admin';
-import { findUserById, getProfile } from '../../(auth)/auth/components/server';
+import {
+  AdminProvider,
+  AuthProvider,
+} from "@/components/layouts/provider/admin-provider";
+import React, { ReactNode } from "react";
+import { User } from "@/types/schema/user";
+import { NavbarAdmin } from "@/components/layouts/navbar-admin";
+import { findUserById, getProfile } from "../(auth)/auth/components/server";
 
 export default async function Page({ children }: { children: ReactNode }) {
   const session = await getProfile();
