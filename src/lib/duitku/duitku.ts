@@ -51,12 +51,7 @@ export class Duitku {
     merchantOrderId: string,
     amount: number
   ): string {
-    const md5 = crypto
-      .createHash("md5")
-      .update(
-        "D19088" + merchantOrderId + amount + "98e9e5e2388118e9e36db7ff9b17e290"
-      )
-      .digest("hex");
+    const md5 = crypto.createHash("md5").update().digest("hex");
     return md5;
   }
 
