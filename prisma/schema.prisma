@@ -165,32 +165,34 @@ model Pembayaran {
 }
 
 model Pembelian {
-  id                  Int            @id @default(autoincrement()) @map("id")
-  orderId             String         @unique @map("order_id")
-  username            String?        @map("username")
-  userId              String?        @map("user_id")
-  zone                String?        @map("zone") @db.VarChar(50)
-  nickname            String?        @map("nickname") @db.VarChar(100)
-  emailVilog          String?        @map("email_vilog") @db.Text
-  passwordVilog       String?        @map("password_vilog") @db.Text
-  loginviaVilog       String?        @map("loginvia_vilog") @db.Text
-  layanan             String         @map("layanan")
-  harga               Int            @map("harga")
-  profit              Int            @map("profit")
-  providerOrderId     String?        @map("provider_order_id")
-  status              String         @map("status") @db.VarChar(20)
-  log                 String?        @map("log") @db.VarChar(1000)
-  sn                  String?        @map("sn")
-  isReOrder           Boolean        @default(false) @map("is_re_order")
-  tipeTransaksi       String         @default("game") @map("tipe_transaksi") @db.VarChar(20)
-  isDigi              Boolean        @map("is_digi")
-  refId               String?        @map("ref_id")
-  successReportSended Boolean        @map("success_report_sended")
-  createdAt           DateTime?      @default(now()) @map("created_at")
-  updatedAt           DateTime?      @updatedAt @map("updated_at")
+  id                  Int               @id @default(autoincrement()) @map("id")
+  orderId             String            @unique @map("order_id")
+  username            String?           @map("username")
+  userId              String?           @map("user_id")
+  zone                String?           @map("zone") @db.VarChar(50)
+  nickname            String?           @map("nickname") @db.VarChar(100)
+  emailVilog          String?           @map("email_vilog") @db.Text
+  passwordVilog       String?           @map("password_vilog") @db.Text
+  loginviaVilog       String?           @map("loginvia_vilog") @db.Text
+  layanan             String            @map("layanan")
+  harga               Int               @map("harga")
+  profit              Int               @map("profit")
+  profitRupiah        Int               @map("profit_rupiah")
+  providerOrderId     String?           @map("provider_order_id")
+  status              String            @map("status") @db.VarChar(20)
+  log                 String?           @map("log") @db.VarChar(1000)
+  sn                  String?           @map("sn")
+  isReOrder           Boolean           @default(false) @map("is_re_order")
+  tipeTransaksi       String            @default("game") @map("tipe_transaksi") @db.VarChar(20)
+  isDigi              Boolean           @map("is_digi")
+  refId               String?           @map("ref_id")
+  successReportSended Boolean           @map("success_report_sended")
+  createdAt           DateTime?         @default(now()) @map("created_at")
+  updatedAt           DateTime?         @updatedAt @map("updated_at")
   voucherUsage        VoucherUsage[]
-  pembayaran          Pembayaran?    @relation("PembayaranToPembelian", fields: [orderId], references: [orderId])
-  user                Users?         @relation(fields: [username], references: [username])
+  reorder             PembelianManual[]
+  pembayaran          Pembayaran?       @relation("PembayaranToPembelian", fields: [orderId], references: [orderId])
+  user                Users?            @relation(fields: [username], references: [username])
   systemLogs          SystemLog[]
 
   @@index([orderId, status])
@@ -203,16 +205,22 @@ model Pembelian {
 model PembelianManual {
   id                Int     @id @default(autoincrement())
   orderId           String  @map("order_id")
-  pembelianManualId String  @map("pembelian_manual_id")
+  pembelianManualId String  @unique @map("pembelian_manual_id")
+  userId            String  @map("user_id")
+  nickname          String? @map("nickname")
+  zone              String?
+  whatsapp          String
+  productName       String  @map("product_name")
   createdBy         String? @map("created_by")
+  sn                String? @db.Text()
   reason            String?
   status            String  @default("PENDING")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updateAt  DateTime @updatedAt() @map("updated_at")
+  pembelian Pembelian @relation(onDelete: Cascade, references: [orderId], fields: [orderId])
+  createdAt DateTime  @default(now()) @map("created_at")
+  updateAt  DateTime  @updatedAt() @map("updated_at")
 
   @@index([orderId])
-  @@index([pembelianManualId])
   @@index([status])
 }
 

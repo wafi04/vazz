@@ -3,7 +3,6 @@ import { CreditCard, Store, Wallet } from "lucide-react";
 import { JSX } from "react";
 import { useState } from "react";
 import axios from "axios";
-import { useRouter } from "next/navigation";
 import { PaymentDetails, checkingVoucher } from "@/types/payment";
 import { useOrderStore } from "../use-order";
 import { CreateOrderType } from "@/app/api/v1/order/create/route";

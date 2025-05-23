@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export type Layanan = {
   id: number;
+  isProfitFixed: boolean;
+  hargaFromDigi: number;
   kategoriId: number; // Mapped from "kategori_id"
   subCategoryId: number; // Mapped from "sub_category_id"
   layanan: string;

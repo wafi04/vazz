@@ -3,12 +3,14 @@ import { DUITKU_API_KEY, DUITKU_MERCHANT_CODE } from "@/constants";
 import { ValidationMethodPayment } from "@/features/transaction/method/validation";
 import { PaymentUsingSaldo } from "@/features/transaction/payment/saldo";
 import { checkingVoucher } from "@/features/transaction/voucher/checkingVoucher";
-import { Duitku } from "@/lib/duitku/duitku";
+import { Duitku } from "@/app/api/v1/duitku/duitku/duitku";
 import { prisma } from "@/lib/prisma";
 import { TRANSACTION_FLOW } from "@/types/transaction";
 import { GenerateRandomId } from "@/utils/generateRandomId";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { ProductData } from "@/types/product";
+import { CalculatePricingWithProfitLogic } from "./calculateProfit";
 
 export const CreateOrder = z.object({
   nickname: z.string().optional(),
@@ -87,20 +89,13 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        // Calculate price based on user role
-        let price: number;
-        let profit: number;
+        const calculatePricing = CalculatePricingWithProfitLogic(
+          product as ProductData,
+          user?.session.role
+        );
 
-        if (user && user.session.role === "Platinum") {
-          price = product.hargaPlatinum;
-          profit = product.profitPlatinum;
-        } else if (user && user.session.role === "Reseller") {
-          price = product.hargaReseller;
-          profit = product.profitReseller;
-        } else {
-          price = product.harga;
-          profit = product.profit;
-        }
+        let price: number = calculatePricing.price;
+        let profit: number = calculatePricing.profitRupiah;
 
         // Process voucher if provided
         let discountAmount = 0;
@@ -128,7 +123,7 @@ export async function POST(req: NextRequest) {
               data: { usageCount: { increment: 1 } },
             });
 
-            price = validated.finalPrice as number;
+            calculatePricing.price = validated.finalPrice as number;
             discountAmount = validated.discountAmount as number;
             appliedVoucherId = validated.voucherId;
             await tx.voucherUsage.create({
@@ -156,8 +151,9 @@ export async function POST(req: NextRequest) {
         try {
           pembelian = await tx.pembelian.create({
             data: {
+              profitRupiah: profit,
               harga: price,
-              profit,
+              profit: calculatePricing.profit,
               isDigi: true,
               layanan: product.layanan,
               status: TRANSACTION_FLOW.PENDING,
@@ -213,11 +209,7 @@ export async function POST(req: NextRequest) {
               transactionDetails: data.data,
             },
           };
-        }
-
-        // Process payment using Duitku
-        else {
-          // Validate payment method
+        } else {
           const method = await ValidationMethodPayment({
             amount: price,
             paymentCode,
@@ -227,13 +219,14 @@ export async function POST(req: NextRequest) {
           price = method.totalAmount;
 
           const baseUrl = req.headers.get("origin") || new URL(req.url).origin;
+          console.log(price);
 
           const toDuitku = await duitku.CreateTransaction({
-            paymentAmount: price,
+            paymentAmount: Math.round(price),
             paymentCode,
             merchantOrderId,
             productDetails: product.layanan,
-            returnUrl: `${baseUrl}/invoice?=invoice=${merchantOrderId}`,
+            returnUrl: `${baseUrl}/invoice?invoice=${merchantOrderId}`,
             cust: user?.session.username ?? "Anonymous",
             noWa,
           });
@@ -249,7 +242,6 @@ export async function POST(req: NextRequest) {
             };
           }
 
-          // Determine payment details based on payment method
           const urlPaymentMethods = ["DA", "OV", "SA"];
           const vaPaymentMethods = ["I1", "BR", "B1", "BT", "FT", "M2", "VA"];
 
@@ -309,20 +301,10 @@ export async function POST(req: NextRequest) {
         }
       },
       { timeout: 15000 }
-    ); // Set Prisma transaction timeout
+    );
     const result = await Promise.race([transactionPromise, timeoutPromise]);
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    console.error("Transaction error:", error);
-
-    if (error instanceof Error) {
-      console.error({
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      });
-    }
-
     return NextResponse.json(
       {
         status: false,

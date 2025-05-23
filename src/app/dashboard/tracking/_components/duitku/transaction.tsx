@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, AlertCircle, CheckCircle2, Clock } from "lucide-react";
-import type { ResponseFromDuitkuCheckTransaction } from "@/lib/duitku/duitku";
+import type { ResponseFromDuitkuCheckTransaction } from "@/app/api/v1/duitku/duitku/duitku";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FormatPrice } from "@/utils/formatPrice";

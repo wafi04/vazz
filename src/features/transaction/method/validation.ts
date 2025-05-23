@@ -45,7 +45,7 @@ export async function ValidationMethodPayment({
     valid: true,
     method,
     taxAmount,
-    totalAmount: amount + taxAmount,
+    totalAmount: Math.round(amount + taxAmount),
     expireMinutes: method?.minExpired || 0,
   };
 }

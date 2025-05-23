@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
-import { Prisma } from '@prisma/client';
-import { layananFormSchema } from '@/types/layanans';
+import { z } from "zod";
+import { publicProcedure, router } from "../trpc";
+import { Prisma } from "@prisma/client";
+import { layananFormSchema } from "@/types/layanans";
 
 export const Layanans = router({
   getLayanans: publicProcedure
@@ -30,7 +30,7 @@ export const Layanans = router({
 
         // Add status filter
         if (input.status) {
-          where.status = input.status === 'active' ? true : false;
+          where.status = input.status === "active" ? true : false;
         }
 
         // Execute query with filters
@@ -39,12 +39,12 @@ export const Layanans = router({
           skip,
           take: input.perPage,
           orderBy: {
-            layanan: 'asc', // Default ordering
+            layanan: "asc", // Default ordering
           },
           select: {
             id: true,
             layanan: true,
-            hargaPlatinum : true,
+            hargaPlatinum: true,
             harga: true,
             status: true,
           },
@@ -64,9 +64,9 @@ export const Layanans = router({
         };
       } catch (error) {
         if (error instanceof Error) {
-          console.error('error : ', error.message);
+          console.error("error : ", error.message);
         }
-        console.error('error fetching layanans');
+        console.error("error fetching layanans");
         return {
           data: [],
           pagination: {
@@ -106,12 +106,7 @@ export const Layanans = router({
 
         // Add category filter
         if (input.categoryId) {
-          where.kategoriId = parseInt(input.categoryId)
-        }
-
-        // Add subcategory filter
-        if (input.subCategoryId) {
-          where.subCategoryId = input.subCategoryId;
+          where.kategoriId = parseInt(input.categoryId);
         }
 
         // Add provider filter
@@ -135,7 +130,7 @@ export const Layanans = router({
           skip,
           take: input.perPage,
           orderBy: {
-            layanan: 'asc', // Default ordering
+            layanan: "asc", // Default ordering
           },
           // No include section since relationships don't exist
         });
@@ -147,12 +142,7 @@ export const Layanans = router({
           data.map(async (item) => {
             const category = await ctx.prisma.categories.findUnique({
               where: { id: item.kategoriId },
-              select: { id: true,nama: true },
-            });
-
-            const subCategory = await ctx.prisma.subCategory.findUnique({
-              where: { id: item.subCategoryId },
-              select: { id: true, name: true },
+              select: { id: true, nama: true },
             });
 
             return {
@@ -161,12 +151,8 @@ export const Layanans = router({
               price: item.harga,
               isActive: item.status,
               category: category || {
-                id: item.kategoriId ,
+                id: item.kategoriId,
                 nama: `Kategori ${item.kategoriId}`, // Fallback if category not found
-              },
-              subCategory: subCategory || {
-                id: item.subCategoryId,
-                name: `Sub Kategori ${item.subCategoryId}`, // Fallback if subcategory not found
               },
             };
           })
@@ -225,15 +211,14 @@ export const Layanans = router({
           select: {
             layanan: true,
             providerId: true,
-            hargaPlatinum : true,
-            subCategoryId: true,
+            hargaPlatinum: true,
             harga: true,
-            hargaFlashSale : true,
-            isFlashSale : true,
+            hargaFlashSale: true,
+            isFlashSale: true,
             id: true,
           },
           orderBy: {
-            harga: 'asc',
+            harga: "asc",
           },
         });
         return {
@@ -242,9 +227,9 @@ export const Layanans = router({
         };
       } catch (error) {
         return {
-         status : false,
-         layanan : [],
-         subCategories : []
+          status: false,
+          layanan: [],
+          subCategories: [],
         };
       }
     }),
@@ -261,7 +246,7 @@ export const Layanans = router({
         });
 
         if (!category) {
-          throw new Error('failed to create category');
+          throw new Error("failed to create category");
         }
 
         const data = await ctx.prisma.layanan.findMany({
@@ -271,12 +256,11 @@ export const Layanans = router({
           select: {
             layanan: true,
             providerId: true,
-            subCategoryId: true,
             harga: true,
             id: true,
           },
           orderBy: {
-            harga: 'asc',
+            harga: "asc",
           },
         });
         return {
@@ -305,7 +289,7 @@ export const Layanans = router({
 
         return {
           status: true,
-          message: 'layanan update successfully',
+          message: "layanan update successfully",
         };
       } catch (error) {
         return {

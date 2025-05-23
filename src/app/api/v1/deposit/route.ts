@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { DUITKU_API_KEY, DUITKU_MERCHANT_CODE } from "@/constants";
 import { findUserById, getProfile } from "@/app/(auth)/auth/components/server";
 import { GenerateRandomId } from "@/utils/generateRandomId";
-import { Duitku } from "@/lib/duitku/duitku";
+import { Duitku } from "@/app/api/v1/duitku/duitku/duitku";
 
 export async function POST(req: NextRequest) {
   try {
@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
       await tx.pembelian.create({
         data: {
           profit: amount,
+          profitRupiah: amount,
           username: user.username,
           harga: amount,
           tipeTransaksi: "DEPOSIT",

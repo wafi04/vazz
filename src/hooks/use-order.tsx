@@ -33,10 +33,17 @@ export type OrderState = {
   finalPrice: number | undefined;
   method: PaymentMethod;
   history: Items[];
+  nickname?: string;
+  cheking: {
+    isChecking: boolean;
+    withoutCheking: boolean;
+  };
   price: number;
 };
 
 export type OrderActions = {
+  setNickName: (nickname?: string) => void;
+  setCheck: (check: { isChecking: boolean; withoutCheking: boolean }) => void;
   setUserId: (userId: string) => void;
   setFinalPrice: (fp: number | undefined) => void;
   setDiscount: (disc: number | undefined) => void;
@@ -60,7 +67,12 @@ const initialState: OrderState = {
   finalPrice: undefined,
   history: [],
   zone: undefined,
+  nickname: undefined,
   whatsAppNumber: "",
+  cheking: {
+    isChecking: false,
+    withoutCheking: false,
+  },
   productDetails: {
     code: "",
     name: "",
@@ -77,6 +89,8 @@ export const useOrderStore = create<OrderStore>()(
   persist(
     (set, get) => ({
       ...initialState,
+      setCheck: (check) => set({ cheking: check }),
+      setNickName: (nick) => set({ nickname: nick }),
       setDiscount: (disc) => set({ discount: disc }),
       setFinalPrice: (fp) => set({ finalPrice: fp }),
       setWhatsAppNumber: (wa) => set({ whatsAppNumber: wa }),

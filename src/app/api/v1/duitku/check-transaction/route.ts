@@ -1,5 +1,5 @@
 import { DUITKU_API_KEY, DUITKU_MERCHANT_CODE } from "@/constants";
-import { Duitku } from "@/lib/duitku/duitku";
+import { Duitku } from "@/app/api/v1/duitku/duitku/duitku";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {

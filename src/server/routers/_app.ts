@@ -11,6 +11,7 @@ import { Products } from "./products/routes";
 import { subCategory } from "./sub-category";
 import { subCategories } from "./subCategory/routes";
 import { adminStats, PembelianAll } from "./transaction";
+import { manualOrder } from "./transaction/manualOrder";
 import { Vouchers } from "./voucher/routes";
 import { WhatsappMessage } from "./whatsapp";
 
@@ -24,6 +25,7 @@ export const appRouter = router({
   sub: subCategory,
   transaction: adminStats,
   order: order,
+  manualOrder: manualOrder,
   voucher: Vouchers,
   deposits: Deposits,
   setting: ConfigWeb,

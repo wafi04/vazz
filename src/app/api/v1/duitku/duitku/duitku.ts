@@ -1,3 +1,8 @@
+import {
+  DUITKU_API_KEY,
+  DUITKU_EMAIL,
+  DUITKU_MERCHANT_CODE,
+} from "@/constants";
 import axios from "axios";
 import crypto from "crypto";
 
@@ -34,6 +39,9 @@ export class Duitku {
   private BASE_URL_GET_TRANSACTION =
     "https://passport.duitku.com/webapi/api/merchant/transactionStatus";
 
+  private BASE_URL_GET_BALANCE =
+    "https://passport.duitku.com/webapi/api/disbursement/checkbalance";
+
   constructor(
     duitkuKey: string,
     duitkuMerchantCode: string,
@@ -44,15 +52,6 @@ export class Duitku {
     this.DUITKU_MERCHANT_CODE = duitkuMerchantCode;
     this.DUITKU_CALLBACK_URL = duitkuCallbackUrl;
     this.DUITKU_EXPIRY_PERIOD = duitkuExpiryPeriod;
-  }
-
-  private generateSignature(
-    merchantCode: string,
-    merchantOrderId: string,
-    amount: number
-  ): string {
-    const md5 = crypto.createHash("md5").update().digest("hex");
-    return md5;
   }
 
   async CreateTransaction({
@@ -66,13 +65,18 @@ export class Duitku {
   }: DuitkuCreateTransactionParams) {
     try {
       // Generate signature
-      const signature = this.generateSignature(
-        this.DUITKU_MERCHANT_CODE,
-        merchantOrderId,
-        paymentAmount
-      );
+      const signature = crypto
+        .createHash("md5")
+        .update(
+          this.DUITKU_MERCHANT_CODE +
+            merchantOrderId +
+            paymentAmount +
+            this.DUITKU_KEY
+        )
+        .digest("hex");
+
       const payload = {
-        merchantCode: this.DUITKU_MERCHANT_CODE,
+        merchantCode: "D19088",
         paymentAmount: paymentAmount,
         merchantOrderId: merchantOrderId,
         productDetails: productDetails,
@@ -90,6 +94,7 @@ export class Duitku {
         headers: {
           "Content-Type": "application/json",
         },
+        timeout: 30000,
       });
 
       // Parse response
@@ -139,6 +144,28 @@ export class Duitku {
         },
       }
     );
+    return req.data;
+  }
+
+  async GetSaldo() {
+    const sign = crypto
+      .createHash("md5")
+      .update((DUITKU_EMAIL as string) + new Date().getTime() + this.DUITKU_KEY)
+      .digest("hex");
+
+    const payload = {
+      userId: 1,
+      email: DUITKU_EMAIL,
+      timestamp: new Date().getTime(),
+      signature: sign,
+    };
+
+    const req = await axios.post(this.BASE_URL_GET_BALANCE, payload, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
     return req.data;
   }
 }
