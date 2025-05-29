@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { User } from "@/types/schema/user";
 
-export default function CardProfile({ user }: { user: User }) {
+export default function CardProfile({ user }: { user: User | any }) {
   return (
     <Card className="md:col-span-1">
       <CardHeader className="pb-2">

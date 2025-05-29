@@ -1,5 +1,6 @@
 export type Category = {
   id: number; // Sesuai dengan `id` di Prisma (Int)
+  isChecknickname: boolean;
   nama: string; // Sesuai dengan `nama` di Prisma (String)
   subNama: string; // Sesuai dengan `subNama` di Prisma (String)
   brand: string; // Sesuai dengan `brand` di Prisma (String @db.Text)
@@ -20,7 +21,7 @@ export type Category = {
 export type SubCategories = {
   name: string;
   id: number;
-  createdAt: string | null
+  createdAt: string | null;
   updatedAt: string | null;
   code: string;
   categoryId: number;
@@ -29,11 +30,11 @@ export type SubCategories = {
 
 export type PlansProps = {
   id: number;
-  hargaPlatinum : number
+  hargaPlatinum: number;
   subCategoryId: number;
   providerId: string;
   layanan: string;
   harga: number;
-  hargaFlashSale : number | null
-  isFlashSale : boolean
+  hargaFlashSale: number | null;
+  isFlashSale: boolean;
 };

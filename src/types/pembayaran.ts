@@ -36,3 +36,14 @@ type Transaksi = {
   updatedAt: string | null;
   pembayaran?: Pembayaran | null;
 };
+
+export type TransaksiPagination = Transaksi & {
+  pagination: {
+    currentPage: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+    itemsPerPage: number;
+    totalItems: number;
+    totalPages: number;
+  };
+};

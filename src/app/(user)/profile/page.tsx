@@ -1,32 +1,57 @@
 "use client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CardProfile from "../_components/CardProfile";
 import { FormatPrice } from "@/utils/formatPrice";
 import { trpc } from "@/utils/trpc";
-import { UserProfile } from "@/types/schema/user";
 import { redirect, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FormTopupContent } from "../_components/form-topup";
 import { MembershipContent } from "../_components/membership";
 import { TableProfileTopup } from "../_components/table/table-profile-topup";
 import { TableDeposit } from "../_components/table/table-deposit";
+import { TableMembership } from "../_components/table/table-memberhisp";
+import { PaginationComponent } from "@/components/ui/pagination-component";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10); // You can make this dynamic if needed
+  const [activeTab, setActiveTab] = useState("deposit");
+
   const {
     data: userResponse,
     isLoading,
     isError,
     error,
-  } = trpc.member.findMe.useQuery();
+    refetch,
+  } = trpc.member.findMe.useQuery({
+    limit: itemsPerPage,
+    page: currentPage,
+  });
 
   useEffect(() => {
     if (!isLoading && (!userResponse || !userResponse.data)) {
       redirect("/");
     }
   }, [userResponse, isLoading]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Refetch data when page changes
+  useEffect(() => {
+    refetch();
+  }, [currentPage, refetch]);
 
   if (isLoading) {
     return (
@@ -50,7 +75,9 @@ export default function ProfilePage() {
     );
   }
 
-  const user = userResponse?.data as UserProfile;
+  const user = userResponse?.data;
+  const pagination = user?.pagination;
+  console.log(pagination);
 
   return (
     <main className="container mx-auto px-4 py-8 max-w-7xl">
@@ -85,7 +112,18 @@ export default function ProfilePage() {
 
         {/* Tabs for Deposit, Membership, and Transaction History - Spans 4 columns */}
         <div className="md:col-span-4">
-          <Tabs defaultValue="deposit" className="w-full">
+          <Tabs
+            defaultValue="deposit"
+            className="w-full"
+            value={activeTab}
+            onValueChange={(value) => {
+              setActiveTab(value);
+              // Reset pagination when switching tabs
+              if (value === "history") {
+                setCurrentPage(1);
+              }
+            }}
+          >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="deposit">Deposit</TabsTrigger>
               <TabsTrigger value="membership">Membership</TabsTrigger>
@@ -94,7 +132,7 @@ export default function ProfilePage() {
 
             {/* Deposit Tab */}
             <TabsContent value="deposit">
-              <div className="flex flex-col w-full  md:flex-row  gap-6">
+              <div className="flex flex-col w-full md:flex-row gap-6">
                 <Card className="w-full md:max-w-[50%] max-h-[50vh] overflow-y-auto custom-scrollbar">
                   <CardHeader>
                     <CardTitle>Deposit</CardTitle>
@@ -116,7 +154,7 @@ export default function ProfilePage() {
 
             {/* Membership Tab */}
             <TabsContent value="membership">
-              <div className="flex flex-col w-full  md:flex-row  gap-6">
+              <div className="flex flex-col w-full md:flex-row gap-6">
                 <Card className="w-full md:max-w-[50%] max-h-[50vh] overflow-y-auto custom-scrollbar">
                   <CardHeader>
                     <CardTitle>Pilih Membership</CardTitle>
@@ -130,9 +168,7 @@ export default function ProfilePage() {
                     <CardTitle>Riwayat Membership</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <TableProfileTopup
-                      purchases={user.pembelian as Transaksi[]}
-                    />
+                    <TableMembership />
                   </CardContent>
                 </Card>
               </div>
@@ -145,10 +181,23 @@ export default function ProfilePage() {
                   <CardTitle>Riwayat Transactions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <TableProfileTopup
-                    purchases={user.pembelian as Transaksi[]}
-                  />
+                  <TableProfileTopup purchases={user?.pembelian as any[]} />
                 </CardContent>
+                <CardFooter className="flex items-center pt-6 w-full">
+                  {pagination && (
+                    <PaginationComponent
+                      currentPage={currentPage}
+                      pagination={{
+                        hasNextPage: user.pagination.hasNextPage,
+                        hasPreviousPage: user.pagination.hasPrevPage,
+                        totalCount: user.pagination.totalItems,
+                        totalPages: user.pagination.totalPages,
+                      }}
+                      perPage={10}
+                      setCurrentPage={() => handlePageChange(currentPage)}
+                    />
+                  )}
+                </CardFooter>
               </Card>
             </TabsContent>
           </Tabs>

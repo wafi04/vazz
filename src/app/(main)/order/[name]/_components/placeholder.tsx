@@ -55,7 +55,6 @@ export function PlaceholderContent({
   const [dataNickname, setNickname] = useState<NicknameResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { setNickName, nickname, setCheck } = useOrderStore();
-  const requiresValidation = GAMES_WITH_VALIDATION.includes(name as string);
 
   const hasSecondInput =
     category.placeholder2 &&
@@ -104,7 +103,7 @@ export function PlaceholderContent({
   };
 
   const checkingUsername = async () => {
-    if (category.kode && userId && requiresValidation) {
+    if (category.kode && userId && category.isChecknickname) {
       setIsLoading(true);
       setCheck({ isChecking: true, withoutCheking: false }); // Start checking
       try {
@@ -130,7 +129,7 @@ export function PlaceholderContent({
 
   React.useEffect(() => {
     if (
-      requiresValidation &&
+      category.isChecknickname &&
       userId &&
       (hasSecondInput ? serverId : true) &&
       category.kode
@@ -140,12 +139,12 @@ export function PlaceholderContent({
       }, 1500);
 
       return () => clearTimeout(timeoutId);
-    } else if (!requiresValidation) {
+    } else if (!category.isChecknickname) {
       setCheck({ isChecking: false, withoutCheking: true });
       setNickName(undefined);
       setNickname(null);
     }
-  }, [userId, serverId, category.kode, requiresValidation]);
+  }, [userId, serverId, category.kode, category.isChecknickname]);
 
   return (
     <div className="space-y-2">
@@ -205,7 +204,7 @@ export function PlaceholderContent({
       </div>
 
       {/* Nickname Result Display - Only show for games that require validation */}
-      {requiresValidation && (isLoading || dataNickname) && (
+      {category.isChecknickname && (isLoading || dataNickname) && (
         <div className="px-4 pb-4">
           <div className="bg-card rounded-2xl py-2 px-4">
             {isLoading ? (

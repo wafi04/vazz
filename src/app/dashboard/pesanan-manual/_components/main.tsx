@@ -1,36 +1,34 @@
 "use client";
-import { useEffect, useState } from "react";
+import React from "react";
 import { HeaderOrderManual } from "./header-order-manual";
-import { trpc } from "@/utils/trpc";
+import { StatsCards } from "./statsCard";
+import { useExpandedRows, useOrderData, useOrderFilters } from "./hooks";
+import { ErrorState, LoadingState } from "./state";
+import { OrdersTable } from "./table";
+import { PembelianManualData } from "@/types/transaction";
 
 export function PesananManual() {
-  const [searchInput, setSearchInput] = useState<string>("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<
-    "PAID" | "PENDING" | "FAILED" | undefined
-  >();
-  const { data } = trpc.order.getManualOrders.useQuery({});
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchInput);
-      setCurrentPage(1);
-    }, 1000);
+  const { orders, isLoading, error } = useOrderData();
+  const { selectedFilter, setSelectedFilter, filteredOrders } = useOrderFilters(
+    orders as PembelianManualData[]
+  );
+  const { expandedRows, toggleRow } = useExpandedRows();
 
-    return () => clearTimeout(handler);
-  }, [searchInput]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter]);
+  if (isLoading) return <LoadingState />;
+  if (error) return <ErrorState error={error} />;
 
   return (
-    <main className="min-h-screen p-8 space-y-6">
-      {/* header */}
-      <HeaderOrderManual
-        onChange={setSearchInput}
-        onStatusChange={setStatusFilter}
-        statusFilter={statusFilter}
+    <main className="min-h-screen p-8 space-y-6 bg-background">
+      <StatsCards
+        categoryData={orders}
+        selectedFilter={selectedFilter}
+        setSelectedFilter={setSelectedFilter}
+      />
+      <HeaderOrderManual />
+      <OrdersTable
+        orders={filteredOrders}
+        expandedRows={expandedRows}
+        onToggleRow={toggleRow}
       />
     </main>
   );

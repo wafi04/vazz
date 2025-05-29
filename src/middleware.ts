@@ -31,8 +31,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check if the route is in ADMIN_ROUTE
+  console.log(token);
   if (ADMIN_ROUTE.some((route) => pathname.startsWith(route))) {
     // Redirect to login if not authenticated
+
     if (!token) {
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }

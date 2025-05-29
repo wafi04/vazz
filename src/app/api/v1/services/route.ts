@@ -71,6 +71,7 @@ export async function GET() {
     let stats = { processed: 0, created: 0, updated: 0 };
     let categoryMatches: Record<string, number> = {};
 
+    // Update bagian transaction di API route
     await prisma.$transaction(async (tx) => {
       for (const category of categories) {
         if (!category.brand) continue;
@@ -81,6 +82,18 @@ export async function GET() {
           if (!item || typeof item !== "object") continue;
           if (item.brand.toUpperCase() !== category.brand.toUpperCase())
             continue;
+
+          // Extract provider code dari buyer_sku_code
+          const match = item.buyer_sku_code.match(/^([A-Z]+)/);
+          const matchedProvider = match ? match[1] : item.buyer_sku_code;
+
+          // Cari subcategory berdasarkan code
+          const subCategory = await tx.subCategory.findFirst({
+            where: {
+              code: matchedProvider,
+              categoryId: category.id, // Tambahkan filter kategori
+            },
+          });
 
           matchCount++;
           stats.processed++;
@@ -105,6 +118,7 @@ export async function GET() {
           let regularPrice, resellerPrice, platinumPrice;
 
           if (existingService) {
+            // Hitung harga berdasarkan profit settings
             if (existingService.isProfitFixed) {
               regularPrice = hargaModal + existingService.profit;
               resellerPrice = hargaModal + existingService.profitReseller;
@@ -121,6 +135,7 @@ export async function GET() {
               );
             }
 
+            // Update existing service
             await tx.layanan.update({
               where: { id: existingService.id },
               data: {
@@ -129,10 +144,13 @@ export async function GET() {
                 hargaReseller: resellerPrice,
                 hargaPlatinum: platinumPrice,
                 status: item.seller_product_status,
+                // Update subCategoryId jika ditemukan
+                ...(subCategory && { subCategoryId: subCategory.id }),
               },
             });
             stats.updated++;
           } else {
+            // Hitung harga untuk service baru
             if (defaultProfits.isProfitFixed) {
               regularPrice = hargaModal + defaultProfits.profit;
               resellerPrice = hargaModal + defaultProfits.profitReseller;
@@ -149,10 +167,12 @@ export async function GET() {
               );
             }
 
+            // Create new service
             await tx.layanan.create({
               data: {
                 layanan: item.product_name,
                 kategoriId: category.id,
+                subCategoryId: subCategory?.id || 1, // Default ke 1 jika tidak ditemukan
                 providerId: item.buyer_sku_code,
                 harga: regularPrice,
                 hargaFromDigi: hargaModal,

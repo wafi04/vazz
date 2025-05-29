@@ -1,11 +1,11 @@
-import axios, { AxiosError } from 'axios';
-import crypto from 'crypto';
-import { Product } from '@/utils/product';
-import { TransactionType } from '@/types/transaction';
+import axios, { AxiosError } from "axios";
+import crypto from "crypto";
+import { Product } from "@/utils/product";
+import { TransactionType } from "@/types/transaction";
 interface TopUpRequest {
   userId: string;
   serverId?: string;
-  reference : string
+  reference: string;
   productCode: string;
 }
 
@@ -20,19 +20,19 @@ export class Digiflazz {
 
   async checkPrice(): Promise<Product[]> {
     try {
-      const sign = crypto.createHash('md5').update(this.apiKey).digest('hex');
+      const sign = crypto.createHash("md5").update(this.apiKey).digest("hex");
 
       const payload = {
-        cmd: 'pricelist',
+        cmd: "pricelist",
         username: this.username,
         sign: sign,
       };
 
       const response = await axios({
-        method: 'POST',
-        url: 'https://api.digiflazz.com/v1/price-list',
+        method: "POST",
+        url: "https://api.digiflazz.com/v1/price-list",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         data: payload,
       });
@@ -40,26 +40,26 @@ export class Digiflazz {
       return response.data.data;
     } catch (error) {
       if (error instanceof Error) {
-        console.error('Digiflazz price check error:', error.message);
+        console.error("Digiflazz price check error:", error.message);
 
         if (axios.isAxiosError(error)) {
           const axiosError = error as AxiosError;
           if (axiosError.response) {
             console.error(
-              'Response data:',
+              "Response data:",
               JSON.stringify(axiosError.response.data)
             );
-            console.error('Response status:', axiosError.response.status);
-            console.error('Response headers:', axiosError.response.headers);
+            console.error("Response status:", axiosError.response.status);
+            console.error("Response headers:", axiosError.response.headers);
           } else if (axiosError.request) {
-            console.error('No response received:', axiosError.request);
+            console.error("No response received:", axiosError.request);
           } else {
-            console.error('Error setting up request:', axiosError.message);
+            console.error("Error setting up request:", axiosError.message);
           }
-          console.error('Error config:', axiosError.config);
+          console.error("Error config:", axiosError.config);
         }
       } else {
-        console.error('Unknown error:', error);
+        console.error("Unknown error:", error);
       }
       throw error;
     }
@@ -70,20 +70,20 @@ export class Digiflazz {
       const trx_id = `TRX-${Date.now()}`;
 
       const signature = crypto
-        .createHash('md5')
+        .createHash("md5")
         .update(this.username + this.apiKey + topUpData.reference)
-        .digest('hex');
+        .digest("hex");
 
       const userId = topUpData.userId?.trim();
       const serverId = topUpData.serverId?.trim();
-     
+
       let customerNo;
 
       if (userId && serverId) {
         customerNo = `${userId}${serverId}`;
-      } else  {
+      } else {
         customerNo = userId;
-      } 
+      }
 
       const data = {
         username: this.username,
@@ -94,41 +94,40 @@ export class Digiflazz {
         sign: signature,
       };
 
-
       // Send request to Digiflazz API
-      const response = await fetch('https://api.digiflazz.com/v1/transaction', {
-        method: 'POST',
+      const response = await fetch("https://api.digiflazz.com/v1/transaction", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
       });
 
       const result: TransactionType = await response.json();
-
+      console.log(result);
       return result;
     } catch (error) {
       if (error instanceof Error) {
-        console.error('Error making order:', error.message);
+        console.error("Error making order:", error.message);
         throw error;
       }
     }
   }
   async checkPricePrepaid() {
     try {
-      const sign = crypto.createHash('md5').update(this.apiKey).digest('hex');
+      const sign = crypto.createHash("md5").update(this.apiKey).digest("hex");
 
       const payload = {
-        cmd: 'pricelist',
+        cmd: "pricelist",
         username: this.username,
         sign: sign,
       };
 
       const response = await axios({
-        method: 'POST',
-        url: 'https://api.digiflazz.com/v1/price-list',
+        method: "POST",
+        url: "https://api.digiflazz.com/v1/price-list",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         data: payload,
       });
@@ -136,27 +135,27 @@ export class Digiflazz {
       return response.data;
     } catch (error) {
       if (error instanceof Error) {
-        console.error('Digiflazz price check error:', error.message);
+        console.error("Digiflazz price check error:", error.message);
 
         // Check if it's an Axios error with a response
         if (axios.isAxiosError(error)) {
           const axiosError = error as AxiosError;
           if (axiosError.response) {
             console.error(
-              'Response data:',
+              "Response data:",
               JSON.stringify(axiosError.response.data)
             );
-            console.error('Response status:', axiosError.response.status);
-            console.error('Response headers:', axiosError.response.headers);
+            console.error("Response status:", axiosError.response.status);
+            console.error("Response headers:", axiosError.response.headers);
           } else if (axiosError.request) {
-            console.error('No response received:', axiosError.request);
+            console.error("No response received:", axiosError.request);
           } else {
-            console.error('Error setting up request:', axiosError.message);
+            console.error("Error setting up request:", axiosError.message);
           }
-          console.error('Error config:', axiosError.config);
+          console.error("Error config:", axiosError.config);
         }
       } else {
-        console.error('Unknown error:', error);
+        console.error("Unknown error:", error);
       }
       throw error;
     }
@@ -168,7 +167,7 @@ export class Digiflazz {
         username_digi: this.username,
         api_key_digi: this.apiKey,
       };
-      const sign = crypto.createHash('md5').update(this.apiKey).digest('hex');
+      const sign = crypto.createHash("md5").update(this.apiKey).digest("hex");
       const api_postdata = {
         username: api.username_digi,
         buyer_sku_code: service,
@@ -177,87 +176,88 @@ export class Digiflazz {
         sign: sign,
       };
       const headers = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
 
       const response = await axios.post(
-        'https://api.digiflazz.com/v1/transaction',
+        "https://api.digiflazz.com/v1/transaction",
         api_postdata,
         { headers }
       );
       return response.data;
     } catch (error) {
       if (error instanceof Error) {
-        console.error('Error making order:', error.message);
+        console.error("Error making order:", error.message);
         throw error;
       }
     }
   }
 
   async checkDeposit() {
-  try {
-    const sign = crypto
-      .createHash('md5')
-      .update(this.username + this.apiKey + "depo")
-      .digest('hex');
+    try {
+      const sign = crypto
+        .createHash("md5")
+        .update(this.username + this.apiKey + "depo")
+        .digest("hex");
 
-    const payload = {
-      cmd: 'deposit',
-      username: this.username,
-      sign: sign,
-    };
+      const payload = {
+        cmd: "deposit",
+        username: this.username,
+        sign: sign,
+      };
 
-    const response = await axios.post(
-      'https://api.digiflazz.com/v1/cek-saldo',
-      payload,
-      { headers: { 'Content-Type': 'application/json' } }
-    );
-   
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      return error.data
-    } else {
-      return error
+      const response = await axios.post(
+        "https://api.digiflazz.com/v1/cek-saldo",
+        payload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        return error;
+      } else {
+        return error;
+      }
     }
-    throw error;
   }
-  }
-  async CheckStatus(buyer_sku_code: string,ref_id : string,customer_no : string
-    
+  async CheckStatus(
+    buyer_sku_code: string,
+    ref_id: string,
+    customer_no: string
   ) {
     const sign = crypto
-      .createHash('md5')
+      .createHash("md5")
       .update(this.username + this.apiKey + "VAZ-174642695128928")
-      .digest('hex');
-    
-    const payload = {
-      username : this.username,
-      buyer_sku_code : "gmml3",
-      ref_id : "VAZ-174642695128928",
-      customer_no : "1396007302706",
-      commands: "status-pasca",
-      sign
-    }
+      .digest("hex");
 
-    console.log(payload)
-    try{
-    const response = await axios.post (
-      'https://api.digiflazz.com/v1/transaction',
-      payload,
-      { headers: { 'Content-Type': 'application/json' } }
-    );
-   
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('Axios error:', {
-        data: error.response?.data,
-      });
-    } else {
-      console.error('Unexpected error:', error);
+    const payload = {
+      username: this.username,
+      buyer_sku_code: "gmml3",
+      ref_id: "VAZ-174642695128928",
+      customer_no: "1396007302706",
+      commands: "status-pasca",
+      sign,
+    };
+
+    console.log(payload);
+    try {
+      const response = await axios.post(
+        "https://api.digiflazz.com/v1/transaction",
+        payload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error("Axios error:", {
+          data: error.response?.data,
+        });
+      } else {
+        console.error("Unexpected error:", error);
+      }
+      throw error;
     }
-    throw error;
-  }
   }
 }

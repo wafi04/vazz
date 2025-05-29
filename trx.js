@@ -1,5 +1,5 @@
 function extractWithNamedGroups(message) {
-    const regex = /#2R(?<trxid>\d+).+ (?<nominal>\w+).(?<tujuan>\d+) SUKSES. SN\/Ref: (?<sn>.+). Saldo (?<SaldoAwal>.+)-(?<HargaJual>.+)=(?<SaldoAkhir>.+)@+/;    
+    const regex = /R#(?<trxid>\d+).+ (?<nominal>\w+).(?<tujuan>\d+) SUKSES. SNRef: (?<sn>.+). Saldo (?<SaldoAwal>.+)-(?<HargaJual>.+)=(?<SaldoAkhir>.+)@/;    
     const match = message.match(regex);
     console.log(match)
     
@@ -20,7 +20,7 @@ function extractWithNamedGroups(message) {
     
 }
 const testMessages = [
-    '#2R4471389  ITP12.085712248830 SUKSES. SN/Ref: 085641118963 berhasil melakukan transfer pulsa ke 085712248830 dg transid 9151291747980386888093. Saldo 1.790.463-12.467=1.777.996 @23/05 13:06:37#TRX NORMAL BOSKU'
+    'R#4475953 TDM2A.081231077567 SUKSES. SNRef: API7756720250523173755RRV.  Saldo 1.037.563 - 10.985=1.026.578 @23/05 17:38:10 * STP TURUN'
 ];
 
 testMessages.forEach(message => {

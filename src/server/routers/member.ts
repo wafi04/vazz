@@ -85,62 +85,89 @@ export const member = router({
       };
     }
   }),
-  findMe: publicProcedure.query(async ({ ctx }) => {
-    try {
-      const session = await getProfile();
-      if (!session) {
+  findMe: publicProcedure
+    .input(
+      z.object({
+        page: z.number().min(1).default(1).optional(),
+        limit: z.number().min(1).max(100).default(10).optional(), // Optional limit with validation
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const session = await getProfile();
+        if (!session) {
+          return {
+            data: null,
+            status: false,
+            message: "Session not found",
+          };
+        }
+
+        const { page = 1, limit = 10 } = input;
+        const skip = (page - 1) * limit;
+
+        // Get total count of pembelian for pagination info
+        const totalPembelian = await ctx.prisma.pembelian.count({
+          where: {
+            username: session.session?.username, // Adjust this based on your relation
+          },
+        });
+
+        console.log(totalPembelian);
+
+        const profile = await ctx.prisma.users.findUnique({
+          where: {
+            username: session.session?.username,
+          },
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            balance: true,
+            role: true,
+            otp: true,
+            whatsapp: true,
+            apiKey: true,
+            pembelian: {
+              skip: skip,
+              take: limit,
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+        // Calculate pagination metadata
+        const totalPages = Math.ceil(totalPembelian / limit);
+        const hasNextPage = page < totalPages;
+        const hasPrevPage = page > 1;
+
         return {
-          data: null,
+          status: true,
+          data: {
+            ...profile,
+            pagination: {
+              currentPage: page,
+              totalPages: totalPages,
+              totalItems: totalPembelian,
+              itemsPerPage: limit,
+              hasNextPage: hasNextPage,
+              hasPrevPage: hasPrevPage,
+            },
+          },
+          message: "Profile Retrieved Successfully",
+        };
+      } catch (error) {
+        return {
+          message: error instanceof Error ? error.message : "unknown error",
           status: false,
-          message: "Session not found",
+          data: null,
         };
       }
-
-      const profile = await ctx.prisma.users.findUnique({
-        where: {
-          username: session.session?.username,
-        },
-        select: {
-          id: true,
-          name: true,
-          username: true,
-          balance: true,
-          role: true,
-          otp: true,
-          whatsapp: true,
-          apiKey: true,
-          deposits: {
-            skip: 10,
-            take: 10,
-            orderBy: {
-              createdAt: "desc",
-            },
-          },
-          pembelian: {
-            skip: 10,
-            take: 10,
-            orderBy: {
-              createdAt: "desc",
-            },
-          },
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-
-      return {
-        status: true,
-        data: profile,
-        message: "Profile Reterived Successfully",
-      };
-    } catch (error) {
-      return {
-        message: error instanceof Error ? error.message : "unknown error",
-        status: false,
-        data: null,
-      };
-    }
-  }),
+    }),
   add: publicProcedure
     .input(
       z.object({

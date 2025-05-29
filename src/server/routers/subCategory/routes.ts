@@ -25,6 +25,9 @@ export const subCategories = router({
       if (input.active !== "all") {
         where.active = input.active === "active";
       }
+      if (input.categoryId) {
+        where.categoryId = input.categoryId;
+      }
 
       const skip = (page - 1) * perPage;
       const total = await ctx.prisma.subCategory.count({ where });

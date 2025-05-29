@@ -121,7 +121,7 @@ export function TableDeposit() {
   const latestDeposit = data?.data?.[0];
 
   return (
-    <div>
+    <>
       {latestDeposit && (
         <div className="mb-4 rounded-lg bg-blue-800 p-4 ">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -215,6 +215,6 @@ export function TableDeposit() {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </>
   );
 }

@@ -20,7 +20,6 @@ export function Footer() {
     isActive: "Active",
   });
   const paymentMethods = data?.data || [];
-  const { data: settingWeb } = trpc.setting.getConfig.useQuery();
   const [containerWidth, setContainerWidth] = useState(0);
 
   // Duplikasi array untuk efek scrolling tak terbatas
@@ -82,7 +81,6 @@ export function Footer() {
                   <div className="relative h-16 w-16 overflow-hidden rounded-lg  p-1 shadow-lg">
                     <Image
                       src={
-                        settingWeb?.logo_footer ||
                         "https://res.cloudinary.com/dstvymie8/image/upload/v1741104560/LOGO_VAZZ_STORE_2_dereyt.webp"
                       }
                       alt="Logo Vazzuniverse"
@@ -101,10 +99,9 @@ export function Footer() {
                   </div>
                 </div>
                 <p className="text-gray-400 text-sm leading-relaxed border-l-2 border-purple-500 pl-4">
-                  {(
-                    (settingWeb?.deskripsi_web as string) ||
-                    "Vazzuniverse menyediakan layanan top-up game dengan harga terbaik, proses cepat, dan pelayanan 24/7 untuk semua kebutuhan gaming Anda."
-                  ).split(".")[0] + "."}
+                  {"Vazzuniverse menyediakan layanan top-up game dengan harga terbaik, proses cepat, dan pelayanan 24/7 untuk semua kebutuhan gaming Anda.".split(
+                    "."
+                  )[0] + "."}
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-sm text-gray-400">
@@ -224,23 +221,21 @@ export function Footer() {
             </h3>
             <div className="flex flex-wrap gap-3">
               <Link
-                href={settingWeb?.url_fb || "/"}
+                href={"/"}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-all hover:bg-blue-600 hover:text-white"
                 aria-label="Facebook"
               >
                 <Facebook className="h-5 w-5" />
               </Link>
               <Link
-                href={
-                  settingWeb?.url_ig || "https://instagram.com/vazzuniverse.id"
-                }
+                href={"https://instagram.com/vazzuniverse.id"}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-all hover:bg-gradient-to-br hover:from-purple-600 hover:to-pink-500 hover:text-white"
                 aria-label="Instagram"
               >
                 <Instagram className="h-5 w-5" />
               </Link>
               <Link
-                href={settingWeb?.url_youtube || "https://youtube.com"}
+                href={"https://youtube.com"}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-all hover:bg-blue-500 hover:text-white"
                 aria-label="Twitter"
               >

@@ -1,11 +1,11 @@
-import { GeneralPage } from '@/features/pages/general/main';
-import { Metadata } from 'next';
+import { Settings } from "lucide-react";
+import { Choices, HeaderGeneral } from "./_components/headerGeneral";
 
-
-export const metadata :Metadata  = {
-  title : "General",
-  description : "Dashboard "
-}
 export default function Page() {
-  return <GeneralPage />;
+  return (
+    <main className="p-10 flex flex-col gap-5">
+      <HeaderGeneral icon={<Settings />} text="Settings" />
+      <Choices />
+    </main>
+  );
 }

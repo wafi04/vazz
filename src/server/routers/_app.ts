@@ -1,10 +1,11 @@
 import { router } from "../trpc";
 import { categoriesRouter } from "./categories/get";
-import { ConfigWeb } from "./config";
 import { Deposits } from "./deposits";
 import { Layanans } from "./layanans";
 import { mainRouter } from "./main";
 import { member } from "./member";
+import { MembershipRouter } from "./membership/router";
+import { Messages } from "./messages/message";
 import { Methods } from "./methods/get";
 import { order } from "./order";
 import { Products } from "./products/routes";
@@ -26,10 +27,11 @@ export const appRouter = router({
   transaction: adminStats,
   order: order,
   manualOrder: manualOrder,
+  membership: MembershipRouter,
   voucher: Vouchers,
   deposits: Deposits,
-  setting: ConfigWeb,
   pembelian: PembelianAll,
+  messages: Messages,
   member: member,
   whatsapp: WhatsappMessage,
 });

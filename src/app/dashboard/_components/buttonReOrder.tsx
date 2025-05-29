@@ -64,7 +64,7 @@ export function DialogReorder({
 
     setLoading(true);
     try {
-      const req = await axios.post("/api/v1/re-transaction", payload);
+      const req = await axios.post("/api/v1/order/retransaction", payload);
       toast.success("Reorder request submitted successfully!");
       onClose();
       // Reset form

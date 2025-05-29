@@ -116,7 +116,7 @@ export const Layanans = router({
 
         // Add status filter
         if (input.status !== undefined) {
-          where.status = input.status ? true : false;
+          where.status = input.status === "active" ? true : false;
         }
 
         // Add flash sale filter

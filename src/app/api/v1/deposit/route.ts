@@ -8,7 +8,7 @@ import { Duitku } from "@/app/api/v1/duitku/duitku/duitku";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { amount, code } = body;
+    const { amount, code, type } = body;
 
     const session = await getProfile();
     if (!session?.session.id) {
@@ -33,7 +33,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate unique ID for merchant order
-    const merchantOrderId = GenerateRandomId("DEP");
+    const merchantOrderId = GenerateRandomId(
+      type === "Membership" ? "MEM" : "DEP"
+    );
     const paymentAmount = amount.toString();
 
     const duitku = new Duitku(
@@ -46,11 +48,16 @@ export async function POST(req: NextRequest) {
       paymentAmount,
       paymentCode: code,
       merchantOrderId,
-      productDetails: `Deposit for ${user.username}`,
+      productDetails:
+        type === "Membership"
+          ? `Membership ${user.username}`
+          : `Deposit  ${user.username}`,
       noWa: user.whatsapp as string,
       cust: user.username,
       returnUrl: `${process.env.NEXTAUTH_URL}/profile`,
     });
+
+    console.log(paymentData);
 
     if (paymentData.data.statusCode !== "00") {
       return NextResponse.json(
@@ -77,27 +84,32 @@ export async function POST(req: NextRequest) {
 
     // Jalankan interactive transaction
     const result = await prisma.$transaction(async (tx) => {
-      const deposit = await tx.deposits.create({
-        data: {
-          username: user.username,
-          metode: method.name,
-          status: "PENDING",
-          jumlah: amount,
-          noPembayaran: noPayment,
-          depositId: merchantOrderId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      });
+      if (type === "DEPOSIT") {
+        const deposit = await tx.deposits.create({
+          data: {
+            username: user.username,
+            metode: method.name,
+            status: "PENDING",
+            jumlah: amount,
+            noPembayaran: noPayment,
+            depositId: merchantOrderId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        });
+      }
 
-      await tx.pembelian.create({
+      const pembelian = await tx.pembelian.create({
         data: {
           profit: amount,
           profitRupiah: amount,
           username: user.username,
           harga: amount,
-          tipeTransaksi: "DEPOSIT",
-          layanan: `Deposit From ${user.username}`,
+          tipeTransaksi: type,
+          layanan:
+            type === "Membership"
+              ? `Membership ${user.username}`
+              : `Deposit  ${user.username}`,
           orderId: merchantOrderId,
           status: "PENDING",
           isDigi: false,
@@ -117,7 +129,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      return deposit;
+      return pembelian;
     });
 
     return NextResponse.json({

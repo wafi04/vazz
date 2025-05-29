@@ -18,6 +18,33 @@ export enum TRANSACTION_FLOW {
   FAILED = "FAILED",
 }
 
+export interface PembelianManualData {
+  id: number;
+  productName: string;
+  status: string;
+  orderId: string | null;
+  createdAt: string;
+  pembelianManualId: string;
+  userId: string;
+  nickname: string | null;
+  zone: string | null;
+  profit: number;
+  profitRupiah: number;
+  harga: number;
+  createdBy: string | null;
+  whatsapp?: string;
+  reason: string | null;
+  pembelian: {
+    orderId: string;
+    status: string;
+    providerOrderId: string | null;
+    tipeTransaksi: string;
+    harga: number;
+    profit?: number;
+    profitRupiah?: number;
+  } | null;
+}
+
 export interface PaymentDetails {
   id: number;
   createdAt: string | null;

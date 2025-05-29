@@ -36,6 +36,7 @@ export function DialogDepositAndMembership({
       const payload = {
         amount,
         code: payment.code,
+        type
       };
       const req = await axios.post("/api/v1/deposit", payload);
       toast.success("create deposit successfully");
@@ -64,9 +65,11 @@ export function DialogDepositAndMembership({
             <p className="font-medium">{FormatPrice(amount)}</p>
           </div>
         </div>
-        <DialogFooter className="flex justify-between items-center gap-3">
-          <Button>Cancel</Button>
-          <Button onClick={handlePost} disabled={loading}>
+        <DialogFooter className="flex flex-row justify-between items-center gap-3 w-full">
+          <Button onClick={onClose} className="w-full">
+            Cancel
+          </Button>
+          <Button onClick={handlePost} disabled={loading} className="w-full">
             Submit
           </Button>
         </DialogFooter>

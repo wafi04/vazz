@@ -22,7 +22,6 @@ export type UserProfile = {
   apiKey: string | null;
   otp: string | null;
   pembelian: Pembelian[];
-  deposits: Deposits[];
   createdAt: string | null;
   updatedAt: string | null;
 };

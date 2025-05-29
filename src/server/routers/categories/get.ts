@@ -12,6 +12,7 @@ import { Prisma } from "@prisma/client";
 export const filterByCodeSchema = z.object({
   code: z.string().trim().min(1, "Kode kategori harus diisi"),
   providerId: z.string().optional(),
+  subCategory: z.number().optional(),
   layananFilter: z
     .object({
       price: z.string().optional(),
@@ -34,15 +35,9 @@ export const categoriesRouter = router({
     .input(filterByCodeSchema)
     .query(async ({ input }) => {
       return handleDatabaseOperation(async () => {
-        const formatProviderId = (providerId: string) => {
-          const productCode = providerId.toUpperCase();
-          const match = productCode.match(/^([A-Z]+)/);
-          return match ? match[0] : productCode;
-        };
-        console.log(input.providerId);
-
-        const layananWhere = {
+        const layananWhere: Prisma.LayananWhereInput = {
           status: true,
+          subCategoryId: input.subCategory,
           ...(input.layananFilter?.price && {
             harga: { lte: parseFloat(input.layananFilter.price) },
           }),
@@ -58,19 +53,7 @@ export const categoriesRouter = router({
             },
           },
         });
-        if (input.providerId && category?.layanan) {
-          const formattedProviderId = formatProviderId(input.providerId);
-
-          category.layanan = category.layanan.filter((layanan) => {
-            const layananProviderId = layanan.providerId.toUpperCase();
-            const match = layananProviderId.match(/^([A-Z]+)/);
-            const matchedProvider = match ? match[1] : layananProviderId;
-            return matchedProvider === formattedProviderId;
-          });
-        }
-
         validateResourceExists(category, "Category", input.code);
-
         return formatResponse(category, "Kategori berhasil ditemukan");
       }, `Failed to fetch category with code: ${input.code}`);
     }),

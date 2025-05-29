@@ -12,11 +12,11 @@ export function HeaderFilterProduct({
   subCategories?: SubCategories[];
 }) {
   const { setFilter } = useFilterProduct();
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
 
-  const handleSelect = (code: string) => {
-    setSelected(code);
-    setFilter(code);
+  const handleSelect = (id: number) => {
+    setSelected(id);
+    setFilter(id);
   };
 
   return (
@@ -33,10 +33,10 @@ export function HeaderFilterProduct({
             >
               <Button
                 variant="outline"
-                onClick={() => handleSelect(subCategory.code)}
+                onClick={() => handleSelect(subCategory.id)}
                 className={`whitespace-nowrap min-w-[140px] justify-start px-5 py-3 rounded-xl transition-all
                   ${
-                    selected === subCategory.code
+                    selected === subCategory.id
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-card hover:bg-primary/10 hover:text-primary"
                   }

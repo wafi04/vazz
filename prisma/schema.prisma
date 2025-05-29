@@ -53,23 +53,24 @@ model Footer {
 }
 
 model Categories {
-  id            Int       @id @default(autoincrement()) @map("id")
-  nama          String    @map("nama")
-  subNama       String    @map("sub_nama")
-  brand         String    @map("brand") @db.Text
-  kode          String?   @unique @map("kode")
-  serverId      Int       @default(0) @map("server_id")
-  status        String    @default("active") @map("status")
-  thumbnail     String    @map("thumbnail")
-  tipe          String    @default("game") @map("tipe")
-  petunjuk      String?   @map("petunjuk")
-  ketLayanan    String?   @map("ket_layanan") @db.Text
-  ketId         String?   @map("ket_id") @db.Text
-  placeholder1  String    @map("placeholder_1") @db.Text
-  placeholder2  String    @map("placeholder_2") @db.Text
-  createdAt     DateTime? @default(now()) @map("created_at")
-  updatedAt     DateTime? @updatedAt @map("updated_at")
-  bannerLayanan String    @map("bannerlayanan")
+  id              Int       @id @default(autoincrement()) @map("id")
+  nama            String    @map("nama")
+  subNama         String    @map("sub_nama")
+  brand           String    @map("brand") @db.Text
+  kode            String?   @unique @map("kode")
+  isChecknickname Boolean   @default(false)
+  serverId        Int       @default(0) @map("server_id")
+  status          String    @default("active") @map("status")
+  thumbnail       String    @map("thumbnail")
+  tipe            String    @default("game") @map("tipe")
+  petunjuk        String?   @map("petunjuk")
+  ketLayanan      String?   @map("ket_layanan") @db.Text
+  ketId           String?   @map("ket_id") @db.Text
+  placeholder1    String    @map("placeholder_1") @db.Text
+  placeholder2    String    @map("placeholder_2") @db.Text
+  createdAt       DateTime? @default(now()) @map("created_at")
+  updatedAt       DateTime? @updatedAt @map("updated_at")
+  bannerLayanan   String    @map("bannerlayanan")
 
   vouchers      VoucherCategory[]
   subCategories SubCategory[]
@@ -80,10 +81,11 @@ model Categories {
 }
 
 model Layanan {
-  id         Int    @id @default(autoincrement()) @map("id")
-  kategoriId Int    @map("kategori_id")
-  providerId String @map("provider_id")
-  layanan    String @map("layanan")
+  id            Int    @id @default(autoincrement()) @map("id")
+  kategoriId    Int    @map("kategori_id")
+  subCategoryId Int    @default(1) @map("sub_category_id")
+  providerId    String @map("provider_id")
+  layanan       String @map("layanan")
 
   harga          Int  @map("harga")
   hargaFromDigi  Int  @map("hargaFromDigi")
@@ -112,9 +114,11 @@ model Layanan {
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  kategori Categories @relation(fields: [kategoriId], references: [id])
+  kategori    Categories  @relation(fields: [kategoriId], references: [id])
+  subCategory SubCategory @relation(fields: [subCategoryId], references: [id])
 
   @@index([kategoriId, status])
+  @@index([subCategoryId, status])
   @@index([providerId, status])
   @@index([isFlashSale, expiredFlashSale])
   @@index([status, isFlashSale])
@@ -204,10 +208,13 @@ model Pembelian {
 
 model PembelianManual {
   id                Int     @id @default(autoincrement())
-  orderId           String  @map("order_id")
-  pembelianManualId String  @unique @map("pembelian_manual_id")
+  orderId           String? @map("order_id")
+  pembelianManualId String  @map("pembelian_manual_id")
   userId            String  @map("user_id")
   nickname          String? @map("nickname")
+  harga             Int
+  profitRupiah      Int
+  profit            Int
   zone              String?
   whatsapp          String
   productName       String  @map("product_name")
@@ -216,9 +223,9 @@ model PembelianManual {
   reason            String?
   status            String  @default("PENDING")
 
-  pembelian Pembelian @relation(onDelete: Cascade, references: [orderId], fields: [orderId])
-  createdAt DateTime  @default(now()) @map("created_at")
-  updateAt  DateTime  @updatedAt() @map("updated_at")
+  pembelian Pembelian? @relation(onDelete: Cascade, references: [orderId], fields: [orderId])
+  createdAt DateTime   @default(now()) @map("created_at")
+  updateAt  DateTime   @updatedAt() @map("updated_at")
 
   @@index([orderId])
   @@index([status])
@@ -235,78 +242,6 @@ model Membership {
   updatedAt DateTime @updatedAt()
 }
 
-model WebsiteConfig {
-  id                   Int       @id @default(autoincrement())
-  judul_web            String
-  deskripsi_web        String
-  keyword              String
-  og_image             String?
-  logo_header          String?
-  logo_footer          String?
-  logo_favicon         String?
-  logo_banner          String?
-  logo_cs              String?
-  url_wa               String
-  url_ig               String
-  url_tiktok           String
-  url_youtube          String
-  url_fb               String
-  kbrstore_api         String
-  slogan_web           String
-  snk                  String
-  privacy              String
-  warna1               String
-  warna2               String
-  warna3               String
-  warna4               String
-  warna5               String
-  harga_gold           String
-  harga_platinum       String
-  tripay_api           String?
-  tripay_merchant_code String?
-  tripay_private_key   String?
-  duitku_key           String?
-  duitku_merchant      String?
-  username_digi        String?
-  api_key_digi         String?
-  apigames_secret      String?
-  apigames_merchant    String?
-  vip_apiid            String?
-  vip_apikey           String?
-  digi_seller_user     String?
-  digi_seller_key      String?
-  nomor_admin          String?
-  wa_key               String?
-  wa_number            String?
-  ovo_admin            String?
-  ovo1_admin           String?
-  gopay_admin          String?
-  gopay1_admin         String?
-  dana_admin           String?
-  shopeepay_admin      String?
-  bca_admin            String?
-  mandiri_admin        String?
-  logo_ceo             String?
-  sejarah              String
-  sejarah_1            String
-  visi                 String
-  misi                 String
-  nama_ceo             String
-  deskripsi_ceo        String
-  nama_bagan           String
-  alamat               String
-  telp                 String
-  email                String
-  waPending            String?
-  waPaid               String?
-  waProcess            String?
-  waSuccess            String?
-  created_at           DateTime? @default(now())
-  updated_at           DateTime? @updatedAt
-
-  @@map("setting_webs")
-}
-
 model SubCategory {
   id         Int       @id @default(autoincrement()) @map("id")
   categoryId Int       @map("category_id")
@@ -317,6 +252,7 @@ model SubCategory {
   updatedAt  DateTime? @updatedAt @map("updated_at")
 
   category Categories @relation(fields: [categoryId], references: [id])
+  Layanan  Layanan[]
 
   @@index([code, categoryId, active])
   @@index([categoryId])
@@ -336,7 +272,8 @@ model Users {
   createdAt     DateTime? @default(now()) @map("created_at")
   updatedAt     DateTime? @updatedAt @map("updated_at")
   lastPaymentAt DateTime? @map("last_payment_at")
-  token         String?
+
+  token String?
 
   deposits  Deposits[]
   pembelian Pembelian[]
@@ -465,4 +402,11 @@ model SystemLog {
   @@index([type])
   @@index([orderId, type])
   @@map("system_log")
+}
+
+model Messages {
+  id      Int    @id @default(autoincrement())
+  title   String @db.Char(300)
+  text    String @db.Text
+  details Json
 }

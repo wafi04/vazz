@@ -5,6 +5,7 @@ export const getAll = z.object({
   page: z.number(),
   perPage: z.number(),
   active: z.string().optional(),
+  categoryId: z.number().optional(),
 });
 
 export const getByCategoryId = z.object({
@@ -28,9 +29,8 @@ export const updateSubCategory = z.object({
 });
 export type UpdateSubCategory = z.infer<typeof updateSubCategory>;
 
+export const DeleteSubCategorySchema = z.object({
+  id: z.number(),
+});
 
-export const DeleteSubCategorySchema =  z.object({
-  id : z.number()
-})
-
-export type DeleteSubCategory  =  z.infer<typeof DeleteSubCategorySchema>
+export type DeleteSubCategory = z.infer<typeof DeleteSubCategorySchema>;
