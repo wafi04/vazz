@@ -91,6 +91,7 @@ export class Digiflazz {
         customer_no: customerNo,
         ref_id: topUpData.reference,
         trx_id,
+        cb_url: `https://da40-103-136-58-71.ngrok-free.app/api/v1/callback/digiflazz`,
         sign: signature,
       };
 

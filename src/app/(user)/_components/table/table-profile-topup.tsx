@@ -11,7 +11,6 @@ import { FormatPrice, formatDate } from "@/utils/formatPrice";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Define badge variants based on status
 const getStatusVariant = (status: string) => {
   switch (status.toUpperCase()) {
     case "PENDING":
@@ -60,7 +59,7 @@ export function TableProfileTopup({ purchases }: TableProfileTopupProps) {
           {purchases.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={5}
+                colSpan={6}
                 className="text-center py-8 text-muted-foreground bg-background/50"
               >
                 <div className="flex flex-col items-center gap-2">
@@ -134,7 +133,7 @@ export function TableProfileTopup({ purchases }: TableProfileTopupProps) {
                 </TableCell>
                 <TableCell className="py-3">
                   <Link
-                    href={`/invoice/${purchase.orderId}`}
+                    href={`/invoice?invoice=${purchase.orderId}`}
                     className="text-xs font-medium bg-blue-900 p-2 rounded-full"
                   >
                     Check Invoice

@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    console.log("Starting Digiflazz price check process...");
-
     const username = process.env.DIGI_USERNAME;
     const apiKey = process.env.DIGI_API_KEY;
 
@@ -101,6 +99,8 @@ export async function GET() {
           const existingService = await tx.layanan.findFirst({
             where: { providerId: item.buyer_sku_code },
           });
+
+          console.log(item.buyer_sku_code);
 
           // Default profit settings
           let defaultProfits = {
@@ -204,6 +204,7 @@ export async function GET() {
       message: "Data processed successfully",
       stats,
       categoryMatches,
+      dataArray,
     });
   } catch (error: any) {
     console.error("Unhandled error in API route:", error);

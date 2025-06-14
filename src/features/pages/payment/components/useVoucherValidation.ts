@@ -1,55 +1,48 @@
-import { useState } from 'react';
-import { trpc } from '@/utils/trpc'; // Sesuaikan path import
-import { Voucher } from '@/types/voucher';
+import { useState } from "react";
+import { trpc } from "@/utils/trpc"; // Sesuaikan path import
+
+// Type untuk voucher yang valid
+export type ValidatedVoucher = {
+  voucherId: number;
+  discountAmount: number;
+  finalPrice: number;
+  message: string;
+};
 
 export function useVoucherValidation(amount: number) {
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
   const [voucherError, setVoucherError] = useState<string | null>(null);
-  const [validVoucher, setValidVoucher] = useState<Voucher | null>(null);
+  const [validVoucher, setValidVoucher] = useState<ValidatedVoucher | null>(
+    null
+  );
   const [discountedAmount, setDiscountedAmount] = useState<number | null>(null);
 
   const validateVoucherMutation = trpc.voucher.validateVoucher.useMutation({
-    onSuccess: (data) => {
-      // Reset error state
+    onMutate: () => {
+      setIsValidatingVoucher(true);
       setVoucherError(null);
-      
-      // Validate voucher before processing
-      if (!data) {
+    },
+
+    onSuccess: (data) => {
+      setIsValidatingVoucher(false);
+
+      if (data.status) {
+        const validatedVoucher: ValidatedVoucher = {
+          voucherId: data.voucherId,
+          discountAmount: data.discountAmount,
+          finalPrice: data.finalPrice,
+          message: data.message,
+        };
+
+        setValidVoucher(validatedVoucher);
+        setDiscountedAmount(data.finalPrice);
+        setVoucherError(null);
+      } else {
+        // Voucher tidak valid
+        setVoucherError(data.message);
         setValidVoucher(null);
         setDiscountedAmount(null);
-        return;
       }
-
-      // Calculate discount
-      const calculateDiscount = () => {
-        if (!amount) return null;
-
-        let discount = 0;
-        
-        // Percentage discount
-        if (data.discountType === 'PERCENTAGE') {
-          discount = (amount * data.discountValue) / 100;
-          
-          // Apply max discount cap if exists
-          if (data.maxDiscount && discount > data.maxDiscount) {
-            discount = data.maxDiscount;
-          }
-        } 
-        // Fixed amount discount
-        else {
-          discount = data.discountValue;
-        }
-
-        // Ensure discount doesn't exceed total amount
-        return Math.min(discount, amount);
-      };
-
-      const calculatedDiscount = calculateDiscount();
-      
-      // Update states
-      setValidVoucher(data);
-      setDiscountedAmount(calculatedDiscount ? amount - calculatedDiscount : null);
-      setIsValidatingVoucher(false);
     },
 
     onError: (error) => {
@@ -61,15 +54,46 @@ export function useVoucherValidation(amount: number) {
     },
   });
 
+  // Function untuk validate voucher
+  const validateVoucher = (code: string, categoryCode: string) => {
+    validateVoucherMutation.mutate({
+      code,
+      categoryCode,
+      amount,
+    });
+  };
+
+  // Function untuk reset voucher state
+  const resetVoucher = () => {
+    setValidVoucher(null);
+    setDiscountedAmount(null);
+    setVoucherError(null);
+    setIsValidatingVoucher(false);
+  };
+
+  // Function untuk clear error
+  const clearVoucherError = () => {
+    setVoucherError(null);
+  };
+
   return {
+    // Mutation object
     validateVoucherMutation,
+
+    // Helper functions
+    validateVoucher,
+    resetVoucher,
+    clearVoucherError,
+
+    // States
     isValidatingVoucher,
     voucherError,
-    setDiscountedAmount,
-    setVoucherError,
-    setIsValidatingVoucher,
     validVoucher,
-    setValidVoucher,
-    discountedAmount
+    discountedAmount,
+
+    // Computed values
+    isVoucherApplied: validVoucher !== null,
+    originalAmount: amount,
+    savings: validVoucher?.discountAmount || 0,
   };
 }

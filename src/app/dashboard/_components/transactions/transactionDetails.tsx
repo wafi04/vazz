@@ -75,6 +75,11 @@ export function TransactionRow({
           {FormatPrice(transaction.harga)}
         </span>
       </TableCell>
+      <TableCell>
+        <span className="font-semibold text-accent">
+          {FormatPrice(transaction.pembayaran?.totalAmount ?? 0)}
+        </span>
+      </TableCell>
 
       <TableCell className="text-center">
         <div className="space-y-1">
@@ -118,12 +123,30 @@ export function TransactionDetails({ transaction }: TransactionDetailsProps) {
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Transaction ID:</span>
-          <span className="font-medium">{transaction.id}</span>
+          <span className="font-medium">{transaction.orderId}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Harga Beli:</span>
+          <span className="font-medium text-secondary">
+            {transaction.priceBuy}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Discount:</span>
+          <span className="font-medium text-secondary">
+            {transaction.discount ?? 0}
+          </span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Profit:</span>
           <span className="font-medium text-secondary">
-            {FormatPrice(transaction.profit)}
+            {transaction.profit}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Profit Rupiah:</span>
+          <span className="font-medium text-secondary">
+            {transaction.profitRupiah}
           </span>
         </div>
         {transaction.successReportSended !== undefined && (

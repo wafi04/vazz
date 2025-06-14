@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Card,
@@ -8,32 +8,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Clock, Copy, CheckCircle, ArrowLeft, Printer } from "lucide-react";
-import { formatDate } from "@/utils/formatPrice";
-import { getStatusConfig, useLogicTransaksi } from "./utils";
-import { InvoicePrint } from "@/data/export/print-invoices";
-import { cn } from "@/lib/utils";
+import { FormatPrice, formatDate } from "@/utils/formatPrice";
+import { useLogicTransaksi } from "./utils";
+import { Transaksi } from "@/types/pembayaran";
+import { TimePending } from "./_components/time";
+import { QrCodeMethod } from "./_components/qrCode";
+import { VirtualAccount } from "./_components/virtualAccount";
+import { DetailItem } from "./_components/itemDetails";
+import { Badge } from "./_components/badge";
 
 interface TransactionDetailsProps {
   data: Transaksi;
-  onBack?: () => void;
-  onViewDetails?: () => void;
 }
 
-export function TransactionDetails({ data, onBack }: TransactionDetailsProps) {
+export function TransactionDetails({ data }: TransactionDetailsProps) {
   const { copy, url, copied, timeLeft, paymentType } = useLogicTransaksi({
     data,
   });
-  const statusConfig = getStatusConfig(data.status);
-  const paymentStatusConfig = data.pembayaran
-    ? getStatusConfig(data.pembayaran.status)
-    : statusConfig;
+
   const isPending = data.pembayaran?.status === "PENDING";
   const timeLeftParts = timeLeft
     ? timeLeft.split(":").map((part) => part.trim())
@@ -74,11 +66,6 @@ export function TransactionDetails({ data, onBack }: TransactionDetailsProps) {
                   value={<Badge status={data.status} />}
                   valueClassName="text-md"
                 />
-                <DetailItem
-                  label="Harga"
-                  value={`Rp ${data.harga.toLocaleString("id-ID")}`}
-                  valueClassName="font-semibold text-primary"
-                />
               </div>
             </motion.div>
 
@@ -92,23 +79,20 @@ export function TransactionDetails({ data, onBack }: TransactionDetailsProps) {
                 Detail Pengguna
               </h3>
               <div className="space-y-3">
-                <DetailItem
-                  label="Username"
-                  value={data.username || "-"}
-                  valueClassName="text-lg"
-                />
-                <DetailItem label="Nickname" value={data.nickname || "-"} />
+                {data.username && (
+                  <DetailItem
+                    label="Username"
+                    value={data.username}
+                    valueClassName="text-lg"
+                  />
+                )}
+                {data.nickname && (
+                  <DetailItem label="Nickname" value={data.nickname || "-"} />
+                )}
                 {data.userId && (
                   <DetailItem label="User Id" value={data.userId} />
                 )}
                 {data.zone && <DetailItem label="Zone" value={data.zone} />}
-                {data.log && (
-                  <DetailItem
-                    label="Message"
-                    value={data.log}
-                    valueClassName="items-end text-end"
-                  />
-                )}
               </div>
             </motion.div>
           </CardContent>
@@ -125,74 +109,11 @@ export function TransactionDetails({ data, onBack }: TransactionDetailsProps) {
             <CardContent className="space-y-6">
               {/* Timer untuk pembayaran pending */}
               {isPending && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div
-                    className={`p-4 rounded-lg bg-[hsl(217,100%,16%)] border border-[hsl(217,100%,20%)]`}
-                  >
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                      {/* Bagian Kiri: Label "Batas Waktu Pembayaran" */}
-                      <div className="flex items-center">
-                        <Clock className="h-5 w-5 mr-2 text-white" />
-                        <span className="font-medium text-white">
-                          Batas Waktu Pembayaran:
-                        </span>
-                      </div>
-
-                      {/* Bagian Kanan: Timer */}
-                      <div className="flex items-center gap-2">
-                        {/* Jam */}
-                        <div className="flex flex-col items-center">
-                          <div className="">
-                            <span className="text-2xl font-bold text-white">
-                              {hours}
-                            </span>
-                          </div>
-                          <span className="text-xs mt-1 text-gray-300">
-                            Jam
-                          </span>
-                        </div>
-
-                        {/* Separator ":" */}
-                        <span className="text-xl font-bold text-white mt-[-0.5rem]">
-                          :
-                        </span>
-
-                        {/* Menit */}
-                        <div className="flex flex-col items-center">
-                          <div className="">
-                            <span className="text-2xl font-bold text-white">
-                              {minutes}
-                            </span>
-                          </div>
-                          <span className="text-xs mt-1 text-gray-300">
-                            Menit
-                          </span>
-                        </div>
-
-                        {/* Separator ":" */}
-                        <span className="text-xl font-bold text-white mt-[-0.5rem]">
-                          :
-                        </span>
-
-                        {/* Detik */}
-                        <div className="flex flex-col items-center">
-                          <div className="">
-                            <span className="text-2xl font-bold text-white">
-                              {seconds}
-                            </span>
-                          </div>
-                          <span className="text-xs mt-1 text-gray-300">
-                            Detik
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
+                <TimePending
+                  hours={hours}
+                  minutes={minutes}
+                  seconds={seconds}
+                />
               )}
 
               {/* Detail Pembayaran */}
@@ -206,19 +127,25 @@ export function TransactionDetails({ data, onBack }: TransactionDetailsProps) {
                 </h3>
                 <div className="space-y-3">
                   <DetailItem label="Metode" value={data.pembayaran.metode} />
+
+                  {/* QRIS Code Display */}
+                  {paymentType === "QRIS" &&
+                    data.pembayaran.noPembayaran &&
+                    isPending && (
+                      <QrCodeMethod
+                        noPembayaran={data.pembayaran.noPembayaran}
+                      />
+                    )}
+
                   {/* Virtual Account */}
                   {paymentType === "VA" && data.pembayaran.noPembayaran && (
-                    <div className="mt-2 mb-3">
-                      <div className="text-sm text-muted-foreground mb-1">
-                        No. Virtual Account:
-                      </div>
-                      <div className="flex items-center justify-between bg-blue-600 p-2 rounded-md">
-                        <span className="font-mono text-base font-medium">
-                          {data.pembayaran.noPembayaran}
-                        </span>
-                      </div>
-                    </div>
+                    <VirtualAccount
+                      copied={copied}
+                      copy={copy}
+                      noPembayaran={data.pembayaran.noPembayaran}
+                    />
                   )}
+
                   {/* Payment URL */}
                   {paymentType === "URL" &&
                     data.pembayaran.noPembayaran &&
@@ -230,12 +157,13 @@ export function TransactionDetails({ data, onBack }: TransactionDetailsProps) {
                         <Button
                           variant="outline"
                           onClick={url}
-                          className="w-full justify-center text-sm py-2 h-10 gap-2  bg-blue-800"
+                          className="w-full justify-center text-sm py-2 h-10 gap-2 bg-blue-800 text-white hover:bg-blue-900"
                         >
                           Buka Link Pembayaran
                         </Button>
                       </div>
                     )}
+
                   <DetailItem
                     label="Status"
                     value={<Badge status={data.pembayaran.status} />}
@@ -249,6 +177,26 @@ export function TransactionDetails({ data, onBack }: TransactionDetailsProps) {
                     value={`${data.pembayaran.noPembeli}`}
                     valueClassName=""
                   />
+                  <DetailItem
+                    label="Harga"
+                    value={FormatPrice(parseInt(data.pembayaran?.harga))}
+                    valueClassName="font-semibold text-primary"
+                  />
+                  {data.pembayaran.feeRupiah &&
+                    data.pembayaran.feeRupiah > 0 && (
+                      <DetailItem
+                        label="Pajak"
+                        value={FormatPrice(
+                          data.pembayaran?.feeRupiah as number
+                        )}
+                        valueClassName="font-semibold text-primary"
+                      />
+                    )}
+                  <DetailItem
+                    label="Total"
+                    value={FormatPrice(data.pembayaran?.totalAmount as number)}
+                    valueClassName="font-semibold text-primary"
+                  />
                   {data.sn && (
                     <DetailItem
                       label="Sn"
@@ -259,47 +207,9 @@ export function TransactionDetails({ data, onBack }: TransactionDetailsProps) {
                 </div>
               </motion.div>
             </CardContent>
-            <CardFooter className="flex justify-between border-t p-6  dark:bg-slate-900">
-              <InvoicePrint data={data} />
-            </CardFooter>
           </Card>
         )}
       </div>
     </div>
-  );
-}
-
-// Komponen DetailItem
-export function DetailItem({
-  label,
-  value,
-  valueClassName = "",
-}: {
-  label: string;
-  value: string | ReactNode;
-  valueClassName?: string;
-}) {
-  return (
-    <div className="flex justify-between items-center">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className={cn("text-sm", valueClassName)}>{value}</span>{" "}
-    </div>
-  );
-}
-
-type BadgeProps = {
-  status: string;
-};
-
-export function Badge({ status }: BadgeProps) {
-  const { color, textColor, bgColor, borderColor } = getStatusConfig(status);
-
-  return (
-    <span
-      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${bgColor} ${textColor} border ${borderColor}`}
-    >
-      <span className={`w-2 h-2 rounded-full mr-2 ${color}`}></span>
-      {status}
-    </span>
   );
 }

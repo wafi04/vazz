@@ -167,7 +167,7 @@ export function FormTopupContent() {
       </div>
 
       <DialogDepositAndMembership
-        type="deposit"
+        type="DEPOSIT"
         open={openDialog}
         amount={totalAmount}
         onClose={() => setOpenDialog(false)}

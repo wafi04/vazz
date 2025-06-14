@@ -50,6 +50,9 @@ export interface PaymentDetails {
   createdAt: string | null;
   updatedAt: string | null;
   status: string;
+  fee: number | null;
+  feeRupiah: number | null;
+  totalAmount: number;
   harga: string;
   orderId: string;
   noPembayaran: string | null;
@@ -61,10 +64,13 @@ export interface PaymentDetails {
 export interface Transaction {
   id: number;
   isReorder: boolean;
+  priceBuy: number;
+  discount: number;
   orderId: string;
   username: string | null;
   layanan: string;
   profit: number;
+  profitRupiah: string;
   harga: number;
   status: string;
   createdAt?: string | null;

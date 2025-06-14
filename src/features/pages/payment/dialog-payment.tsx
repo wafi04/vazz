@@ -14,10 +14,9 @@ import { useOrderStore } from "@/hooks/use-order";
 import { usePaymentDialog } from "@/hooks/payment/usePaymentDialog";
 import { useVoucherValidator } from "@/hooks/payment/use-payment";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PaymentSummary } from "@/hooks/payment/paymentSummary";
 import { AccountInfoSection } from "@/hooks/payment/accountInfoSection";
-
 export function DialogPayment({ className }: { className?: string }) {
   const {
     userId,
@@ -26,10 +25,10 @@ export function DialogPayment({ className }: { className?: string }) {
     price,
     productDetails,
     voucherCode,
-    setHistory,
     whatsAppNumber,
     resetOrder,
     discount,
+    tax,
     finalPrice,
   } = useOrderStore();
 
@@ -39,10 +38,15 @@ export function DialogPayment({ className }: { className?: string }) {
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [isCheckingVoucher, setIsCheckingVoucher] = useState(false);
 
-  const { validateVoucher } = useVoucherValidator();
   const formatCategoryName = (name: string) => {
     return name.toUpperCase().replace("-", " ");
   };
+
+  const {
+    validateVoucher,
+    isLoading: isVoucherLoading,
+    error: voucherValidationError,
+  } = useVoucherValidator();
 
   const {
     isDialogOpen,
@@ -51,7 +55,6 @@ export function DialogPayment({ className }: { className?: string }) {
     error,
     nicknameData,
     isCheckingNickname,
-    requiresValidation,
     isPaymentDisabled,
     handlePayment,
   } = usePaymentDialog({
@@ -67,40 +70,50 @@ export function DialogPayment({ className }: { className?: string }) {
 
   // Check voucher when dialog opens and voucher code exists
   useEffect(() => {
-    async function checkVoucher() {
-      if (
-        !isDialogOpen ||
-        !voucherCode ||
-        voucherApplied ||
-        isCheckingVoucher
-      ) {
-        return;
-      }
+    let isCancelled = false;
 
-      if (!productDetails?.code || !method?.code) {
-        return;
-      }
+    async function checkVoucher() {
+      if (!isDialogOpen) return;
+      if (!voucherCode?.trim()) return;
+      if (voucherApplied) return;
+      if (isCheckingVoucher) return;
+      if (!productDetails?.code || !method?.code) return;
 
       try {
         setIsCheckingVoucher(true);
         setVoucherError(null);
+
         await validateVoucher();
-        setVoucherApplied(true);
+
+        // Check if effect was cancelled during async operation
+        if (!isCancelled) {
+          setVoucherApplied(true);
+          console.log("Voucher validated successfully");
+        }
       } catch (err: any) {
-        setVoucherError(err.message || "Failed to validate voucher");
+        if (!isCancelled) {
+          const errorMessage = err.message || "Failed to validate voucher";
+          setVoucherError(errorMessage);
+          console.error("Voucher validation failed:", errorMessage);
+        }
       } finally {
-        setIsCheckingVoucher(false);
+        if (!isCancelled) {
+          setIsCheckingVoucher(false);
+        }
       }
     }
 
     checkVoucher();
+
+    // Cleanup function
+    return () => {
+      isCancelled = true;
+    };
   }, [
     isDialogOpen,
     voucherCode,
-    productDetails,
-    method,
-    voucherApplied,
-    isCheckingVoucher,
+    productDetails?.code,
+    method?.code,
     validateVoucher,
   ]);
 
@@ -109,6 +122,7 @@ export function DialogPayment({ className }: { className?: string }) {
     if (!isDialogOpen) {
       setVoucherApplied(false);
       setVoucherError(null);
+      setIsCheckingVoucher(false);
     }
   }, [isDialogOpen]);
 
@@ -159,7 +173,7 @@ export function DialogPayment({ className }: { className?: string }) {
           <AccountInfoSection
             isCheckingNickname={isCheckingNickname}
             method={method}
-            nicknameData={nicknameData}
+            nicknameData={nicknameData ?? ""}
             requiresValidation={requiresValidation}
             userId={userId}
             voucherCode={voucherCode}
@@ -189,20 +203,6 @@ export function DialogPayment({ className }: { className?: string }) {
                 )}
               </div>
 
-              {isCheckingVoucher && (
-                <p className="text-xs text-indigo-300 flex items-center">
-                  <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full mr-1.5 animate-pulse"></span>
-                  Validating voucher code...
-                </p>
-              )}
-
-              {voucherApplied && discount && discount > 0 && (
-                <div className="flex items-center text-green-400 text-xs">
-                  <CheckCircle2 className="h-3 w-3 mr-1.5" />
-                  Silahkan Lakukan Pembayaran Sebelum Kehabisan
-                </div>
-              )}
-
               {voucherError && (
                 <div className="flex items-center text-red-400 text-xs">
                   <AlertCircle className="h-3 w-3 mr-1.5" />
@@ -215,14 +215,15 @@ export function DialogPayment({ className }: { className?: string }) {
           {/* Payment Summary - Horizontal layout for key items */}
           <PaymentSummary
             price={price}
+            tax={tax as number}
             discount={discount}
-            finalPrice={finalPrice}
+            finalPrice={finalPrice || (method.finalPrice as number) || price}
           />
           {/* Payment Action Button */}
           <div className="px-4 pb-4 pt-1">
             <Button
               onClick={handlePayment}
-              disabled={isPaymentDisabled || isCheckingVoucher}
+              disabled={isPaymentDisabled || isVoucherLoading}
               className="w-full bg-gradient-to-br from-indigo-600 to-blue-500 hover:from-indigo-500 hover:to-blue-400 text-white py-2 rounded-lg transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed font-medium text-sm focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-indigo-900 flex items-center justify-center"
             >
               {isLoading ? (

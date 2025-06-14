@@ -1,6 +1,5 @@
 import { DIGI_KEY, DIGI_USERNAME } from "@/constants";
 import { Digiflazz } from "@/lib/digiflazz";
-import { handleOrderStatusChange } from "@/lib/whatsapp-message";
 import { TRANSACTION_FLOW } from "@/types/transaction";
 import { Prisma } from "@prisma/client";
 
@@ -32,6 +31,7 @@ export async function PaymentUsingSaldo({
     data: {
       harga: amount.toString(),
       metode: "SALDO",
+      totalAmount: amount,
       noPembeli: noWa,
       status: "PENDING",
       orderId,
@@ -50,19 +50,6 @@ export async function PaymentUsingSaldo({
   const digiData = ToDigi?.data;
 
   if (!digiData) {
-    await handleOrderStatusChange({
-      orderData: {
-        amount: amount,
-        link: `https://vazzuniverse.id/invoice?invoice=${orderId}`,
-        productName,
-        status: "FAILED",
-        customerName: username,
-        method: "SALDO",
-        orderId,
-        whatsapp: noWa.toString(),
-      },
-    });
-
     return {
       status: false,
       code: 400,
@@ -98,18 +85,6 @@ export async function PaymentUsingSaldo({
     });
 
     // Send success notification
-    await handleOrderStatusChange({
-      orderData: {
-        amount: amount,
-        link: `https://vazzuniverse.id/invoice?invoice=${orderId}`,
-        productName,
-        status: "PAID",
-        customerName: username,
-        method: "SALDO",
-        orderId,
-        whatsapp: noWa.toString(),
-      },
-    });
 
     return {
       status: true,
@@ -133,19 +108,6 @@ export async function PaymentUsingSaldo({
       },
     };
   } else {
-    await handleOrderStatusChange({
-      orderData: {
-        amount: amount,
-        link: `https://vazzuniverse.id/invoice?invoice=${orderId}`,
-        productName,
-        status: "FAILED",
-        customerName: username,
-        method: "SALDO",
-        orderId,
-        whatsapp: noWa.toString(),
-      },
-    });
-
     return {
       status: false,
       code: 400,

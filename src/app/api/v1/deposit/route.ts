@@ -20,23 +20,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not Found" }, { status: 404 });
     }
 
-    const method = await prisma.method.findFirst({
-      where: { code },
-      select: { name: true, code: true },
-    });
+    // Raw SQL untuk cari method - lebih cepat
+    const methodResult = (await prisma.$queryRaw`
+      SELECT name, code, type_tax AS "typeTax", tax_admin AS "taxAdmin"
+      FROM methods 
+      WHERE code = ${code} 
+      LIMIT 1
+    `) as Array<{
+      name: string;
+      code: string;
+      typeTax: string;
+      taxAdmin: number;
+    }>;
 
-    if (!method) {
+    if (methodResult.length === 0) {
       return NextResponse.json(
         { error: "Payment method not found" },
         { status: 404 }
       );
     }
 
+    const method = methodResult[0];
+
     // Generate unique ID for merchant order
     const merchantOrderId = GenerateRandomId(
       type === "Membership" ? "MEM" : "DEP"
     );
-    const paymentAmount = amount.toString();
+
+    // Hitung tax/fee berdasarkan method
+    let fee = 0;
+    let feeRupiah = 0;
+
+    if (method.typeTax === "PERCENTAGE") {
+      fee = (amount * method.taxAdmin) / 100;
+      feeRupiah = fee;
+    } else if (method.typeTax === "FIXED") {
+      fee = method.taxAdmin;
+      feeRupiah = method.taxAdmin;
+    } else {
+      fee = method.taxAdmin;
+      feeRupiah = method.taxAdmin;
+    }
+
+    // Total amount yang akan dibayar (amount + fee)
+    const totalAmount = Math.round(amount + feeRupiah);
 
     const duitku = new Duitku(
       DUITKU_API_KEY as string,
@@ -45,19 +72,17 @@ export async function POST(req: NextRequest) {
 
     // Request payment to Duitku
     const paymentData = await duitku.CreateTransaction({
-      paymentAmount,
+      paymentAmount: totalAmount,
       paymentCode: code,
       merchantOrderId,
       productDetails:
         type === "Membership"
           ? `Membership ${user.username}`
-          : `Deposit  ${user.username}`,
+          : `Deposit ${user.username}`,
       noWa: user.whatsapp as string,
       cust: user.username,
       returnUrl: `${process.env.NEXTAUTH_URL}/profile`,
     });
-
-    console.log(paymentData);
 
     if (paymentData.data.statusCode !== "00") {
       return NextResponse.json(
@@ -69,7 +94,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Tentukan noPembayaran dari response Duitku
-    const urlPaymentMethods = ["DA", "OV", "SA", "QR"];
+    const urlPaymentMethods = ["DA", "OV", "SA"];
     const vaPaymentMethods = ["I1", "BR", "B1", "BT", "SP", "FT", "M2", "VA"];
     let noPayment = "";
 
@@ -78,67 +103,77 @@ export async function POST(req: NextRequest) {
     } else if (vaPaymentMethods.includes(method.code)) {
       noPayment = paymentData.data.vaNumber || "";
     } else {
-      noPayment =
-        paymentData.data.vaNumber || paymentData.data.paymentUrl || "";
+      noPayment = paymentData.data.qrString || "";
     }
 
-    // Jalankan interactive transaction
+    const currentTime = new Date();
+    const logData = JSON.stringify(paymentData.data);
+
+    // Raw SQL Transaction - jauh lebih cepat
     const result = await prisma.$transaction(async (tx) => {
+      // Insert deposit jika tipe DEPOSIT
       if (type === "DEPOSIT") {
-        const deposit = await tx.deposits.create({
-          data: {
-            username: user.username,
-            metode: method.name,
-            status: "PENDING",
-            jumlah: amount,
-            noPembayaran: noPayment,
-            depositId: merchantOrderId,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        });
+        await tx.$executeRaw`
+          INSERT INTO deposits (
+            username, metode, status, jumlah, fee, fee_rupiah, 
+            no_pembayaran, deposit_id, created_at, updated_at, log
+          )
+          VALUES (
+            ${user.username}, ${method.name}, 'PENDING', ${amount}, 
+            ${fee}, ${feeRupiah}, ${noPayment}, ${merchantOrderId}, 
+            ${currentTime}, ${currentTime}, ${logData}
+          )
+        `;
       }
 
-      const pembelian = await tx.pembelian.create({
-        data: {
-          profit: amount,
-          profitRupiah: amount,
-          username: user.username,
-          harga: amount,
-          tipeTransaksi: type,
-          layanan:
+      // Insert pembelian
+      const pembelianResult = (await tx.$queryRaw`
+        INSERT INTO pembelians (
+          profit, profit_rupiah, username, harga, tipe_transaksi, 
+          layanan, order_id, status, is_digi, success_report_sended
+        )
+        VALUES (
+          ${amount}, ${amount}, ${user.username}, ${totalAmount}, ${type}, 
+          ${
             type === "Membership"
               ? `Membership ${user.username}`
-              : `Deposit  ${user.username}`,
-          orderId: merchantOrderId,
-          status: "PENDING",
-          isDigi: false,
-          successReportSended: false,
-        },
-      });
+              : `Deposit ${user.username}`
+          }, 
+          ${merchantOrderId}, 'PENDING', false, false
+        )
+        RETURNING *
+      `) as Array<any>;
 
-      await tx.pembayaran.create({
-        data: {
-          harga: paymentAmount,
-          metode: method.name,
-          noPembeli: user.whatsapp as string,
-          status: "PENDING",
-          orderId: merchantOrderId,
-          noPembayaran: noPayment,
-          reference: paymentData.data.reference || paymentData.data.ref_id,
-        },
-      });
+      // Insert pembayaran
+      await tx.$executeRaw`
+        INSERT INTO pembayarans (
+          harga, metode, no_pembeli, status, order_id, 
+          no_pembayaran, reference, fee, total_amount
+        )
+        VALUES (
+          ${amount}, ${method.name}, ${user.whatsapp}, 'PENDING', 
+          ${merchantOrderId}, ${noPayment}, 
+          ${paymentData.data.reference || paymentData.data.ref_id || ""}, 
+          ${feeRupiah}, ${totalAmount}
+        )
+      `;
 
-      return pembelian;
+      return pembelianResult[0];
     });
 
     return NextResponse.json({
-      data: result,
+      data: {
+        ...result,
+        fee: feeRupiah,
+        totalAmount: totalAmount,
+        originalAmount: amount,
+        noPayment: noPayment,
+      },
       status: true,
       statusCode: 201,
     });
   } catch (error) {
-    console.error("Payment creation error:", error);
+    console.error("Payment API Error:", error);
     return NextResponse.json(
       {
         error: "Internal server error",

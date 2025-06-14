@@ -9,10 +9,7 @@ const nextConfig = {
         ignoreBuildErrors: true,
     },
     images: {
-    domains : [
-        'universeh2h.site'
-    ],    minimumCacheTTL: 60,
-
+    minimumCacheTTL: 60,
         remotePatterns: [
             {
                 hostname: 'res.cloudinary.com',

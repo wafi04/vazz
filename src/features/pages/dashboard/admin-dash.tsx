@@ -17,7 +17,10 @@ import { RecentTransactions } from "@/app/dashboard/_components/transactions/rec
 export type FILTER = "ALL" | "PAYMENT" | "DEPOSIT" | "Top Up";
 
 export default function DashboardAdminPage() {
-  const { data, isLoading } = trpc.transaction.useQuery();
+  const { data, isLoading } = trpc.transaction.useQuery({
+    limit: 10,
+    page: 1,
+  });
   const [selectedTab, setSelectedTab] = useState("overview");
 
   if (isLoading) {

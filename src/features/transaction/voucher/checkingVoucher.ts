@@ -6,16 +6,30 @@ export type CheckingVoucherInput = {
   categoryId?: number;
 };
 
+// Alternative: Using discriminated union for cleaner type safety
+export type CheckingVoucherResult = {
+  status: boolean;
+  message: string;
+  discountAmount: number;
+  finalPrice: number;
+  voucherId: number;
+};
+
 export async function checkingVoucher(
   tx: Prisma.TransactionClient,
   { voucherCode, amount, categoryId }: CheckingVoucherInput
-) {
+): Promise<CheckingVoucherResult> {
   if (!voucherCode || !amount || amount < 0) {
     return {
       status: false,
       message: "Missing Required Data",
+      discountAmount: 0,
+      finalPrice: 0,
+      voucherId: 0,
     };
   }
+
+  let discountAmount = 0;
   const voucher = await tx.voucher.findFirst({
     where: {
       code: voucherCode,
@@ -32,6 +46,9 @@ export async function checkingVoucher(
     return {
       status: false,
       message: "Invalid or expired voucher code",
+      discountAmount: 0,
+      finalPrice: 0,
+      voucherId: 0,
     };
   }
 
@@ -40,6 +57,9 @@ export async function checkingVoucher(
     return {
       status: false,
       message: "Voucher usage limit reached",
+      discountAmount: 0,
+      finalPrice: 0,
+      voucherId: 0,
     };
   }
 
@@ -47,6 +67,9 @@ export async function checkingVoucher(
     return {
       status: false,
       message: `Minimum purchase of ${voucher.minPurchase} required for this voucher`,
+      discountAmount: 0,
+      finalPrice: 0,
+      voucherId: 0,
     };
   }
 
@@ -59,12 +82,14 @@ export async function checkingVoucher(
     return {
       status: false,
       message: "Voucher not applicable to this product category",
+      discountAmount: 0,
+      finalPrice: 0,
+      voucherId: 0,
     };
   }
 
-  let discountAmount = 0;
+  discountAmount = (amount * voucher.discountValue) / 100;
   if (voucher.discountType === "PERCENTAGE") {
-    discountAmount = (amount * voucher.discountValue) / 100;
     if (voucher.maxDiscount) {
       discountAmount = Math.min(discountAmount, voucher.maxDiscount);
     }
@@ -76,9 +101,9 @@ export async function checkingVoucher(
 
   return {
     status: true,
+    message: "Voucher is valid and applicable",
     discountAmount,
     finalPrice,
     voucherId: voucher.id,
-    message: "Voucher is valid and applicable",
   };
 }

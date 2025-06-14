@@ -9,6 +9,9 @@ export type ProductDetails = {
 export type PaymentMethod = {
   code: string;
   name: string;
+  typeTax: string | null;
+  taxAdmin: number | null;
+  finalPrice: number | null;
 };
 
 export interface Items {
@@ -25,6 +28,7 @@ export interface Items {
 
 export type OrderState = {
   userId: string;
+  tax: number | null;
   zone: string | undefined;
   productDetails: ProductDetails;
   voucherCode: string;
@@ -46,6 +50,7 @@ export type OrderActions = {
   setCheck: (check: { isChecking: boolean; withoutCheking: boolean }) => void;
   setUserId: (userId: string) => void;
   setFinalPrice: (fp: number | undefined) => void;
+  setTax: (tax: number) => void;
   setDiscount: (disc: number | undefined) => void;
   setZone: (zone: string) => void;
   setProduct: (product: ProductDetails) => void;
@@ -65,6 +70,7 @@ const initialState: OrderState = {
   userId: "",
   discount: undefined,
   finalPrice: undefined,
+  tax: null,
   history: [],
   zone: undefined,
   nickname: undefined,
@@ -78,6 +84,9 @@ const initialState: OrderState = {
     name: "",
   },
   method: {
+    typeTax: "",
+    taxAdmin: null,
+    finalPrice: null,
     name: "",
     code: "",
   },
@@ -89,6 +98,7 @@ export const useOrderStore = create<OrderStore>()(
   persist(
     (set, get) => ({
       ...initialState,
+      setTax: (tax) => set({ tax }),
       setCheck: (check) => set({ cheking: check }),
       setNickName: (nick) => set({ nickname: nick }),
       setDiscount: (disc) => set({ discount: disc }),
@@ -124,11 +134,7 @@ export const useOrderStore = create<OrderStore>()(
         console.log(item);
         set({
           productDetails: item.product,
-          method: item.method,
           whatsAppNumber: item.whatsAppNumber,
-          discount: item.discount,
-          price: item.price,
-          finalPrice: item.finalPrice,
           userId: item.userId || "",
           zone: item.zone || undefined,
           voucherCode: "",
@@ -149,6 +155,9 @@ export const useOrderStore = create<OrderStore>()(
           method: {
             name: "",
             code: "",
+            finalPrice: null,
+            taxAdmin: null,
+            typeTax: null,
           },
           voucherCode: "",
           price: 0,

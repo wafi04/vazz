@@ -1,5 +1,4 @@
 "use client";
-import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Facebook,
@@ -10,115 +9,53 @@ import {
   Phone,
   Youtube,
 } from "lucide-react";
-import { trpc } from "@/utils/trpc";
 import Image from "next/image";
-import { motion, useAnimation } from "framer-motion";
-import { WhatsAppButton } from "../ui/button-wa";
 
 export function Footer() {
-  const { data, isLoading, error } = trpc.method.getAll.useQuery({
-    isActive: "Active",
-  });
-  const paymentMethods = data?.data || [];
-  const [containerWidth, setContainerWidth] = useState(0);
-
-  // Duplikasi array untuk efek scrolling tak terbatas
-  const duplicatedMethods = [
-    ...paymentMethods,
-    ...paymentMethods,
-    ...paymentMethods,
-  ];
-
-  // Referensi untuk lebar container
-  const containerRef = useRef<HTMLDivElement>(null);
-  const controls = useAnimation();
-
-  useEffect(() => {
-    if (containerRef.current) {
-      setContainerWidth(containerRef.current.offsetWidth);
-    }
-
-    const handleResize = () => {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.offsetWidth);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    // Tambahkan pengecekan tambahan untuk memastikan data sudah ada
-    if (containerRef.current && paymentMethods.length > 0) {
-      const width = containerRef.current.offsetWidth;
-      setContainerWidth(width);
-
-      controls.start({
-        x: [-width * 0.3, -width * 1.3],
-        transition: {
-          repeat: Number.POSITIVE_INFINITY,
-          repeatType: "loop",
-          duration: 25,
-          ease: "linear",
-        },
-      });
-    }
-  }, [paymentMethods, controls]);
   return (
     <footer className="relative pt-20 pb-12" aria-label="Footer Vazzuniverse">
-      {/* Decorative elements */}
-
       <div className="container mx-auto px-4 max-w-7xl relative z-10">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {/* Informasi Perusahaan */}
           <div className="space-y-6">
-            {isLoading ? (
-              <div className="animate-pulse h-24 bg-gray-700 rounded-md"></div>
-            ) : (
-              <>
-                <div className="flex items-center space-x-3">
-                  <div className="relative h-16 w-16 overflow-hidden rounded-lg  p-1 shadow-lg">
-                    <Image
-                      src={
-                        "https://res.cloudinary.com/dstvymie8/image/upload/v1741104560/LOGO_VAZZ_STORE_2_dereyt.webp"
-                      }
-                      alt="Logo Vazzuniverse"
-                      width={100}
-                      height={100}
-                      className="object-contain"
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <h3 className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-2xl font-bold text-transparent">
-                      Vazzuniverse
-                    </h3>
-                    <p className="text-gray-400 text-sm">
-                      Tempat Top-Up Terpercaya Se-Universe
-                    </p>
-                  </div>
-                </div>
-                <p className="text-gray-400 text-sm leading-relaxed border-l-2 border-purple-500 pl-4">
-                  {"Vazzuniverse menyediakan layanan top-up game dengan harga terbaik, proses cepat, dan pelayanan 24/7 untuk semua kebutuhan gaming Anda.".split(
-                    "."
-                  )[0] + "."}
+            <div className="flex items-center space-x-3">
+              <div className="relative h-16 w-16 overflow-hidden rounded-lg p-1 shadow-lg">
+                <Image
+                  src="https://res.cloudinary.com/dstvymie8/image/upload/v1741104560/LOGO_VAZZ_STORE_2_dereyt.webp"
+                  alt="Logo Vazzuniverse"
+                  width={100}
+                  height={100}
+                  className="object-contain"
+                />
+              </div>
+              <div className="flex flex-col">
+                <h3 className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-2xl font-bold text-transparent">
+                  Vazzuniverse
+                </h3>
+                <p className="text-gray-400 text-sm">
+                  Tempat Top-Up Terpercaya Se-Universe
                 </p>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-sm text-gray-400">
-                    <MapPin className="h-4 w-4 text-purple-500" />
-                    <span>Jakarta, Indonesia</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-400">
-                    <Mail className="h-4 w-4 text-purple-500" />
-                    <span>storevazz09@gmail.com</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-400">
-                    <Phone className="h-4 w-4 text-purple-500" />
-                    <span>{process.env.NEXT_PUBLIC_NOMOR_ADMIN}</span>
-                  </div>
-                </div>
-              </>
-            )}
+              </div>
+            </div>
+            <p className="text-gray-400 text-sm leading-relaxed border-l-2 border-purple-500 pl-4">
+              Vazzuniverse menyediakan layanan top-up game dengan harga terbaik,
+              proses cepat, dan pelayanan 24/7 untuk semua kebutuhan gaming
+              Anda.
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 text-sm text-gray-400">
+                <MapPin className="h-4 w-4 text-purple-500" />
+                <span>Jakarta, Indonesia</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-400">
+                <Mail className="h-4 w-4 text-purple-500" />
+                <span>storevazz09@gmail.com</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-400">
+                <Phone className="h-4 w-4 text-purple-500" />
+                <span>{process.env.NEXT_PUBLIC_NOMOR_ADMIN}</span>
+              </div>
+            </div>
           </div>
 
           {/* Link Game */}
@@ -236,106 +173,12 @@ export function Footer() {
               </Link>
               <Link
                 href={"https://youtube.com"}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-all hover:bg-blue-500 hover:text-white"
-                aria-label="Twitter"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-all hover:bg-red-600 hover:text-white"
+                aria-label="YouTube"
               >
                 <Youtube className="h-5 w-5" />
               </Link>
             </div>
-          </div>
-        </div>
-
-        {/* Metode Pembayaran - Slider Framer Motion */}
-        <div className="mt-12">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="h-px flex-1 bg-gray-800"></div>
-            <h3 className="text-base font-medium text-white">
-              Metode Pembayaran
-            </h3>
-            <div className="h-px flex-1 bg-gray-800"></div>
-          </div>
-
-          <div
-            className="relative overflow-hidden rounded-lg py-6 backdrop-blur-sm"
-            ref={containerRef}
-          >
-            {isLoading ? (
-              <div className="flex justify-center py-4">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-400 border-t-purple-500"></div>
-              </div>
-            ) : error ? (
-              <div className="flex justify-center py-4 text-red-400">
-                <span>Gagal memuat metode pembayaran</span>
-              </div>
-            ) : (
-              <motion.div className="flex gap-8" animate={controls}>
-                {/* Payment methods */}
-                {duplicatedMethods.length > 0 ? (
-                  duplicatedMethods.map((method, index) => (
-                    <div
-                      key={`${method.id}-${index}`}
-                      className="flex flex-col items-center min-w-[100px]"
-                    >
-                      <div className="h-12 w-20 flex items-center justify-center rounded-md p-1">
-                        <Image
-                          width={80}
-                          height={48}
-                          src={method.images}
-                          alt={`Pembayaran dengan ${method.name}`}
-                          className="h-auto w-auto max-h-full max-w-full object-contain"
-                        />
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  // Metode pembayaran cadangan jika tidak ada data
-                  <>
-                    {[
-                      { id: "visa", name: "Visa" },
-                      { id: "mastercard", name: "Mastercard" },
-                      { id: "paypal", name: "PayPal" },
-                      { id: "bca", name: "Bank BCA" },
-                      { id: "bni", name: "Bank BNI" },
-                      { id: "bri", name: "Bank BRI" },
-                      { id: "mandiri", name: "Bank Mandiri" },
-                      { id: "gopay", name: "GoPay" },
-                      { id: "dana", name: "DANA" },
-                      { id: "ovo", name: "OVO" },
-                      { id: "linkaja", name: "LinkAja" },
-                      { id: "shopeepay", name: "ShopeePay" },
-                      // Duplikasi untuk efek berkelanjutan
-                      { id: "visa-2", name: "Visa" },
-                      { id: "mastercard-2", name: "Mastercard" },
-                      { id: "paypal-2", name: "PayPal" },
-                      { id: "bca-2", name: "Bank BCA" },
-                      { id: "bni-2", name: "Bank BNI" },
-                      { id: "bri-2", name: "Bank BRI" },
-                      { id: "mandiri-2", name: "Bank Mandiri" },
-                      { id: "gopay-2", name: "GoPay" },
-                      { id: "dana-2", name: "DANA" },
-                      { id: "ovo-2", name: "OVO" },
-                      { id: "linkaja-2", name: "LinkAja" },
-                      { id: "shopeepay-2", name: "ShopeePay" },
-                    ].map((method) => (
-                      <div
-                        key={method.id}
-                        className="flex flex-col items-center min-w-[100px]"
-                      >
-                        <div className="h-12 w-20 flex items-center justify-center rounded-md p-1">
-                          <Image
-                            width={80}
-                            height={48}
-                            src="/placeholder.svg?height=48&width=80"
-                            alt={`Pembayaran dengan ${method.name}`}
-                            className="h-auto max-h-full object-contain"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </motion.div>
-            )}
           </div>
         </div>
 
@@ -365,8 +208,6 @@ export function Footer() {
           </div>
         </div>
       </div>
-
-      {/* WhatsApp Button with improved styling */}
     </footer>
   );
 }

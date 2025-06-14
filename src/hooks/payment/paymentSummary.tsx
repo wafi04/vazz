@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 interface PaymentSummaryProps {
   price: number;
   discount?: number;
+  tax?: number;
   finalPrice?: number;
 }
 
@@ -13,6 +14,7 @@ export const PaymentSummary: FC<PaymentSummaryProps> = ({
   price,
   discount,
   finalPrice,
+  tax,
 }) => {
   return (
     <div className="px-4 py-2 space-y-3">
@@ -23,7 +25,7 @@ export const PaymentSummary: FC<PaymentSummaryProps> = ({
 
       <div className="bg-indigo-900/30 rounded p-2 border border-indigo-500/40">
         <div className="flex justify-between items-center ">
-          <span className="text-xs text-indigo-200">Subtotal</span>
+          <span className="text-xs text-indigo-200">Harga </span>
           <span className="text-xs font-medium text-white">
             {FormatPrice(price)}
           </span>
@@ -37,6 +39,18 @@ export const PaymentSummary: FC<PaymentSummaryProps> = ({
               <span className="text-xs text-indigo-200">Discount</span>
               <span className="text-xs font-medium text-green-400">
                 {FormatPrice(discount)}
+              </span>
+            </div>
+            <Separator className="my-1" />
+          </>
+        )}
+
+        {tax && tax > 0 && (
+          <>
+            <div className="flex justify-between items-center ">
+              <span className="text-xs text-indigo-200">Pajak</span>
+              <span className="text-xs font-medium text-green-400">
+                {FormatPrice(tax)}
               </span>
             </div>
             <Separator className="my-1" />

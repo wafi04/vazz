@@ -1,7 +1,13 @@
-'use client';
-import { CheckCircle2, AlertCircle, Wallet, CreditCard, Cog } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
+"use client";
+import {
+  CheckCircle2,
+  AlertCircle,
+  Wallet,
+  CreditCard,
+  Cog,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface HeaderPaymentStatusProps {
   status: string;
@@ -11,195 +17,130 @@ export function HeaderPaymentStatus({ status }: HeaderPaymentStatusProps) {
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
-    if (status === 'PENDING') {
+    if (status === "PENDING") {
       const interval = setInterval(() => {
         setAnimate((prev) => !prev);
-      }, 1500);
-
+      }, 2000);
       return () => clearInterval(interval);
     }
   }, [status]);
 
+  const getStatusConfig = (status: string) => {
+    const configs = {
+      PENDING: {
+        color: "text-yellow-500",
+        bg: "bg-card",
+        border: "border-blue-800",
+        text: "Menunggu Pembayaran",
+        desc: "Silahkan melakukan pembayaran dengan metode yang dipilih",
+        icon: Wallet,
+      },
+      PAID: {
+        color: "text-blue-500",
+        bg: "bg-card",
+        border: "border-blue-200",
+        text: "Pembayaran Diterima",
+        desc: null,
+        icon: CreditCard,
+      },
+      PROCESS: {
+        color: "text-amber-500",
+        bg: "bg-card",
+        border: "border-amber-200",
+        text: "Pembayaran Diproses",
+        desc: null,
+        icon: Cog,
+      },
+      SUCCESS: {
+        color: "text-green-500",
+        bg: "bg-card",
+        border: "border-green-200",
+        text: "Pembayaran Berhasil",
+        desc: null,
+        icon: CheckCircle2,
+      },
+      FAILED: {
+        color: "text-red-500",
+        bg: "bg-card",
+        border: "border-red-200",
+        text: "Pembayaran Gagal",
+        desc: null,
+        icon: AlertCircle,
+      },
+    };
+    return (
+      configs[status as keyof typeof configs] || {
+        color: "text-gray-500",
+        bg: "bg-gray-50",
+        border: "border-gray-200",
+        text: "Status Pembayaran",
+        desc: null,
+        icon: AlertCircle,
+      }
+    );
+  };
+
+  const config = getStatusConfig(status);
+  const IconComponent = config.icon;
+
   return (
     <section
-      className="w-full rounded-xl overflow-hidden relative"
-      style={{ background: '#001435' }}
+      className={cn(
+        "w-full rounded-lg border p-6 text-center transition-all duration-300",
+        config.bg,
+        config.border
+      )}
     >
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-blue-500/10 blur-xl"></div>
-        <div className="absolute -left-16 -bottom-16 w-64 h-64 rounded-full bg-purple-500/10 blur-xl"></div>
-        <div className="absolute right-1/4 bottom-0 w-32 h-32 rounded-full bg-yellow-500/10 blur-lg"></div>
-
-        {/* Animated lines */}
-        <div className="absolute inset-0">
-          <svg width="100%" height="100%" className="opacity-20">
-            <defs>
-              <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop
-                  offset="0%"
-                  style={{ stopColor: '#4F46E5', stopOpacity: 0.6 }}
-                />
-                <stop
-                  offset="100%"
-                  style={{ stopColor: '#06B6D4', stopOpacity: 0.6 }}
-                />
-              </linearGradient>
-            </defs>
-            <path
-              d="M0,64 Q50,0 100,64 T200,64 T300,64 T400,64"
-              stroke="url(#grad1)"
-              strokeWidth="2"
-              fill="none"
-              className="animate-pulse"
-            />
-            <path
-              d="M0,128 Q50,64 100,128 T200,128 T300,128 T400,128"
-              stroke="url(#grad1)"
-              strokeWidth="2"
-              fill="none"
-              className="animate-pulse"
-              style={{ animationDelay: '0.5s' }}
-            />
-          </svg>
+      {/* Icon */}
+      <div className={cn("flex justify-center mb-4", config.color)}>
+        <div
+          className={cn(
+            "transition-transform duration-500",
+            status === "PENDING" && animate && "scale-110",
+            status === "PROCESS" && "animate-spin",
+            status === "SUCCESS" && "animate-bounce"
+          )}
+        >
+          <IconComponent className="h-16 w-16" strokeWidth={1.5} />
         </div>
       </div>
 
-      <div className="flex flex-col items-center justify-center py-12 px-4 text-white relative z-10">
-        {/* Icon container with glowing effect */}
+      {/* Status text */}
+      <div>
+        <h2 className={cn("text-xl font-semibold mb-2", config.color)}>
+          {config.text}
+        </h2>
+        {config.desc && (
+          <p className={cn("text-sm", config.color, "opacity-80")}>
+            {config.desc}
+          </p>
+        )}
+      </div>
+
+      {/* Simple progress indicator */}
+      <div className="flex justify-center items-center space-x-2 mt-6">
         <div
           className={cn(
-            'relative flex items-center justify-center',
-            status === 'PENDING' && 'text-yellow-400',
-            status === 'PAID' && 'text-blue-400',
-            status === 'PROCESS' && 'text-amber-400',
-            status === 'SUCCESS' && 'text-green-400',
-            status === 'FAILED' && 'text-red-400'
+            "h-2 w-8 rounded-full transition-colors duration-300",
+            ["PENDING", "PAID", "PROCESS", "SUCCESS"].includes(status)
+              ? "bg-yellow-400"
+              : "bg-gray-200"
           )}
-        >
-          {/* Glow effect */}
-          <div
-            className={cn(
-              'absolute inset-0 rounded-full blur-xl opacity-30',
-              status === 'PENDING' && 'bg-yellow-400',
-              status === 'PAID' && 'bg-blue-400',
-              status === 'PROCESS' && 'bg-amber-400',
-              status === 'SUCCESS' && 'bg-green-400',
-              status === 'FAILED' && 'bg-red-400'
-            )}
-          ></div>
-
-          {/* PENDING - Animated wallet */}
-          {status === 'PENDING' && (
-            <div
-              className={cn(
-                'transition-transform duration-1500 ease-in-out relative',
-                animate ? 'transform translate-y-2' : 'transform -translate-y-2'
-              )}
-            >
-              <div className="absolute inset-0 bg-yellow-400 rounded-full blur-xl opacity-20"></div>
-              <Wallet className="h-28 w-28 relative z-10" strokeWidth={1.5} />
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent rounded-full blur-sm"></div>
-            </div>
+        ></div>
+        <div
+          className={cn(
+            "h-2 w-8 rounded-full transition-colors duration-300",
+            ["PAID", "PROCESS", "SUCCESS"].includes(status)
+              ? "bg-blue-400"
+              : "bg-gray-200"
           )}
-
-          {/* PAID - Credit card icon */}
-          {status === 'PAID' && (
-            <div className="animate-pulse relative">
-              <div className="absolute inset-0 bg-blue-400 rounded-full blur-xl opacity-20"></div>
-              <CreditCard
-                className="h-28 w-28 relative z-10"
-                strokeWidth={1.5}
-              />
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent rounded-full blur-sm"></div>
-            </div>
+        ></div>
+        <div
+          className={cn(
+            "h-2 w-8 rounded-full transition-colors duration-300",
+            status === "SUCCESS" ? "bg-green-400" : "bg-gray-200"
           )}
-
-          {/* PROCESS - Gear icon */}
-          {status === 'PROCESS' && (
-            <div className="animate-spin relative">
-              <div className="absolute inset-0 bg-amber-400 rounded-full blur-xl opacity-20"></div>
-              <Cog className="h-28 w-28 relative z-10" strokeWidth={1.5} />
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent rounded-full blur-sm"></div>
-            </div>
-          )}
-
-          {/* SUCCESS - Check circle */}
-          {status === 'SUCCESS' && (
-            <div className="animate-bounce relative">
-              <div className="absolute inset-0 bg-green-400 rounded-full blur-xl opacity-20"></div>
-              <CheckCircle2
-                className="h-28 w-28 relative z-10"
-                strokeWidth={1.5}
-              />
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent rounded-full blur-sm"></div>
-            </div>
-          )}
-
-          {/* FAILED - Alert circle */}
-          {status === 'FAILED' && (
-            <div className="animate-pulse relative">
-              <div className="absolute inset-0 bg-red-400 rounded-full blur-xl opacity-20"></div>
-              <AlertCircle
-                className="h-28 w-28 relative z-10"
-                strokeWidth={1.5}
-              />
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gradient-to-r from-transparent via-red-400 to-transparent rounded-full blur-sm"></div>
-            </div>
-          )}
-        </div>
-
-        {/* Status text with gradient */}
-        <div className="mt-8 text-center">
-          <h2
-            className={cn(
-              'text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r',
-              status === 'PENDING' && 'from-yellow-300 to-yellow-500',
-              status === 'PAID' && 'from-blue-300 to-blue-500',
-              status === 'PROCESS' && 'from-amber-300 to-amber-500',
-              status === 'SUCCESS' && 'from-green-300 to-green-500',
-              status === 'FAILED' && 'from-red-300 to-red-500',
-              !['PENDING', 'PAID', 'PROCESS', 'SUCCESS', 'FAILED'].includes(status) &&
-                'from-gray-300 to-gray-500'
-            )}
-          >
-            {status === 'PENDING' && 'Menunggu Pembayaran '}
-            {status === 'PAID' && 'Pembayaran Diterima'}
-            {status === 'PROCESS' && 'Pembayaran Diproses'}
-            {status === 'SUCCESS' && 'Pembayaran Berhasil'}
-            {status === 'FAILED' && 'Pembayaran Gagal'}
-            {!['PENDING', 'PAID', 'PROCESS', 'SUCCESS', 'FAILED'].includes(status) &&
-              'Status Pembayaran'}
-          </h2>
-          {status === 'PENDING' && (
-            <p className="text-md mt-2 font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 to-yellow-500">
-              Silahkan Melakukan Pembayaran Dengan Metode Yang Kamu Pilih
-            </p>
-          )}
-        </div>
-
-        {/* Modern progress indicator */}
-        <div className="mt-6 flex items-center space-x-1">
-          <div
-            className={cn(
-              'h-1 w-16 rounded-full transition-all duration-300',
-              status === 'PENDING' ? 'bg-yellow-400' : 'bg-white/20',
-              status === 'PAID' || status === 'PROCESS' || status === 'SUCCESS' ? 'bg-blue-400' : ''
-            )}
-          ></div>
-          <div
-            className={cn(
-              'h-1 w-16 rounded-full transition-all duration-300',
-              status === 'PAID' ? 'bg-blue-400' : 'bg-white/20',
-              status === 'PROCESS' || status === 'SUCCESS' ? 'bg-amber-400' : ''
-            )}
-          ></div>
-          <div
-            className={cn(
-              'h-1 w-16 rounded-full transition-all duration-300',
-              status === 'SUCCESS' ? 'bg-green-400' : 'bg-white/20'
-            )}
-          ></div>
-        </div>
+        ></div>
       </div>
     </section>
   );

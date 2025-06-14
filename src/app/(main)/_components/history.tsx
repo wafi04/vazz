@@ -99,32 +99,6 @@ export function CardHistory() {
                         {item.whatsAppNumber}
                       </span>
                     </p>
-                    <p className="text-sm text-card-foreground">
-                      <span className="font-medium text-muted-foreground">
-                        Metode Bayar:
-                      </span>{" "}
-                      <span className="text-secondary">{item.method.name}</span>
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-card-foreground">
-                      <span className="font-medium text-muted-foreground">
-                        Harga Awal:
-                      </span>{" "}
-                      <span className="text-card-foreground">
-                        {FormatPrice(item.price)}
-                      </span>
-                    </p>
-                    {item.discount && (
-                      <p className="text-sm">
-                        <span className="font-medium text-muted-foreground">
-                          Diskon:
-                        </span>{" "}
-                        <span className="text-accent font-medium">
-                          {item.discount}
-                        </span>
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>

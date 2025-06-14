@@ -3,15 +3,18 @@ type Pembayaran = {
   orderId: string;
   harga: string;
   noPembayaran: string | null;
-  noPembeli: number;
+  noPembeli: string; // Changed from number to string
   status: string;
   metode: string;
   reference: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
+  fee: number; // Added missing field
+  feeRupiah: number | null; // Added missing field
+  totalAmount: number; // Added missing field
+  createdAt: string | null; // ISO date string
+  updatedAt: string | null; // ISO date string
 };
 
-type Transaksi = {
+export type Transaksi = {
   id: number;
   orderId: string;
   username: string | null;

@@ -7,6 +7,7 @@ import {
   validateResourceExists,
 } from "@/lib/trpc-response";
 import { Prisma } from "@prisma/client";
+import { getProfile } from "@/app/(auth)/auth/components/server";
 
 // ====== Schemas ======
 export const filterByCodeSchema = z.object({
@@ -35,26 +36,90 @@ export const categoriesRouter = router({
     .input(filterByCodeSchema)
     .query(async ({ input }) => {
       return handleDatabaseOperation(async () => {
-        const layananWhere: Prisma.LayananWhereInput = {
-          status: true,
-          subCategoryId: input.subCategory,
-          ...(input.layananFilter?.price && {
-            harga: { lte: parseFloat(input.layananFilter.price) },
+        // 1. Parallel execution - jalankan secara bersamaan
+        const [user, category] = await Promise.all([
+          getProfile().catch(() => undefined),
+          prisma.categories.findUnique({
+            where: { kode: input.code, status: "active" },
+            select: {
+              id: true,
+              isChecknickname: true,
+              nama: true,
+              subNama: true,
+              brand: true,
+              kode: true,
+              serverId: true,
+              status: true,
+              thumbnail: true,
+              tipe: true,
+              petunjuk: true,
+              ketLayanan: true,
+              ketId: true, // Sesuai dengan `ketId` di Prisma (String? @db.Text)
+              placeholder1: true, // Sesuai dengan `placeholder1` di Prisma (String @db.Text)
+              placeholder2: true, // Sesuai dengan `placeholder2` di Prisma (String @db.Text)
+              createdAt: true, // Sesuai dengan `createdAt` di Prisma (DateTime?)
+              updatedAt: true, // Sesuai dengan `updatedAt` di Prisma (DateTime?)
+              bannerLayanan: true, // Sesuai dengan `bannerLayanan` di Prisma (String)
+              subCategories: {
+                where: {
+                  active: true,
+                },
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              layanan: {
+                where: {
+                  status: true,
+                  subCategoryId: input.subCategory,
+                },
+                select: {
+                  id: true,
+                  layanan: true,
+                  harga: true,
+                  productLogo: true,
+                  providerId: true,
+                  hargaPlatinum: true,
+                  hargaReseller: true,
+                  hargaFlashSale: true,
+                  hargaSuggest: true,
+                  isFlashSale: true,
+                  subCategoryId: true,
+                  isSuggest: true,
+                },
+                orderBy: { harga: "asc" },
+              },
+            },
           }),
+        ]);
+
+        validateResourceExists(category, "Category", input.code);
+
+        // 3. Optimasi price calculation - harga berdasarkan role atau default untuk non-login
+        const layananWithAdjustedPrice = category?.layanan.map((item) => {
+          let finalPrice = item.harga;
+          if (user?.session?.role) {
+            if (user.session.role === "Platinum") {
+              finalPrice = item.hargaPlatinum;
+            } else if (user.session.role === "Reseller") {
+              finalPrice = item.hargaReseller;
+            }
+          }
+          return {
+            ...item,
+            userRole: user?.session.role as string,
+            finalPrice,
+          };
+        });
+
+        // 4. Return optimized data structure
+        const optimizedCategory = {
+          ...category,
+          layanan: layananWithAdjustedPrice,
         };
 
-        const category = await prisma.categories.findUnique({
-          where: { kode: input.code },
-          include: {
-            subCategories: true,
-            layanan: {
-              where: layananWhere,
-              orderBy: { harga: "asc" },
-            },
-          },
-        });
-        validateResourceExists(category, "Category", input.code);
-        return formatResponse(category, "Kategori berhasil ditemukan");
+        return formatResponse(optimizedCategory, "Kategori berhasil ditemukan");
       }, `Failed to fetch category with code: ${input.code}`);
     }),
 

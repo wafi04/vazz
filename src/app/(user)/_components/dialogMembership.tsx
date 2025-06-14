@@ -12,7 +12,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 interface DialogDepositAndMembershipProps {
-  type: "Membership" | "deposit";
+  type: "MEMBERSHIP" | "DEPOSIT";
   amount: number;
   open: boolean;
   onClose: () => void;
@@ -36,7 +36,7 @@ export function DialogDepositAndMembership({
       const payload = {
         amount,
         code: payment.code,
-        type
+        type,
       };
       const req = await axios.post("/api/v1/deposit", payload);
       toast.success("create deposit successfully");
@@ -52,12 +52,12 @@ export function DialogDepositAndMembership({
       <DialogContent className="w-full max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {type === "Membership" ? "Membership Payment" : "Deposit Payment"}
+            {type === "MEMBERSHIP" ? "Membership Payment" : "Deposit Payment"}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <p className="text-sm text-muted-foreground">Payment Method</p>
+            <p className="text-sm text-muted-foreground">Metode Pembayaran</p>
             <p className="font-medium">{payment.name}</p>
           </div>
           <div>

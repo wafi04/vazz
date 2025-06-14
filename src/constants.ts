@@ -6,7 +6,7 @@ export const DEFAULT_CATEGORY = 23;
 export const DEBOUNCE_DELAY = 500;
 export const LAYANAN_PER_PAGE = 100;
 export const TAX_RATE = 0.007;
-export const MINIMUM_CUSTOM_AMOUNT = 1000;
+export const MINIMUM_CUSTOM_AMOUNT = 1;
 
 export const NOMINAL_OPTIONS = [
   { value: "50000", label: "Rp 50.000" },
@@ -17,7 +17,7 @@ export const NOMINAL_OPTIONS = [
 ] as const;
 
 export const PAYMENT_METHODS = [
-  { value: "virtual_account", label: "Virtual Account", icon: "🏦" },
+  { value: "virtual-account", label: "Virtual Account", icon: "🏦" },
   { value: "e-wallet", label: "E-Wallet", icon: "💳" },
   { value: "qris", label: "QRIS", icon: "📱" },
 ] as const;

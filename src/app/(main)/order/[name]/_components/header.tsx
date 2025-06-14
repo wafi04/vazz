@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import type { SubCategories } from "@/types/category";
 import { motion } from "framer-motion";
 import { useFilterProduct } from "@/hooks/use-filterProduct";
 import { useState } from "react";
@@ -9,7 +8,10 @@ import { useState } from "react";
 export function HeaderFilterProduct({
   subCategories,
 }: {
-  subCategories?: SubCategories[];
+  subCategories?: {
+    id: number;
+    name: string;
+  }[];
 }) {
   const { setFilter } = useFilterProduct();
   const [selected, setSelected] = useState<number | null>(null);

@@ -14,10 +14,35 @@ import { KodeVoucherInput } from "./voucher";
 import { CartDetails } from "./cartDetails";
 import { CardHistory } from "@/app/(main)/_components/history";
 import { EmptyState } from "@/app/dashboard/pesanan-manual/_components/state";
-import { useMemo } from "react";
+import { useMemo, useRef, createContext, useContext } from "react";
+import { Category } from "@/types/category";
+
+// Create context for scroll function
+const ScrollContext = createContext<{
+  scrollToMethod: () => void;
+} | null>(null);
+
+export const useScrollToMethod = () => {
+  const context = useContext(ScrollContext);
+  if (!context) {
+    throw new Error("useScrollToMethod must be used within ScrollContext");
+  }
+  return context;
+};
 
 export default function DetailsCategories({ name }: { name: string }) {
   const { filter } = useFilterProduct();
+  const methodSectionRef = useRef<HTMLDivElement>(null);
+
+  // Scroll function
+  const scrollToMethod = () => {
+    if (methodSectionRef.current) {
+      methodSectionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
 
   // Fetch semua data tanpa filter subCategory di server
   const { data, isLoading } = trpc.categories.getByCode.useQuery(
@@ -39,22 +64,12 @@ export default function DetailsCategories({ name }: { name: string }) {
   const filteredProducts = useMemo(() => {
     if (!category?.layanan) return [];
 
-    // Jika tidak ada filter, tampilkan semua
     if (!filter) return category.layanan;
 
     return category.layanan.filter(
       (product) => product.subCategoryId === filter
     );
   }, [category?.layanan, filter]);
-
-  const categoryWithFilteredProducts = useMemo(() => {
-    if (!category) return null;
-
-    return {
-      ...category,
-      layanan: filteredProducts,
-    };
-  }, [category, filteredProducts]);
 
   if (isLoading) {
     return null;
@@ -65,43 +80,48 @@ export default function DetailsCategories({ name }: { name: string }) {
   }
 
   return (
-    <main className="">
-      {/* Hero Section */}
-      <HeroSection category={category} />
+    <ScrollContext.Provider value={{ scrollToMethod }}>
+      <main className="">
+        {/* Hero Section */}
+        <HeroSection category={category as Category} />
 
-      {/* Main Content Grid */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 container mx-auto max-w-7xl">
-        <div className="hidden lg:block lg:sticky lg:top-6 lg:self-start">
-          <SidebarOrder category={category} />
-          <CardHistory />
-        </div>
-
-        {/* Input Section */}
-        <div className="lg:col-span-2 px-2 space-y-6">
-          <div className="flex flex-col w-full rounded-lg overflow-hidden border-2">
-            <HeaderNumber number={"1"} title={"Masukkan Detail Akun"} />
-            <PlaceholderContent
-              category={category}
-              onChangeServerId={setZone}
-              serverId={zone}
-              userId={userId}
-              onChangeUserId={setUserId}
-            />
+        {/* Main Content Grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 container mx-auto max-w-7xl">
+          <div className="hidden lg:block lg:sticky lg:top-6 lg:self-start">
+            <SidebarOrder category={category as Category} />
+            <CardHistory />
           </div>
 
-          <div className="flex flex-col w-full rounded-lg overflow-hidden border-2">
-            <HeaderNumber number={"2"} title={"Pilih Product"} />
-            <HeaderFilterProduct subCategories={category.subCategories} />
-            {/* Pass filtered products instead of all products */}
-            <ProductPage products={filteredProducts} />
-          </div>
+          {/* Input Section */}
+          <div className="lg:col-span-2 px-2 space-y-6">
+            <div className="flex flex-col w-full rounded-lg overflow-hidden border-2">
+              <HeaderNumber number={"1"} title={"Masukkan Detail Akun"} />
+              <PlaceholderContent
+                category={category as Category}
+                onChangeServerId={setZone}
+                serverId={zone}
+                userId={userId}
+                onChangeUserId={setUserId}
+              />
+            </div>
 
-          <MethodSection />
-          <WhatsAppInput />
-          <KodeVoucherInput />
-          <CartDetails />
-        </div>
-      </section>
-    </main>
+            <div className="flex flex-col w-full rounded-lg overflow-hidden border-2">
+              <HeaderNumber number={"2"} title={"Pilih Product"} />
+              <HeaderFilterProduct subCategories={category.subCategories} />
+              {/* Pass filtered products instead of all products */}
+              <ProductPage products={filteredProducts} />
+            </div>
+
+            {/* Add ref to MethodSection */}
+            <div ref={methodSectionRef}>
+              <MethodSection />
+            </div>
+            <WhatsAppInput />
+            <KodeVoucherInput />
+            <CartDetails />
+          </div>
+        </section>
+      </main>
+    </ScrollContext.Provider>
   );
 }

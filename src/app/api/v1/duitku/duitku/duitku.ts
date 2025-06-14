@@ -12,6 +12,7 @@ export type DuitkuCreateTransactionParams = {
   productDetails: string;
   paymentCode: string;
   cust?: string;
+  callbackUrl?: string;
   returnUrl?: string;
   noWa: string;
 };
@@ -35,6 +36,8 @@ export class Duitku {
   private DUITKU_EXPIRY_PERIOD?: number;
   private BASE_URL =
     "https://passport.duitku.com/webapi/api/merchant/v2/inquiry";
+  private SANDBOX_URL =
+    "https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry";
 
   private BASE_URL_GET_TRANSACTION =
     "https://passport.duitku.com/webapi/api/merchant/transactionStatus";
@@ -56,6 +59,7 @@ export class Duitku {
 
   async CreateTransaction({
     paymentAmount,
+    callbackUrl,
     merchantOrderId,
     productDetails,
     paymentCode,
@@ -76,7 +80,7 @@ export class Duitku {
         .digest("hex");
 
       const payload = {
-        merchantCode: "D19088",
+        merchantCode: this.DUITKU_MERCHANT_CODE,
         paymentAmount: paymentAmount,
         merchantOrderId: merchantOrderId,
         productDetails: productDetails,
@@ -84,7 +88,8 @@ export class Duitku {
         customerVaName: cust,
         phoneNumber: noWa,
         returnUrl,
-        callbackUrl: this.DUITKU_CALLBACK_URL,
+        callbackUrl:
+          "https://da40-103-136-58-71.ngrok-free.app/api/v1/callback/duitku",
         signature: signature,
         expiryPeriod: this.DUITKU_EXPIRY_PERIOD,
       };

@@ -1,4 +1,5 @@
 import { router } from "../trpc";
+import { beritaRouter } from "./banner/route";
 import { categoriesRouter } from "./categories/get";
 import { Deposits } from "./deposits";
 import { Layanans } from "./layanans";
@@ -18,6 +19,7 @@ import { WhatsappMessage } from "./whatsapp";
 
 export const appRouter = router({
   main: mainRouter,
+  banner: beritaRouter,
   categories: categoriesRouter,
   method: Methods,
   subCategory: subCategories,

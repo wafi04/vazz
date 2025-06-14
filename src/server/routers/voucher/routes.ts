@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { validateVoucher } from "../vouchers";
+import { checkingVoucher } from "@/features/transaction/voucher/checkingVoucher";
 
 export const Vouchers = router({
   getAll: publicProcedure
@@ -15,39 +16,156 @@ export const Vouchers = router({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const where: Prisma.VoucherWhereInput = {};
+        const params: any[] = [];
+        let paramIndex = 1;
+
+        // Build WHERE conditions
+        const conditions: string[] = [];
 
         if (input.code) {
-          where.code = { contains: input.code };
+          conditions.push(`code ILIKE $${paramIndex}`);
+          params.push(`%${input.code}%`);
+          paramIndex++;
         }
 
         const today = new Date();
 
         switch (input.category) {
           case "active":
-            where.startDate = { lte: today };
-            where.expiryDate = { gte: today };
-            where.isActive = true;
+            conditions.push(`start_date <= $${paramIndex}`);
+            params.push(today);
+            paramIndex++;
+
+            conditions.push(`expiry_date >= $${paramIndex}`);
+            params.push(today);
+            paramIndex++;
+
+            conditions.push(`is_active = true`);
             break;
+
           case "inactive":
-            where.isActive = false;
+            conditions.push(`is_active = false`);
             break;
+
           case "upcoming":
-            where.startDate = { gt: today };
+            conditions.push(`start_date > $${paramIndex}`);
+            params.push(today);
+            paramIndex++;
             break;
+
           case "expired":
-            where.expiryDate = { lt: today };
+            conditions.push(`expiry_date < $${paramIndex}`);
+            params.push(today);
+            paramIndex++;
             break;
         }
-        return await ctx.prisma.voucher.findMany({
-          where,
-          include : {
-            usage : true
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        });
+
+        const whereClause =
+          conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+        // Get vouchers
+        const vouchersQuery = `
+          SELECT 
+            id,
+            code,
+            "discountType",
+           "discountValue",
+            "maxDiscount",
+             "minPurchase",
+           "usageLimit",
+            "usageCount",
+            is_for_all_categories as "isForAllCategories",
+            is_active as "isActive",
+            start_date as "startDate",
+            expiry_date as "expiryDate",
+            description,
+            created_at as "createdAt",
+            updated_at as "updatedAt"
+          FROM vouchers
+          ${whereClause}
+          ORDER BY created_at DESC
+        `;
+
+        const vouchers = (await ctx.prisma.$queryRawUnsafe(
+          vouchersQuery,
+          ...params
+        )) as any[];
+
+        if (vouchers.length === 0) {
+          return [];
+        }
+
+        const voucherIds = vouchers.map((v) => v.id);
+        const placeholders = voucherIds.map((_, i) => `$${i + 1}`).join(",");
+
+        // Get usage data
+        const usageQuery = `
+          SELECT 
+            id,
+            voucher_id as "voucherId",
+            order_id as "orderId",
+            username,
+            whatsapp,
+            amount,
+            created_at as "createdAt",
+            expires_at as "expiresAt"
+          FROM voucher_usages
+          WHERE voucher_id IN (${placeholders})
+          ORDER BY created_at DESC
+        `;
+
+        const usage = (await ctx.prisma.$queryRawUnsafe(
+          usageQuery,
+          ...voucherIds
+        )) as any[];
+
+        // Get categories data
+        const categoriesQuery = `
+        SELECT 
+          vc.id,
+          vc.voucher_id as "voucherId",
+          vc.category_id as "categoryId",
+          k.id as "categoryDetailId",
+          k.nama as "categoryName"
+        FROM voucher_categories vc
+        LEFT JOIN kategoris k ON vc.category_id = k.id
+        WHERE vc.voucher_id IN (${placeholders})
+      `;
+
+        const categories = (await ctx.prisma.$queryRawUnsafe(
+          categoriesQuery,
+          ...voucherIds
+        )) as any[];
+
+        // Group usage and categories by voucher ID
+        const usageByVoucher = usage.reduce((acc, item) => {
+          if (!acc[item.voucherId]) acc[item.voucherId] = [];
+          acc[item.voucherId].push(item);
+          return acc;
+        }, {} as Record<number, any[]>);
+
+        const categoriesByVoucher = categories.reduce((acc, item) => {
+          if (!acc[item.voucherId]) acc[item.voucherId] = [];
+          acc[item.voucherId].push(item);
+          return acc;
+        }, {} as Record<number, any[]>);
+
+        const result = vouchers.map((voucher) => ({
+          ...voucher,
+          usage: usageByVoucher[voucher.id] || [],
+          categories: (categoriesByVoucher[voucher.id] || []).map(
+            (cat: any) => ({
+              id: cat.id,
+              voucherId: cat.voucherId,
+              categoryId: cat.categoryId,
+              category: {
+                id: cat.categoryDetailId,
+                nama: cat.categoryName,
+              },
+            })
+          ),
+        }));
+        return result;
       } catch (error) {
         if (error instanceof TRPCError) {
           console.error(error.message);
@@ -177,8 +295,6 @@ export const Vouchers = router({
           },
         });
 
-        console.log(data);
-
         if (categoryIds) {
           const categoryId = Promise.all(
             categoryIds.map(async (p) => {
@@ -195,8 +311,6 @@ export const Vouchers = router({
         }
         return data;
       } catch (error) {
-        console.log(error);
-
         if (error instanceof TRPCError) {
           console.error(error.message);
         }
@@ -227,25 +341,72 @@ export const Vouchers = router({
     .input(
       z.object({
         code: z.string(),
-        categoryId: z.string(),
+        categoryCode: z.string(),
         amount: z.number(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const data = await validateVoucher(ctx.prisma, {
-          ...input,
+        const { amount, categoryCode, code } = input;
+        let discountAmount = 0;
+        let finalPrice = 0;
+
+        if (!code || !amount || amount < 0) {
+          return {
+            status: false,
+            message:
+              "Kode voucher belum diisi dan pilih product terlebih dahulu",
+            discountAmount: 0,
+            finalPrice: 0,
+            voucherId: 0,
+          };
+        }
+
+        const prismaTransaction = await ctx.prisma.$transaction(async (tx) => {
+          const category = await tx.categories.findFirst({
+            where: {
+              kode: categoryCode,
+            },
+            select: {
+              id: true,
+            },
+          });
+
+          if (!category) {
+            return {
+              status: false,
+              message: "Voucher ini tidak tersedia untuk kategori ini",
+              discountAmount: 0,
+              finalPrice: 0,
+              voucherId: 0,
+            };
+          }
+
+          const validate = await checkingVoucher(tx, {
+            amount,
+            categoryId: category?.id,
+            voucherCode: code,
+          });
+
+          finalPrice = validate.finalPrice;
+          discountAmount = validate.discountAmount;
         });
 
-        return data;
+        return {
+          status: true,
+          message: "Voucher is valid and applicable",
+          discountAmount,
+          finalPrice,
+          voucherId: 0,
+        };
       } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Terjadi kesalahan saat memvalidasi voucher",
-        });
+        return {
+          status: false,
+          message: "Validated voucher failed",
+          discountAmount: 0,
+          finalPrice: 0,
+          voucherId: 0,
+        };
       }
     }),
 

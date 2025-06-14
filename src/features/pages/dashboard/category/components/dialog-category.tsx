@@ -47,6 +47,7 @@ export function DialogCreateCategory({
       brand: req?.brand || "",
       kode: req?.kode || "",
       status: req?.status || "",
+      isChecknickname: req?.isChecknickname || false,
       thumbnail: req?.thumbnail ?? "",
       tipe: req?.tipe ?? "",
       petunjuk: req?.petunjuk ?? "",

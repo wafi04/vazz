@@ -31,6 +31,7 @@ export function VoucherPage() {
     code: debouncedSearch,
     category: determineCategory(),
   });
+
   return (
     <main className="p-8">
       <HeaderVoucher

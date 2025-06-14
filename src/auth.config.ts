@@ -1,9 +1,8 @@
-// auth.config.ts
-import { prisma } from '@/lib/prisma';
-import { loginSchema } from '@/types/schema/auth';
-import bcryptjs from 'bcryptjs';
-import { type NextAuthOptions } from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
+import { prisma } from "@/lib/prisma";
+import { loginSchema } from "@/types/schema/auth";
+import bcryptjs from "bcryptjs";
+import { type NextAuthOptions } from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 
 export const authConfig: NextAuthOptions = {
   providers: [
@@ -11,20 +10,23 @@ export const authConfig: NextAuthOptions = {
       async authorize(credentials) {
         try {
           const validatedCredentials = loginSchema.parse(credentials);
-          
+
           if (validatedCredentials) {
             const { username, password } = validatedCredentials;
-            
+
             const user = await prisma.users.findUnique({
               where: { username },
             });
-            
+
             if (!user || !user.password) {
               return null;
             }
-            
-            const validPassword = await bcryptjs.compare(password, user.password);
-            
+
+            const validPassword = await bcryptjs.compare(
+              password,
+              user.password
+            );
+
             if (validPassword) {
               return {
                 id: user.id,
@@ -33,18 +35,17 @@ export const authConfig: NextAuthOptions = {
               };
             }
           }
-          
+
           return null;
         } catch (error) {
-          console.error('Auth error:', error);
           return null;
         }
       },
       credentials: {
-        username: { label: 'Username', type: 'text' },
-        password: { label: 'Password', type: 'password' },
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
       },
-    })
+    }),
   ],
   callbacks: {
     async jwt({ token, user }) {
@@ -57,16 +58,16 @@ export const authConfig: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token.role) session.user.role = token.role as string;
-      if (token.id) session.user.id = token.id as number; 
+      if (token.id) session.user.id = token.id as number;
       if (token.username) session.user.username = token.username as string;
-      
+
       return session;
     },
   },
   pages: {
-    signIn: '/login',
+    signIn: "/auth/login",
   },
-  secret : process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
 };
 

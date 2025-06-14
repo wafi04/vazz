@@ -188,7 +188,7 @@ export function MembershipContent() {
       {/* Dialog */}
       {selectedMembershipData && selectedBank && (
         <DialogDepositAndMembership
-          type="Membership"
+          type="MEMBERSHIP"
           open={open}
           amount={totalAmount || selectedMembershipData.price}
           onClose={() => setOpen(false)}

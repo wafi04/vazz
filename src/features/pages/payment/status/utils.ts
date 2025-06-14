@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { Transaksi } from "@/types/pembayaran";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export const getStatusConfig = (status: string) => {
   switch (status) {
@@ -60,11 +61,33 @@ export function useLogicTransaksi({ data }: { data: Transaksi }) {
   });
   const [timeLeft, setTimeLeft] = useState<string>("");
 
-  const determinePaymentType = (): "VA" | "URL" | "OTHER" => {
+  // Memoize payment type calculation to avoid repeated computation
+  const paymentType = useMemo((): "VA" | "URL" | "QRIS" | "OTHER" => {
     if (!data.pembayaran) return "OTHER";
 
+    const { noPembayaran, metode } = data.pembayaran;
+
+    // Early return if no payment number
+    if (!noPembayaran) return "OTHER";
+
+    // Check for QRIS code pattern (most specific check first)
+    if (
+      noPembayaran.startsWith("00020101") ||
+      (noPembayaran.length > 100 && noPembayaran.includes("ID.CO.QRIS"))
+    ) {
+      return "QRIS";
+    }
+
+    // Check if the reference field contains a URL
+    if (noPembayaran.startsWith("https") || noPembayaran.includes("://")) {
+      return "URL";
+    }
+
+    // Check payment method categories
+    const uppercaseMethod = metode.toUpperCase();
+
     // Common Virtual Account methods
-    const vaPaymentMethods = [
+    const vaPatterns = [
       "VA",
       "VIRTUAL ACCOUNT",
       "BCA",
@@ -75,53 +98,41 @@ export function useLogicTransaksi({ data }: { data: Transaksi }) {
       "CIMB",
       "BR",
     ];
-
-    // Common URL-based payment methods
-    const urlPaymentMethods = [
-      "QRIS",
-      "OVO",
-      "GOPAY",
-      "DANA",
-      "LINKAJA",
-      "SHOPEEPAY",
-    ];
-
-    // Check if the reference field contains a URL
-    const hasUrl =
-      data.pembayaran.noPembayaran &&
-      (data.pembayaran.noPembayaran.startsWith("https") ||
-        data.pembayaran.noPembayaran.includes("://"));
-
-    if (hasUrl) return "URL";
-
-    const uppercaseMethod = data.pembayaran.metode.toUpperCase();
-    if (vaPaymentMethods.some((method) => uppercaseMethod.includes(method)))
+    if (vaPatterns.some((pattern) => uppercaseMethod.includes(pattern))) {
       return "VA";
-    if (urlPaymentMethods.some((method) => uppercaseMethod.includes(method)))
+    }
+
+    const urlPatterns = ["OVO", "GOPAY", "DANA", "LINKAJA", "SHOPEEPAY"];
+    if (urlPatterns.some((pattern) => uppercaseMethod.includes(pattern))) {
       return "URL";
+    }
 
     return "OTHER";
-  };
+  }, [data.pembayaran?.noPembayaran, data.pembayaran?.metode]);
 
-  const paymentType = determinePaymentType();
+  // Memoize expiration times to avoid recalculation
+  const expirationTimes = useMemo(() => {
+    if (!data.pembayaran?.createdAt) return null;
 
-  // Calculate payment expiration time (3 hours from creation)
+    const createTime = new Date(data.pembayaran.createdAt).getTime();
+    const expireTime3h = createTime + 3 * 60 * 60 * 1000; // for ewallet & QRIS
+    const expireTime24h = createTime + 24 * 60 * 60 * 1000; // for VA
+
+    return {
+      va: expireTime24h,
+      other: expireTime3h,
+    };
+  }, [data.pembayaran?.createdAt]);
+
+  // Calculate payment expiration time
   useEffect(() => {
-    if (!data.pembayaran?.createdAt) return;
+    if (!expirationTimes) return;
 
     const calculateTimeLeft = () => {
-      const createTime = new Date(data.pembayaran?.createdAt || "").getTime();
-      const expireTime = createTime + 3 * 60 * 60 * 1000; //  for ewallet
-      const expiredTimeVa = createTime + 24 * 60 * 60 * 1000; // for vanumber44
       const now = new Date().getTime();
-
-      const paymentType = determinePaymentType();
-      let difference: number;
-      if (paymentType === "VA") {
-        difference = expiredTimeVa - now;
-      } else {
-        difference = expireTime - now;
-      }
+      const targetExpiry =
+        paymentType === "VA" ? expirationTimes.va : expirationTimes.other;
+      const difference = targetExpiry - now;
 
       if (difference <= 0) {
         return "Kedaluwarsa";
@@ -136,25 +147,30 @@ export function useLogicTransaksi({ data }: { data: Transaksi }) {
         .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
     };
 
+    // Set initial time
     setTimeLeft(calculateTimeLeft());
+
+    // Set up interval
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [data.pembayaran?.createdAt]);
+  }, [expirationTimes, paymentType]);
 
-  const copyToClipboard = (text: string, id: string) => {
+  // Memoize copy function to prevent unnecessary re-renders
+  const copyToClipboard = useCallback((text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopied({ id, value: true });
     setTimeout(() => setCopied({ id: "", value: false }), 2000);
-  };
+  }, []);
 
-  const openPaymentUrl = () => {
+  // Memoize URL opener function
+  const openPaymentUrl = useCallback(() => {
     if (data.pembayaran?.noPembayaran && paymentType === "URL") {
       window.open(data.pembayaran.noPembayaran as string, "_blank");
     }
-  };
+  }, [data.pembayaran?.noPembayaran, paymentType]);
 
   return {
     url: openPaymentUrl,

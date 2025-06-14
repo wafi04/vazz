@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { handleOrderStatusChange } from "@/lib/whatsapp-message";
 
 export async function POST(req: NextRequest) {
   let referenceId: string = "UNKNOWN";
@@ -133,21 +132,6 @@ export async function POST(req: NextRequest) {
         });
 
         // Trigger WhatsApp notification for status change
-        if (pembayaran?.noPembeli) {
-          await handleOrderStatusChange({
-            orderData: {
-              amount: pembelian.harga,
-              link: `${process.env.NEXTAUTH_URL}/invoice?invoice=${pembelian.orderId}`,
-              method: pembayaran?.metode,
-              status: purchaseStatus,
-              productName: pembelian.layanan,
-              customerName: pembelian.username as string,
-              orderId: pembelian.orderId,
-              whatsapp: pembayaran.noPembeli,
-              sn,
-            },
-          });
-        }
 
         // Handle success report flag update
         if (purchaseStatus === "SUCCESS" && !pembelian.successReportSended) {

@@ -29,9 +29,6 @@ export default function CardProfile({ user }: { user: User | any }) {
       <CardContent className="pt-2">
         <div className="space-y-2 text-sm">
           <div className="flex justify-between items-center">
-            <p className="text-muted-foreground">Email:</p>
-          </div>
-          <div className="flex justify-between items-center">
             <p className="text-muted-foreground">WhatsApp:</p>
             <p className="font-medium">{user.whatsapp || "Not Set"}</p>
           </div>

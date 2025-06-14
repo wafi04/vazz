@@ -1,6 +1,5 @@
 import { ProductData } from "@/types/product";
 
-// Function dari sebelumnya
 function hitungHarga(hargaDigi: number, profit: number, isFixed = true) {
   if (isFixed) {
     return hargaDigi + profit;
@@ -58,15 +57,15 @@ export function CalculatePricingWithProfitLogic(
   let tier: string;
 
   switch (userRole?.toUpperCase()) {
-    case "Platinum":
+    case "PLATINUM":
       selectedProfit = profitPlatinum;
       tier = "Platinum";
       break;
-    case "Reseller":
+    case "RESELLER":
       selectedProfit = profitReseller;
       tier = "Reseller";
       break;
-    case "Member":
+    case "MEMBER":
       selectedProfit = profit;
       tier = "Member";
       break;

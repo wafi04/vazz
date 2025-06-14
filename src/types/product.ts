@@ -26,3 +26,20 @@ export type ProductData = {
   createdAt: string | null;
   updatedAt: string | null;
 };
+
+export interface ProductFromCategoryCode {
+  finalPrice: number;
+  harga: number;
+  hargaFlashSale: number | null;
+  userRole: string | null;
+  hargaPlatinum: number;
+  hargaReseller: number;
+  hargaSuggest: number | null;
+  id: number;
+  isFlashSale: boolean;
+  isSuggest: boolean;
+  layanan: string;
+  productLogo: string | null;
+  providerId: string;
+  subCategoryId: number;
+}

@@ -4,12 +4,7 @@ import { useDuitkuPayment } from "@/hooks/payment/use-payment";
 import { toast } from "sonner";
 import { CheckNickName } from "@/lib/check-nickname";
 import { GAMES_WITH_VALIDATION, GameType } from "@/data/check-code";
-import { useOrderStore } from "../use-order";
-
-interface PaymentMethod {
-  name: string;
-  code: string;
-}
+import { PaymentMethod, useOrderStore } from "../use-order";
 
 interface ProductDetails {
   name: string;
@@ -44,8 +39,6 @@ export const usePaymentDialog = ({
 
   const { setHistory, discount, finalPrice, price, nickname, cheking } =
     useOrderStore();
-
-  const requiresValidation = GAMES_WITH_VALIDATION.includes(name);
 
   const handlePayment = async (): Promise<void> => {
     if (!whatsAppNumber || !method?.code || !productDetails?.code) {
@@ -96,14 +89,7 @@ export const usePaymentDialog = ({
     }
   };
 
-  const isPaymentDisabled =
-    isLoading ||
-    !whatsAppNumber ||
-    (requiresValidation && !cheking.withoutCheking && cheking.isChecking) ||
-    (requiresValidation &&
-      !cheking.withoutCheking &&
-      !nickname &&
-      !cheking.isChecking);
+  const isPaymentDisabled = isLoading || !whatsAppNumber;
 
   return {
     isDialogOpen,
@@ -115,6 +101,5 @@ export const usePaymentDialog = ({
     withoutChecking: cheking.withoutCheking,
     isPaymentDisabled,
     handlePayment,
-    requiresValidation,
   } as const;
 };

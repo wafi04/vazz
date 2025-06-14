@@ -34,7 +34,7 @@ export function RecentTransactions({ data }: RecentTransactionsProps) {
   }
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden bg-card">
+    <div className=" rounded-lg overflow-hidden bg-card">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
@@ -42,7 +42,8 @@ export function RecentTransactions({ data }: RecentTransactionsProps) {
             <TableHead className="font-semibold">Order ID</TableHead>
             <TableHead className="font-semibold">Customer</TableHead>
             <TableHead className="font-semibold">Service</TableHead>
-            <TableHead className="font-semibold">Amount</TableHead>
+            <TableHead className="font-semibold">Harga</TableHead>
+            <TableHead className="font-semibold">Total</TableHead>
             <TableHead className="font-semibold text-center">Status</TableHead>
             <TableHead className="font-semibold text-right">Date</TableHead>
           </TableRow>

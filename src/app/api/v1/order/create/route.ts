@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     // Get authenticated user
     const user = await getProfile();
-    const merchantOrderId = GenerateRandomId("TEST");
+    const merchantOrderId = GenerateRandomId("VAZZ");
 
     // Initialize Duitku with proper error handling
     const duitku = new Duitku(
@@ -94,7 +94,10 @@ export async function POST(req: NextRequest) {
           user?.session.role
         );
 
-        let price: number = calculatePricing.price;
+        let price: number = Math.round(calculatePricing.price);
+        let total: number = calculatePricing.price;
+        let fee: number | null;
+        let feeRupiah: number | null;
         let profit: number = calculatePricing.profitRupiah;
 
         // Process voucher if provided
@@ -123,9 +126,10 @@ export async function POST(req: NextRequest) {
               data: { usageCount: { increment: 1 } },
             });
 
-            calculatePricing.price = validated.finalPrice as number;
+            profit = calculatePricing.profitRupiah - validated.discountAmount;
             discountAmount = validated.discountAmount as number;
             appliedVoucherId = validated.voucherId;
+            total = validated.finalPrice;
             await tx.voucherUsage.create({
               data: {
                 amount: discountAmount,
@@ -145,39 +149,6 @@ export async function POST(req: NextRequest) {
               { status: 400 }
             );
           }
-        }
-
-        let pembelian;
-        try {
-          pembelian = await tx.pembelian.create({
-            data: {
-              profitRupiah: profit,
-              harga: price,
-              profit: calculatePricing.profit,
-              isDigi: true,
-              layanan: product.layanan,
-              status: TRANSACTION_FLOW.PENDING,
-              successReportSended: false,
-              log: "Pembelian Pending",
-              nickname,
-              orderId: merchantOrderId,
-              tipeTransaksi: "TOPUP",
-              userId,
-              zone,
-              providerOrderId: productCode,
-              username: user?.session.username ?? "Anonymous",
-              createdAt: new Date(),
-            },
-          });
-        } catch (e) {
-          return NextResponse.json(
-            {
-              status: false,
-              message: "Failed to create purchase record",
-              code: 500,
-            },
-            { status: 500 }
-          );
         }
 
         // Process payment using balance if applicable
@@ -211,27 +182,27 @@ export async function POST(req: NextRequest) {
           };
         } else {
           const method = await ValidationMethodPayment({
-            amount: price,
+            amount: total,
             paymentCode,
             tx,
           });
 
-          price = method.totalAmount;
+          total = method.totalAmount;
+          fee = method.methodTax ?? 0;
+          feeRupiah = method.taxAmount;
 
           const baseUrl = req.headers.get("origin") || new URL(req.url).origin;
-          console.log(price);
 
           const toDuitku = await duitku.CreateTransaction({
-            paymentAmount: Math.round(price),
+            paymentAmount: Math.round(total),
             paymentCode,
             merchantOrderId,
             productDetails: product.layanan,
+            callbackUrl: `${baseUrl}/api/v1/callback/duitku`,
             returnUrl: `${baseUrl}/invoice?invoice=${merchantOrderId}`,
-            cust: user?.session.username ?? "Anonymous",
+            cust: user?.session.username,
             noWa,
           });
-
-          console.log(toDuitku);
 
           if (!toDuitku || !toDuitku.status) {
             return {
@@ -258,21 +229,64 @@ export async function POST(req: NextRequest) {
               bankName: toDuitku.data.bankName || "",
             };
           } else {
-            noPembayaran = toDuitku.data.qrString || toDuitku.data.qr_string;
+            noPembayaran = toDuitku.data.qrString;
             paymentDetails = {
               qrString: toDuitku.data.qrString,
               qrCode: toDuitku.data.qrCode,
             };
           }
 
+          const log = {
+            ...toDuitku.data,
+            message: "Pemblian Pending",
+          };
+
+          let pembelian;
+          try {
+            pembelian = await tx.pembelian.create({
+              data: {
+                profitRupiah: profit,
+                harga: price,
+                profit: calculatePricing.profit,
+                isDigi: true,
+                layanan: product.layanan,
+                status: TRANSACTION_FLOW.PENDING,
+                successReportSended: false,
+                log: JSON.stringify(log),
+                discount: discountAmount,
+                priceBuy: product.hargaFromDigi,
+                nickname,
+                orderId: merchantOrderId,
+                tipeTransaksi: "TOPUP",
+                userId,
+                zone,
+                providerOrderId: productCode,
+                username: user?.session.username as string,
+                createdAt: new Date(),
+              },
+            });
+          } catch (e) {
+            return NextResponse.json(
+              {
+                status: false,
+                message: "Failed to create purchase record",
+                code: 500,
+              },
+              { status: 500 }
+            );
+          }
+
           // Create payment record
           await tx.pembayaran.create({
             data: {
+              totalAmount: total,
               orderId: merchantOrderId,
               harga: price.toString(),
               metode: method.method?.name ?? "",
               noPembeli: noWa,
-              status: "PENDING",
+              feeRupiah: feeRupiah,
+              fee,
+              status: TRANSACTION_FLOW.PENDING,
               reference: toDuitku.data.reference,
               noPembayaran,
               createdAt: new Date(),
