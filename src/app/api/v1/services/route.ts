@@ -69,142 +69,155 @@ export async function GET() {
     let stats = { processed: 0, created: 0, updated: 0 };
     let categoryMatches: Record<string, number> = {};
 
-    // Update bagian transaction di API route
-    await prisma.$transaction(async (tx) => {
-      for (const category of categories) {
-        if (!category.brand) continue;
+    // Solusi 1: Proses per batch untuk menghindari transaction timeout
+    const BATCH_SIZE = 50; // Kurangi batch size untuk menghindari timeout
+    
+    for (const category of categories) {
+      if (!category.brand) continue;
 
-        let matchCount = 0;
+      let matchCount = 0;
+      const matchingItems = dataArray.filter((item: any) => 
+        item && 
+        typeof item === "object" && 
+        item.brand?.toUpperCase() === category.brand.toUpperCase()
+      );
 
-        for (const item of dataArray) {
-          if (!item || typeof item !== "object") continue;
-          if (item.brand.toUpperCase() !== category.brand.toUpperCase())
-            continue;
+      // Process in smaller batches
+      for (let i = 0; i < matchingItems.length; i += BATCH_SIZE) {
+        const batch = matchingItems.slice(i, i + BATCH_SIZE);
+        
+        try {
+          await prisma.$transaction(async (tx) => {
+            for (const item of batch) {
+              // Extract provider code dari buyer_sku_code
+              const match = item.buyer_sku_code.match(/^([A-Z]+)/);
+              const matchedProvider = match ? match[1] : item.buyer_sku_code;
 
-          // Extract provider code dari buyer_sku_code
-          const match = item.buyer_sku_code.match(/^([A-Z]+)/);
-          const matchedProvider = match ? match[1] : item.buyer_sku_code;
+              // Cari subcategory berdasarkan code
+              const subCategory = await tx.subCategory.findFirst({
+                where: {
+                  code: matchedProvider,
+                  categoryId: category.id,
+                },
+              });
 
-          // Cari subcategory berdasarkan code
-          const subCategory = await tx.subCategory.findFirst({
-            where: {
-              code: matchedProvider,
-              categoryId: category.id, // Tambahkan filter kategori
-            },
-          });
+              matchCount++;
+              stats.processed++;
 
-          matchCount++;
-          stats.processed++;
+              const existingService = await tx.layanan.findFirst({
+                where: { providerId: item.buyer_sku_code },
+              });
 
-          const existingService = await tx.layanan.findFirst({
-            where: { providerId: item.buyer_sku_code },
-          });
+              // Default profit settings
+              let defaultProfits = {
+                profit: 4,
+                profitReseller: 3,
+                profitPlatinum: 2,
+                isProfitFixed: false,
+              };
 
-          console.log(item.buyer_sku_code);
+              if (item.category === "Voucher" || item.category === "PLN") {
+                defaultProfits.isProfitFixed = true;
+              }
 
-          // Default profit settings
-          let defaultProfits = {
-            profit: 4,
-            profitReseller: 3,
-            profitPlatinum: 2,
-            isProfitFixed: false,
-          };
+              const hargaModal = item.price;
+              let regularPrice, resellerPrice, platinumPrice;
 
-          if (item.category === "Voucher" || item.category === "PLN") {
-            defaultProfits.isProfitFixed = true;
-          }
+              if (existingService) {
+                // Hitung harga berdasarkan profit settings
+                if (existingService.isProfitFixed) {
+                  regularPrice = hargaModal + existingService.profit;
+                  resellerPrice = hargaModal + existingService.profitReseller;
+                  platinumPrice = hargaModal + existingService.profitPlatinum;
+                } else {
+                  regularPrice = Math.round(
+                    hargaModal + (hargaModal * existingService.profit) / 100
+                  );
+                  resellerPrice = Math.round(
+                    hargaModal + (hargaModal * existingService.profitReseller) / 100
+                  );
+                  platinumPrice = Math.round(
+                    hargaModal + (hargaModal * existingService.profitPlatinum) / 100
+                  );
+                }
 
-          const hargaModal = item.price;
-          let regularPrice, resellerPrice, platinumPrice;
+                // Update existing service
+                await tx.layanan.update({
+                  where: { id: existingService.id },
+                  data: {
+                    harga: regularPrice,
+                    hargaFromDigi: hargaModal,
+                    hargaReseller: resellerPrice,
+                    hargaPlatinum: platinumPrice,
+                    status: item.seller_product_status,
+                    ...(subCategory && { subCategoryId: subCategory.id }),
+                  },
+                });
+                stats.updated++;
+              } else {
+                // Hitung harga untuk service baru
+                if (defaultProfits.isProfitFixed) {
+                  regularPrice = hargaModal + defaultProfits.profit;
+                  resellerPrice = hargaModal + defaultProfits.profitReseller;
+                  platinumPrice = hargaModal + defaultProfits.profitPlatinum;
+                } else {
+                  regularPrice = Math.round(
+                    hargaModal + (hargaModal * defaultProfits.profit) / 100
+                  );
+                  resellerPrice = Math.round(
+                    hargaModal + (hargaModal * defaultProfits.profitReseller) / 100
+                  );
+                  platinumPrice = Math.round(
+                    hargaModal + (hargaModal * defaultProfits.profitPlatinum) / 100
+                  );
+                }
 
-          if (existingService) {
-            // Hitung harga berdasarkan profit settings
-            if (existingService.isProfitFixed) {
-              regularPrice = hargaModal + existingService.profit;
-              resellerPrice = hargaModal + existingService.profitReseller;
-              platinumPrice = hargaModal + existingService.profitPlatinum;
-            } else {
-              regularPrice = Math.round(
-                hargaModal + (hargaModal * existingService.profit) / 100
-              );
-              resellerPrice = Math.round(
-                hargaModal + (hargaModal * existingService.profitReseller) / 100
-              );
-              platinumPrice = Math.round(
-                hargaModal + (hargaModal * existingService.profitPlatinum) / 100
-              );
+                // Create new service
+                await tx.layanan.create({
+                  data: {
+                    layanan: item.product_name,
+                    kategoriId: category.id,
+                    subCategoryId: subCategory?.id || 1,
+                    providerId: item.buyer_sku_code,
+                    harga: regularPrice,
+                    hargaFromDigi: hargaModal,
+                    hargaReseller: resellerPrice,
+                    hargaPlatinum: platinumPrice,
+                    hargaSuggest: 0,
+                    profit: defaultProfits.profit,
+                    profitReseller: defaultProfits.profitReseller,
+                    profitPlatinum: defaultProfits.profitPlatinum,
+                    isProfitFixed: defaultProfits.isProfitFixed,
+                    profitSuggest: 0,
+                    isSuggest: false,
+                    catatan: item.desc || "",
+                    status: item.seller_product_status,
+                    provider: "digiflazz",
+                    productLogo: null,
+                    isFlashSale: false,
+                  },
+                });
+                stats.created++;
+              }
             }
-
-            // Update existing service
-            await tx.layanan.update({
-              where: { id: existingService.id },
-              data: {
-                harga: regularPrice,
-                hargaFromDigi: hargaModal,
-                hargaReseller: resellerPrice,
-                hargaPlatinum: platinumPrice,
-                status: item.seller_product_status,
-                // Update subCategoryId jika ditemukan
-                ...(subCategory && { subCategoryId: subCategory.id }),
-              },
-            });
-            stats.updated++;
-          } else {
-            // Hitung harga untuk service baru
-            if (defaultProfits.isProfitFixed) {
-              regularPrice = hargaModal + defaultProfits.profit;
-              resellerPrice = hargaModal + defaultProfits.profitReseller;
-              platinumPrice = hargaModal + defaultProfits.profitPlatinum;
-            } else {
-              regularPrice = Math.round(
-                hargaModal + (hargaModal * defaultProfits.profit) / 100
-              );
-              resellerPrice = Math.round(
-                hargaModal + (hargaModal * defaultProfits.profitReseller) / 100
-              );
-              platinumPrice = Math.round(
-                hargaModal + (hargaModal * defaultProfits.profitPlatinum) / 100
-              );
-            }
-
-            // Create new service
-            await tx.layanan.create({
-              data: {
-                layanan: item.product_name,
-                kategoriId: category.id,
-                subCategoryId: subCategory?.id || 1, // Default ke 1 jika tidak ditemukan
-                providerId: item.buyer_sku_code,
-                harga: regularPrice,
-                hargaFromDigi: hargaModal,
-                hargaReseller: resellerPrice,
-                hargaPlatinum: platinumPrice,
-                hargaSuggest: 0,
-                profit: defaultProfits.profit,
-                profitReseller: defaultProfits.profitReseller,
-                profitPlatinum: defaultProfits.profitPlatinum,
-                isProfitFixed: defaultProfits.isProfitFixed,
-                profitSuggest: 0,
-                isSuggest: false,
-                catatan: item.desc || "",
-                status: item.seller_product_status,
-                provider: "digiflazz",
-                productLogo: null,
-                isFlashSale: false,
-              },
-            });
-            stats.created++;
-          }
+          }, {
+            timeout: 30000, // 30 detik timeout
+            maxWait: 5000,  // 5 detik max wait
+          });
+        } catch (error) {
+          console.error(`Batch processing error for category ${category.brand}:`, error);
+          // Continue with next batch instead of failing completely
+          continue;
         }
-
-        categoryMatches[category.brand] = matchCount;
       }
-    });
+
+      categoryMatches[category.brand] = matchCount;
+    }
 
     return NextResponse.json({
       message: "Data processed successfully",
       stats,
       categoryMatches,
-      dataArray,
     });
   } catch (error: any) {
     console.error("Unhandled error in API route:", error);

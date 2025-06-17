@@ -149,15 +149,14 @@ export default function DashboardAdminPage() {
                 <div className="text-2xl font-bold text-primary">
                   {data.totalTransactions
                     ? Math.round(
-                        (data.statusCounts.successful /
-                          data.totalTransactions) *
+                        (data.statusCounts.success / data.totalTransactions) *
                           100
                       )
                     : 0}
                   %
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {data.statusCounts.successful} successful transactions
+                  {data.statusCounts.success} successful transactions
                 </p>
               </CardContent>
             </Card>

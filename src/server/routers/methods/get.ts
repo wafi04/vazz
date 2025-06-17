@@ -31,8 +31,6 @@ export const Methods = router({
       }),
     };
 
-    console.log(type);
-
     if (isAll) {
       const methods = await prisma.method.findMany({
         where,

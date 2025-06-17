@@ -183,17 +183,17 @@ export function CartDetails() {
       <div className="rounded-lg bg-blue-500/10 backdrop-blur-sm p-4 space-y-2 border border-blue-400/20">
         {/* Original Price */}
         <div className="flex justify-between items-center text-sm">
-          <span className="text-white/70">Harga Asli</span>
+          <span className="text-white/70">Harga</span>
           <span className="text-white">{FormatPrice(price)}</span>
         </div>
 
         {/* Tax */}
-        {tax && tax > 0 && (
+        {tax && tax > 1 ? (
           <div className="flex justify-between items-center text-sm">
             <span className="text-white/70">Pajak</span>
-            <span className="text-white">+{FormatPrice(tax)}</span>
+            <span className="text-white">+{FormatPrice(tax as number)}</span>
           </div>
-        )}
+        ) : null}
 
         {discount && discount > 0 && hasValidVoucher && (
           <div className="flex justify-between items-center text-sm">
@@ -339,7 +339,7 @@ export function CartDetails() {
             {/* Order Details */}
             <div className="rounded-lg bg-white/5 backdrop-blur-sm p-4 space-y-3 border border-white/10">
               {renderOrderDetailRow("User ID", userId)}
-              {renderOrderDetailRow("Zone", zone as string, true)}
+              {zone && renderOrderDetailRow("Zone", zone as string, true)}
               {!isCheckingNickname &&
                 renderOrderDetailRow("Nickname", nicknameData ?? "-")}
               {renderOrderDetailRow("Produk", productDetails?.name)}

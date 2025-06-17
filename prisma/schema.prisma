@@ -186,6 +186,7 @@ model Pembelian {
   layanan             String            @map("layanan")
   harga               Int               @map("harga")
   profit              Int               @map("profit")
+  message             String?           @map("message")
   profitRupiah        Int               @map("profit_rupiah")
   providerOrderId     String?           @map("provider_order_id")
   status              String            @map("status") @db.VarChar(20)

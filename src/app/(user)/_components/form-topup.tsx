@@ -168,8 +168,10 @@ export function FormTopupContent() {
 
       <DialogDepositAndMembership
         type="DEPOSIT"
+        tax={taxAmount}
+        totalAmount={totalAmount}
         open={openDialog}
-        amount={totalAmount}
+        amount={baseAmount}
         onClose={() => setOpenDialog(false)}
         payment={{
           code: selectedBank?.code || "",

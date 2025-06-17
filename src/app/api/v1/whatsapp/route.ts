@@ -64,14 +64,6 @@ export async function GET(req: Request) {
       }
     );
 
-    // Log successful send with dummy data info
-    console.log("Message sent successfully:", {
-      to: dummyData.phoneNumber,
-      game: dummyData.productNameDisplay,
-      amount: dummyData.formattedAmount,
-      timestamp: new Date().toISOString(),
-    });
-
     return Response.json({
       success: true,
       message: "Order notification sent successfully",

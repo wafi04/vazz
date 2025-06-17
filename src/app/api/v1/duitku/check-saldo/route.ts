@@ -9,9 +9,6 @@ export async function GET() {
   );
 
   const reqToDuitku = await duitku.GetSaldo();
-
-  console.log(reqToDuitku);
-
   return NextResponse.json({
     message: "Duitku retreived successfully",
     data: reqToDuitku.data,

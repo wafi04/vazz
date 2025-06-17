@@ -54,8 +54,6 @@ export function FormMessages({
     onSubmit,
   });
 
-  console.log(initialData);
-
   return (
     <div className="bg-background text-foreground rounded-lg shadow-lg">
       <div className="flex gap-4">

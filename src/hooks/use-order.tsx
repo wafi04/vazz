@@ -131,7 +131,6 @@ export const useOrderStore = create<OrderStore>()(
       },
 
       applyHistoryToOrder: (item) => {
-        console.log(item);
         set({
           productDetails: item.product,
           whatsAppNumber: item.whatsAppNumber,

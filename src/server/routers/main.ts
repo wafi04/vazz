@@ -37,7 +37,6 @@ export const mainRouter = router({
   createCategory: publicProcedure
     .input(FormCategory)
     .mutation(async ({ ctx, input }) => {
-      console.log("From Client");
       const category = await ctx.prisma.categories.create({
         data: {
           ...input,

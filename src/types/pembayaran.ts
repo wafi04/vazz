@@ -16,6 +16,7 @@ type Pembayaran = {
 
 export type Transaksi = {
   id: number;
+  message: string | null;
   orderId: string;
   username: string | null;
   userId: string | null;

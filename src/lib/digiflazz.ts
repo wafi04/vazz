@@ -105,7 +105,6 @@ export class Digiflazz {
       });
 
       const result: TransactionType = await response.json();
-      console.log(result);
       return result;
     } catch (error) {
       if (error instanceof Error) {
@@ -241,7 +240,6 @@ export class Digiflazz {
       sign,
     };
 
-    console.log(payload);
     try {
       const response = await axios.post(
         "https://api.digiflazz.com/v1/transaction",

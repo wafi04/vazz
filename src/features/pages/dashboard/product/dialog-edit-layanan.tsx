@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import type React from 'react';
-import { useForm } from 'react-hook-form';
-import { useState } from 'react';
-import { z } from 'zod';
-import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import type React from "react";
+import { useForm } from "react-hook-form";
+import { useState } from "react";
+import { z } from "zod";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 
-import type { Layanan, layananFormSchema } from '@/types/layanans';
-import { Button } from '@/components/ui/button';
+import type { Layanan, layananFormSchema } from "@/types/layanans";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -26,46 +26,55 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { trpc } from '@/utils/trpc';
-import { toast } from 'sonner';
-import FlashSaleForm from './form-flashsale';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { trpc } from "@/utils/trpc";
+import { toast } from "sonner";
+import FlashSaleForm from "./form-flashsale";
 
 interface DialogEditLayananProps {
-  children: React.ReactNode;
   layanan: Layanan;
+  open: boolean;
+  onClose: () => void;
 }
 
 export function DialogEditLayanan({
-  children,
   layanan,
+  open,
+  onClose,
 }: DialogEditLayananProps) {
-  const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('basic');
+  const [activeTab, setActiveTab] = useState("basic");
   const { mutate } = trpc.layanans.edit.useMutation();
   const form = useForm<z.infer<typeof layananFormSchema>>({
     defaultValues: {
       ...layanan,
+      harga: layanan.harga || 0,
+      hargaReseller: layanan.hargaReseller || 0,
+      hargaSuggest: layanan.hargaSuggest || 0,
+      hargaPlatinum: layanan.hargaPlatinum || 0,
+      profit: layanan.profit || 0,
+      profitReseller: layanan.profitReseller || 0,
+      profitPlatinum: layanan.profitPlatinum || 0,
+      provider: layanan.provider || "-",
+      catatan: layanan.catatan || "",
     },
   });
 
   const handleFormSubmit = async (data: z.infer<typeof layananFormSchema>) => {
     try {
       mutate(data);
-      setOpen(false);
-      toast.success('success update layanan')
+      onClose();
+      toast.success("success update layanan");
     } catch (error) {
-      toast.error('layaanan gagal update')
+      toast.error("layaanan gagal update");
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Edit Layanan</DialogTitle>
@@ -107,7 +116,7 @@ export function DialogEditLayanan({
                       </FormItem>
                     )}
                   />
-              
+
                   <FormField
                     control={form.control}
                     name="provider"
@@ -115,7 +124,7 @@ export function DialogEditLayanan({
                       <FormItem className="flex flex-col">
                         <FormLabel>Nama Provider</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} value={field.value ?? "-"} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -146,7 +155,7 @@ export function DialogEditLayanan({
 
                 <div className="flex justify-between mt-4">
                   <div></div>
-                  <Button type="button" onClick={() => setActiveTab('pricing')}>
+                  <Button type="button" onClick={() => setActiveTab("pricing")}>
                     Selanjutnya
                   </Button>
                 </div>
@@ -168,10 +177,13 @@ export function DialogEditLayanan({
                         <FormControl>
                           <Input
                             type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
+                            value={field.value?.toString() || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === "" ? 0 : Number(value));
+                            }}
+                            onBlur={field.onBlur}
+                            name={field.name}
                           />
                         </FormControl>
                         <FormMessage />
@@ -188,10 +200,13 @@ export function DialogEditLayanan({
                         <FormControl>
                           <Input
                             type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
+                            value={field.value?.toString() || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === "" ? 0 : Number(value));
+                            }}
+                            onBlur={field.onBlur}
+                            name={field.name}
                           />
                         </FormControl>
                         <FormMessage />
@@ -208,10 +223,13 @@ export function DialogEditLayanan({
                         <FormControl>
                           <Input
                             type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
+                            value={field.value?.toString() || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === "" ? 0 : Number(value));
+                            }}
+                            onBlur={field.onBlur}
+                            name={field.name}
                           />
                         </FormControl>
                         <FormMessage />
@@ -221,17 +239,20 @@ export function DialogEditLayanan({
 
                   <FormField
                     control={form.control}
-                    name="hargaGold"
+                    name="hargaSuggest"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Harga Gold</FormLabel>
+                        <FormLabel>Harga Suggest</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
+                            value={field.value?.toString() || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === "" ? 0 : Number(value));
+                            }}
+                            onBlur={field.onBlur}
+                            name={field.name}
                           />
                         </FormControl>
                         <FormMessage />
@@ -252,10 +273,13 @@ export function DialogEditLayanan({
                         <FormControl>
                           <Input
                             type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
+                            value={field.value?.toString() || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === "" ? 0 : Number(value));
+                            }}
+                            onBlur={field.onBlur}
+                            name={field.name}
                           />
                         </FormControl>
                         <FormMessage />
@@ -272,10 +296,13 @@ export function DialogEditLayanan({
                         <FormControl>
                           <Input
                             type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
+                            value={field.value?.toString() || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === "" ? 0 : Number(value));
+                            }}
+                            onBlur={field.onBlur}
+                            name={field.name}
                           />
                         </FormControl>
                         <FormMessage />
@@ -292,30 +319,13 @@ export function DialogEditLayanan({
                         <FormControl>
                           <Input
                             type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="profitGold"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Profit Gold</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
+                            value={field.value?.toString() || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === "" ? 0 : Number(value));
+                            }}
+                            onBlur={field.onBlur}
+                            name={field.name}
                           />
                         </FormControl>
                         <FormMessage />
@@ -328,13 +338,13 @@ export function DialogEditLayanan({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setActiveTab('basic')}
+                    onClick={() => setActiveTab("basic")}
                   >
                     Sebelumnya
                   </Button>
                   <Button
                     type="button"
-                    onClick={() => setActiveTab('flashsale')}
+                    onClick={() => setActiveTab("flashsale")}
                   >
                     Selanjutnya
                   </Button>
@@ -343,19 +353,19 @@ export function DialogEditLayanan({
 
               {/* Tab 3: Flash Sale */}
               <TabsContent value="flashsale" className="space-y-4 py-4">
-               <FlashSaleForm form={form}/>
+                <FlashSaleForm form={form} />
 
                 <div className="flex justify-between mt-4">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setActiveTab('pricing')}
+                    onClick={() => setActiveTab("pricing")}
                   >
                     Sebelumnya
                   </Button>
                   <Button
                     type="button"
-                    onClick={() => setActiveTab('additional')}
+                    onClick={() => setActiveTab("additional")}
                   >
                     Selanjutnya
                   </Button>
@@ -372,26 +382,10 @@ export function DialogEditLayanan({
                       <FormItem className="col-span-2">
                         <FormLabel>Catatan</FormLabel>
                         <FormControl>
-                          <Textarea {...field} rows={3} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="productLogo"
-                    render={({ field }) => (
-                      <FormItem className="col-span-2">
-                        <FormLabel>Logo Produk URL</FormLabel>
-                        <FormControl>
-                          <Input
+                          <Textarea
                             {...field}
-                            value={field.value || ''}
-                            onChange={(e) =>
-                              field.onChange(e.target.value || null)
-                            }
+                            rows={3}
+                            value={field.value ?? ""}
                           />
                         </FormControl>
                         <FormMessage />
@@ -404,7 +398,7 @@ export function DialogEditLayanan({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setActiveTab('flashsale')}
+                    onClick={() => setActiveTab("flashsale")}
                   >
                     Sebelumnya
                   </Button>

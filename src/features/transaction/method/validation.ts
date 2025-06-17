@@ -16,10 +16,6 @@ export async function ValidationMethodPayment({
   paymentCode: string;
   tx: Prisma.TransactionClient;
 }) {
-  console.log("=== DEBUG PAYMENT CALCULATION ===");
-  console.log("Input amount:", amount, formatRupiah(amount));
-  console.log("Payment code:", paymentCode);
-
   const method = await tx.method.findFirst({
     where: {
       code: paymentCode,
@@ -44,14 +40,6 @@ export async function ValidationMethodPayment({
       expireMinutes: 0,
     };
   }
-
-  console.log("Method found:", {
-    name: method.name,
-    typeTax: method.typeTax,
-    taxAdmin: method.taxAdmin,
-    min: method.min,
-    max: method.max,
-  });
 
   // Validasi min/max
   if (method.min && amount < method.min) {
@@ -81,33 +69,18 @@ export async function ValidationMethodPayment({
   // Hitung pajak
   let taxAmount = 0;
   if (method.typeTax && method.taxAdmin) {
-    console.log("Calculating tax...");
-    console.log("Tax type:", method.typeTax);
-    console.log("Tax admin:", method.taxAdmin);
-
     if (method.typeTax === "PERCENTAGE") {
       // Hitung pajak percentage
       const rawTax = (amount * method.taxAdmin) / 100;
       taxAmount = Math.round(rawTax);
-
-      console.log("Raw tax calculation:", rawTax);
-      console.log("Rounded tax:", taxAmount);
     } else if (method.typeTax === "FIXED") {
       taxAmount = method.taxAdmin;
-      console.log("Fixed tax:", taxAmount);
     }
   } else {
     console.log("No tax applied (typeTax or taxAdmin is null)");
   }
 
   const totalAmount = Math.round(amount + taxAmount);
-
-  console.log("Final calculation:");
-  console.log("- Original amount:", amount, formatRupiah(amount));
-  console.log("- Tax amount:", taxAmount, formatRupiah(taxAmount));
-  console.log("- Total before round:", amount + taxAmount);
-  console.log("- Total after round:", totalAmount, formatRupiah(totalAmount));
-  console.log("=== END DEBUG ===");
 
   return {
     valid: true,

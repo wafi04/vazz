@@ -261,6 +261,7 @@ export async function POST(req: NextRequest) {
                 userId,
                 zone,
                 providerOrderId: productCode,
+                message: "Pembelian Pending",
                 username: user?.session.username as string,
                 createdAt: new Date(),
               },

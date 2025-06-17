@@ -1,0 +1,10 @@
+POST https://hub.rapspoint.com/api/top-up/free-fire/get-username
+Content-Type: application/json
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+Origin: https://hub.rapspoint.com
+Referer: https://hub.rapspoint.com/
+
+{
+  "game_id": "64345831",
+  "product_id": 28
+}

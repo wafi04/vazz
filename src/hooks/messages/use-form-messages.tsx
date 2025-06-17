@@ -45,8 +45,6 @@ export function useFormMessages({
       },
     };
 
-    console.log("Form submitted:", formData);
-
     if (onSubmit) {
       await onSubmit(formData);
     }

@@ -1,8 +1,8 @@
-import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
-import { Prisma } from '@prisma/client';
-import { TRPCError } from '@trpc/server';
-import { getProfile } from '@/app/(auth)/auth/components/server';
+import { z } from "zod";
+import { publicProcedure, router } from "../trpc";
+import { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { getProfile } from "@/app/(auth)/auth/components/server";
 
 export const Deposits = router({
   getAll: publicProcedure
@@ -10,7 +10,7 @@ export const Deposits = router({
       z.object({
         page: z.number().default(1),
         perPage: z.number().default(10),
-        search: z.string().optional().default(''),
+        search: z.string().optional().default(""),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -38,7 +38,7 @@ export const Deposits = router({
           take,
           skip,
           orderBy: {
-            createdAt: 'desc',
+            createdAt: "desc",
           },
         });
 
@@ -53,77 +53,78 @@ export const Deposits = router({
           },
         };
       } catch (error) {
-        console.log(error)
         if (error instanceof TRPCError) {
-          console.error('error : ', error.message);
+          console.error("error : ", error.message);
         }
         throw new Error(`Internal Server Erorr`);
       }
     }),
-    getByUsername: publicProcedure.query(async ({ ctx }) => {
-      try {
-        const session = await getProfile()
-        if (!session) {
-          return {
-            status: false,
-            message: 'Unauthorized',
-            statusCode: 401,
-            data: null
-          };
-        }
-        const user = await  ctx.prisma.users.findUnique({
-          where : {
-            id : session.session.id
-          }
-        })
-
-        
-        const data = await ctx.prisma.deposits.findMany({
-          where: {
-            username: session?.session.username,
-          },
-          orderBy: {
-            createdAt: 'desc'
-          }
-        });
-        
-        return {
-          status: true,
-          message: 'Success',
-          statusCode: 200,
-          data: {
-            history: data,
-            user
-          }
-        };
-      } catch (error) {
-        console.error('Error in getByUsername:', error);
-        
-        if (error instanceof TRPCError) {
-          return {
-            status: false,
-            message: error.message,
-            statusCode: 400,
-            data: null
-          };
-        }
-        
+  getByUsername: publicProcedure.query(async ({ ctx }) => {
+    try {
+      const session = await getProfile();
+      if (!session) {
         return {
           status: false,
-          message: 'Internal Server Error',
-          statusCode: 500,
-          data: null
+          message: "Unauthorized",
+          statusCode: 401,
+          data: null,
         };
       }
+      const user = await ctx.prisma.users.findUnique({
+        where: {
+          id: session.session.id,
+        },
+      });
+
+      const data = await ctx.prisma.deposits.findMany({
+        where: {
+          username: session?.session.username,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      return {
+        status: true,
+        message: "Success",
+        statusCode: 200,
+        data: {
+          history: data,
+          user,
+        },
+      };
+    } catch (error) {
+      console.error("Error in getByUsername:", error);
+
+      if (error instanceof TRPCError) {
+        return {
+          status: false,
+          message: error.message,
+          statusCode: 400,
+          data: null,
+        };
+      }
+
+      return {
+        status: false,
+        message: "Internal Server Error",
+        statusCode: 500,
+        data: null,
+      };
+    }
+  }),
+  findByNoPembayaran: publicProcedure
+    .input(
+      z.object({
+        depositId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      return await ctx.prisma.deposits.findFirst({
+        where: {
+          depositId: input.depositId,
+        },
+      });
     }),
-    findByNoPembayaran : publicProcedure.input(z.object({
-        depositId : z.string()
-    })
-  ).query(async({ctx,input})  => {
-    return await ctx.prisma.deposits.findFirst({
-      where : {
-        depositId : input.depositId
-      },
-    })
-  })
 });

@@ -13,88 +13,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/formatPrice";
 import { trpc } from "@/utils/trpc";
-import { Loader2, ExternalLink, Copy } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import Link from "next/link";
 
 export function TableMembership() {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const { data, isLoading, error } = trpc.membership.getMembership.useQuery();
-
-  // Function to detect if payment info is VA number or link
-  const detectPaymentType = (paymentInfo: string) => {
-    if (!paymentInfo) return null;
-
-    // Regex to detect if it's a number (VA)
-    const isVANumber = /^\d+$/.test(paymentInfo.trim());
-
-    // Regex to detect if it's a URL/link
-    const isLink = /^https?:\/\//.test(paymentInfo.trim());
-
-    if (isVANumber) return "va";
-    if (isLink) return "link";
-    return "text"; // fallback for other formats
-  };
-
-  // Function to copy VA number to clipboard
-  const copyToClipboard = async (text: string, id: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-      toast.success(`Berhasil copy ${text}`);
-    } catch (err) {
-      toast.error("Gagal Copy Text");
-    }
-  };
-
-  // Function to open link in new tab
-  const openLink = (url: string) => {
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
-
-  // Function to render payment info based on type
-  const renderPaymentInfo = (paymentInfo: string, depositId: string) => {
-    const paymentType = detectPaymentType(paymentInfo);
-
-    switch (paymentType) {
-      case "va":
-        return (
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm">{paymentInfo}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => copyToClipboard(paymentInfo, depositId)}
-              className="h-8 w-8 p-0"
-            >
-              {copiedId === depositId ? (
-                <span className="text-xs">✓</span>
-              ) : (
-                <Copy className="h-3 w-3" />
-              )}
-            </Button>
-          </div>
-        );
-
-      case "link":
-        return (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => openLink(paymentInfo)}
-            className="flex items-center gap-2"
-          >
-            <span>Bayar Sekarang</span>
-            <ExternalLink className="h-3 w-3" />
-          </Button>
-        );
-
-      case "text":
-      default:
-        return <span className="text-sm">{paymentInfo}</span>;
-    }
-  };
 
   if (isLoading) {
     return (
@@ -155,12 +79,11 @@ export function TableMembership() {
                 </span>
               </TableCell>
               <TableCell>
-                {deposit.pembayaran?.noPembayaran
-                  ? renderPaymentInfo(
-                      deposit.pembayaran.noPembayaran,
-                      deposit.orderId
-                    )
-                  : "-"}
+                <Button>
+                  <Link href={`/invoice?invoice=${deposit.orderId}`}>
+                    Link Pemabayaran
+                  </Link>
+                </Button>
               </TableCell>
             </TableRow>
           ))}

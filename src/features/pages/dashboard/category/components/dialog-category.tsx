@@ -47,7 +47,7 @@ export function DialogCreateCategory({
       brand: req?.brand || "",
       kode: req?.kode || "",
       status: req?.status || "",
-      isChecknickname: req?.isChecknickname || false,
+      isChecknickname: req?.isChecknickname || true,
       thumbnail: req?.thumbnail ?? "",
       tipe: req?.tipe ?? "",
       petunjuk: req?.petunjuk ?? "",
@@ -102,7 +102,14 @@ export function DialogCreateCategory({
     });
 
   const onSubmit = async (data: FormValuesCategory) => {
-    create(data);
+    if (req) {
+      update({
+        data,
+        id: req.id,
+      });
+    } else {
+      create(data);
+    }
     refreshData();
   };
 

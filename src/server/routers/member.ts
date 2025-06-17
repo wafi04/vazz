@@ -113,8 +113,6 @@ export const member = router({
           },
         });
 
-        console.log(totalPembelian);
-
         const profile = await ctx.prisma.users.findUnique({
           where: {
             username: session.session?.username,

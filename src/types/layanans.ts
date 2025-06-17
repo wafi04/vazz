@@ -1,32 +1,33 @@
 import { z } from "zod";
 
 export type Layanan = {
-  id: number;
-  isProfitFixed: boolean;
-  hargaFromDigi: number;
-  kategoriId: number; // Mapped from "kategori_id"
-  subCategoryId: number; // Mapped from "sub_category_id"
-  layanan: string;
-  providerId: string; // Mapped from "provider_id"
+  bannerFlashSale: string | null;
+  catatan: string | null;
+  createdAt: string | null;
+  expiredFlashSale: string | null;
   harga: number;
-  hargaReseller: number; // Mapped from "harga_reseller"
-  hargaPlatinum: number; // Mapped from "harga_platinum"
-  hargaGold: number; // Mapped from "harga_gold"
-  hargaFlashSale?: number | null; // Optional, default 0, mapped from "harga_flash_sale"
+  hargaFlashSale: number | null;
+  hargaFromDigi: number;
+  hargaPlatinum: number;
+  hargaReseller: number;
+  hargaSuggest: number;
+  id: number;
+  isFlashSale: boolean;
+  isProfitFixed: boolean;
+  isSuggest: boolean;
+  judulFlashSale: string | null;
+  kategoriId: number;
+  layanan: string;
+  productLogo: string | null;
   profit: number;
-  profitReseller: number; // Mapped from "profit_reseller"
-  profitPlatinum: number; // Mapped from "profit_platinum"
-  profitGold: number; // Mapped from "profit_gold"
-  isFlashSale: boolean; // Default false, mapped from "is_flash_sale"
-  judulFlashSale?: string | null; // Optional, mapped from "judul_flash_sale"
-  bannerFlashSale?: string | null; // Optional, mapped from "banner_flash_sale"
-  expiredFlashSale?: string | null; // Optional, mapped from "expired_flash_sale"
-  catatan: string;
+  profitPlatinum: number;
+  profitReseller: number;
+  profitSuggest: number;
+  provider: string | null;
+  providerId: string;
   status: boolean;
-  provider: string;
-  productLogo?: string | null; // Optional, mapped from "product_logo"
-  createdAt?: string | null; // Optional, default now(), mapped from "created_at"
-  updatedAt?: string | null; // Optional, updated at, mapped from "updated_at"
+  subCategoryId: number;
+  updatedAt: string | null;
 };
 
 export const layananFormSchema = z.object({
@@ -37,19 +38,22 @@ export const layananFormSchema = z.object({
   providerId: z.string().min(1, "Provider wajib dipilih"),
   harga: z.number().positive("Harga harus lebih dari 0"),
   hargaReseller: z.number().positive("Harga reseller harus lebih dari 0"),
+  hargaSuggest: z.number().positive("Harga reseller harus lebih dari 0"),
   hargaPlatinum: z.number().positive("Harga platinum harus lebih dari 0"),
-  hargaGold: z.number().positive("Harga gold harus lebih dari 0"),
   hargaFlashSale: z.number().nullable().optional(), // Corrected to optional
   profit: z.number().min(0, "Profit tidak boleh negatif"),
   profitReseller: z.number().min(0, "Profit reseller tidak boleh negatif"),
   profitPlatinum: z.number().min(0, "Profit platinum tidak boleh negatif"),
-  profitGold: z.number().min(0, "Profit gold tidak boleh negatif"),
   isFlashSale: z.boolean().default(false),
   judulFlashSale: z.string().nullable().optional(),
   bannerFlashSale: z.string().nullable().optional(),
   expiredFlashSale: z.string().nullable().optional(),
-  catatan: z.string().default(""),
+  catatan: z.string().default("").nullable(),
   status: z.boolean().default(true),
-  provider: z.string().min(1, "Provider wajib diisi"),
+  provider: z
+    .string()
+    .min(1, "Provider wajib diisi")
+    .nullable()
+    .default("digiflazz"),
   productLogo: z.string().nullable().optional(),
 });

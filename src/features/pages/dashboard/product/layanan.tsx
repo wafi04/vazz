@@ -58,7 +58,6 @@ export function LayananPage() {
     : undefined;
 
   const isLoadingData = isLoading || isFetching;
-
   return (
     <main className="p-8 min-h-screen ">
       <HeaderLayanan

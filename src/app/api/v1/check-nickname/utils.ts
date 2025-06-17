@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export const allowedMethod = ["GET", "HEAD"];
 
 export function getUrl(request: Request): URL {
@@ -19,7 +21,29 @@ export async function hitCoda(body: string): Promise<any> {
       body,
     }
   );
-  return await response.json();
+  const data = await response.json();
+  return data;
+}
+
+export async function HitRapsPoint(userId: string) {
+  const response = await axios.post(
+    "https://hub.rapspoint.com/api/top-up/free-fire/get-username",
+    {
+      game_id: userId,
+      product_id: 28,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        Origin: "https://hub.rapspoint.com",
+        Referer: "https://hub.rapspoint.com/",
+      },
+    }
+  );
+  const data = await response.data;
+  return data;
 }
 
 export interface ResultFromCoda {

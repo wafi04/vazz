@@ -88,8 +88,7 @@ export class Duitku {
         customerVaName: cust,
         phoneNumber: noWa,
         returnUrl,
-        callbackUrl:
-          "https://da40-103-136-58-71.ngrok-free.app/api/v1/callback/duitku",
+        callbackUrl,
         signature: signature,
         expiryPeriod: this.DUITKU_EXPIRY_PERIOD,
       };

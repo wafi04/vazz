@@ -14,7 +14,7 @@ export function TransactionStatusChart({
 }: {
   data: {
     statusCounts: {
-      successful?: number;
+      success?: number;
       pending?: number;
       failed?: number;
     };
@@ -22,7 +22,7 @@ export function TransactionStatusChart({
 }) {
   // Transformasi data ke format yang dibutuhkan chart
   const transformStatusData = (statusCounts: {
-    successful?: number;
+    success?: number;
     pending?: number;
     failed?: number;
   }) => {
@@ -43,7 +43,6 @@ export function TransactionStatusChart({
             : "0",
       }));
   };
-
   // Transform data
   const chartData = transformStatusData(data.statusCounts);
 
@@ -57,13 +56,13 @@ export function TransactionStatusChart({
 
   const statusColors = {
     pending: "#FFB703",
-    successful: "#83C5BE",
+    success: "#83C5BE",
     failed: "#E63946",
   };
 
   const statusLabels = {
     pending: "Pending",
-    successful: "Successful",
+    success: "Success",
     failed: "Failed",
   };
 

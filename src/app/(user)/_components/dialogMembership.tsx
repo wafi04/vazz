@@ -15,6 +15,8 @@ interface DialogDepositAndMembershipProps {
   type: "MEMBERSHIP" | "DEPOSIT";
   amount: number;
   open: boolean;
+  tax: number;
+  totalAmount: number;
   onClose: () => void;
   payment: {
     code: string;
@@ -25,6 +27,8 @@ interface DialogDepositAndMembershipProps {
 export function DialogDepositAndMembership({
   type,
   amount,
+  totalAmount,
+  tax,
   payment,
   open,
   onClose,
@@ -35,11 +39,16 @@ export function DialogDepositAndMembership({
     try {
       const payload = {
         amount,
+        tax,
+        totalAmount,
         code: payment.code,
         type,
       };
       const req = await axios.post("/api/v1/deposit", payload);
-      toast.success("create deposit successfully");
+      const data = await req.data;
+      if (data.status === true || data.statusCode === 201) {
+        toast.success("create deposit successfully");
+      }
       return req.data;
     } catch (error) {
       toast.error("failed to create deposit");
@@ -61,8 +70,16 @@ export function DialogDepositAndMembership({
             <p className="font-medium">{payment.name}</p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Amount</p>
+            <p className="text-sm text-muted-foreground">Harga : </p>
             <p className="font-medium">{FormatPrice(amount)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Fee : </p>
+            <p className="font-medium">{FormatPrice(tax)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Total : </p>
+            <p className="font-medium">{FormatPrice(totalAmount)}</p>
           </div>
         </div>
         <DialogFooter className="flex flex-row justify-between items-center gap-3 w-full">

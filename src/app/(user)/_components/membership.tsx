@@ -27,6 +27,7 @@ export function MembershipContent() {
   });
 
   const dataMembership = data?.data || [];
+  let Tax: number = 0;
   const selectedMembershipData = dataMembership.find(
     (plan) => plan.name === selectedPlan
   );
@@ -39,16 +40,15 @@ export function MembershipContent() {
     if (isNaN(numericAmount))
       return { baseAmount: 0, taxAmount: 0, totalAmount: 0 };
 
-    const tax = Math.round(numericAmount * TAX_RATE);
+    Tax = Math.round(numericAmount * TAX_RATE);
     const total =
-      selectedBank?.code === "NQ" ? numericAmount + tax : numericAmount;
+      selectedBank?.code === "NQ" ? numericAmount + Tax : numericAmount;
 
-    return { baseAmount: numericAmount, taxAmount: tax, totalAmount: total };
+    return { baseAmount: numericAmount, taxAmount: Tax, totalAmount: total };
   }, [selectedMembershipData, selectedBank]);
 
   const handlePaymentMethodChange = (method: PaymentMethodCode) => {
     setSelectedPayment(method);
-    // Reset selected bank when payment method changes
     setSelectedBank(null);
   };
 
@@ -189,8 +189,10 @@ export function MembershipContent() {
       {selectedMembershipData && selectedBank && (
         <DialogDepositAndMembership
           type="MEMBERSHIP"
+          tax={Tax}
+          totalAmount={totalAmount}
           open={open}
-          amount={totalAmount || selectedMembershipData.price}
+          amount={selectedMembershipData.price}
           onClose={() => setOpen(false)}
           payment={{
             code: selectedBank.code,

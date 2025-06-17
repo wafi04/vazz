@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useParams } from 'next/navigation';
-import { HeaderInvoices } from './header';
-import { trpc } from '@/utils/trpc';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useParams } from "next/navigation";
+import { HeaderInvoices } from "./header";
+import { trpc } from "@/utils/trpc";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,50 +12,50 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { CopyIcon, Download, ExternalLink, RefreshCw } from 'lucide-react';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { FormatPrice } from '@/utils/formatPrice';
-import Image from 'next/image';
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { CopyIcon, Download, ExternalLink, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { FormatPrice } from "@/utils/formatPrice";
+import Image from "next/image";
 
 // Custom color styles for dark background (#001435)
 const styles = {
-  background: 'bg-[#001435]',
-  card: 'bg-[#002255] border-[#1a3665] text-white',
-  cardHeader: 'text-white',
-  cardDescription: 'text-blue-200',
-  heading: 'text-white',
-  subheading: 'text-blue-200',
-  text: 'text-gray-100',
-  mutedText: 'text-blue-300',
-  button: 'bg-blue-500 hover:bg-blue-600 text-white',
-  buttonOutline: 'border-blue-400 text-blue-300 hover:bg-blue-900',
-  buttonGhost: 'text-blue-200 hover:bg-blue-900 hover:text-white',
-  separator: 'bg-[#1a3665]',
-  highlight: 'text-blue-300',
+  background: "bg-[#001435]",
+  card: "bg-[#002255] border-[#1a3665] text-white",
+  cardHeader: "text-white",
+  cardDescription: "text-blue-200",
+  heading: "text-white",
+  subheading: "text-blue-200",
+  text: "text-gray-100",
+  mutedText: "text-blue-300",
+  button: "bg-blue-500 hover:bg-blue-600 text-white",
+  buttonOutline: "border-blue-400 text-blue-300 hover:bg-blue-900",
+  buttonGhost: "text-blue-200 hover:bg-blue-900 hover:text-white",
+  separator: "bg-[#1a3665]",
+  highlight: "text-blue-300",
 };
 
 const getStatusColor = (status: string) => {
   switch (status?.toUpperCase()) {
-    case 'PENDING':
-      return 'bg-yellow-900 text-yellow-100';
-    case 'PAID':
-    case 'SUCCESS':
-      return 'bg-green-900 text-green-100';
-    case 'FAILED':
-    case 'EXPIRED':
-      return 'bg-red-900 text-red-100';
+    case "PENDING":
+      return "bg-yellow-900 text-yellow-100";
+    case "PAID":
+    case "SUCCESS":
+      return "bg-green-900 text-green-100";
+    case "FAILED":
+    case "EXPIRED":
+      return "bg-red-900 text-red-100";
     default:
-      return 'bg-gray-800 text-gray-100';
+      return "bg-gray-800 text-gray-100";
   }
 };
 
 export function InvoicePage() {
   const { slug } = useParams();
-  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [timeLeft, setTimeLeft] = useState<string>("");
 
   const { data, isLoading, error, refetch } =
     trpc.transaction.getTransaction.useQuery({
@@ -64,12 +64,12 @@ export function InvoicePage() {
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    toast.info('Copied to clipboard');
+    toast.info("Copied to clipboard");
   };
 
   // Calculate time left for payment deadline
   useEffect(() => {
-    if (!data || data.paymentStatus !== 'PENDING') return;
+    if (!data || data.paymentStatus !== "PENDING") return;
 
     const calculateTimeLeft = () => {
       // Assuming 24 hours payment window from createdAt
@@ -78,7 +78,7 @@ export function InvoicePage() {
       const now = new Date();
 
       if (now > deadline) {
-        return 'Expired';
+        return "Expired";
       }
 
       const diff = deadline.getTime() - now.getTime();
@@ -86,9 +86,9 @@ export function InvoicePage() {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-      return `${hours.toString().padStart(2, '0')}:${minutes
+      return `${hours.toString().padStart(2, "0")}:${minutes
         .toString()
-        .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
     };
 
     const timer = setInterval(() => {
@@ -138,30 +138,29 @@ export function InvoicePage() {
 
   // Get payment details based on payment code
   const getPaymentMethod = (paymentCode: string) => {
-    if (['bni', 'bri', 'VA', 'I1', 'BR'].includes(paymentCode)) {
-      return 'Virtual Account';
+    if (["bni", "bri", "VA", "I1", "BR"].includes(paymentCode)) {
+      return "Virtual Account";
     }
     // E-wallet
-    if (['OV', 'SA', 'LQ', 'DA'].includes(paymentCode)) {
-      return 'E-Wallet';
+    if (["OV", "SA", "LQ", "DA"].includes(paymentCode)) {
+      return "E-Wallet";
     }
     // QRIS
-    if (paymentCode === 'QR') {
-      return 'QRIS';
+    if (paymentCode === "QR") {
+      return "QRIS";
     }
     // Retail
-    if (['FT', 'A1'].includes(paymentCode)) {
-      return 'Convenience Store';
+    if (["FT", "A1"].includes(paymentCode)) {
+      return "Convenience Store";
     }
-    return 'Other';
+    return "Other";
   };
 
   const paymentMethod = getPaymentMethod(data.paymentCode);
-  const paymentReference = data.paymentReference || '-';
+  const paymentReference = data.paymentReference || "-";
   const paymentStatus = data.paymentStatus;
   const totalAmount = (data.finalAmount || data.originalAmount) ?? 0;
-  const isQris = paymentMethod === 'QRIS';
-  console.log(data);
+  const isQris = paymentMethod === "QRIS";
 
   return (
     <main className={`${styles.background} min-h-screen`}>
@@ -182,7 +181,7 @@ export function InvoicePage() {
             <Badge className={getStatusColor(paymentStatus)}>
               {paymentStatus}
             </Badge>
-            {paymentStatus === 'PENDING' && (
+            {paymentStatus === "PENDING" && (
               <div className="mt-2 text-right">
                 <p className={styles.mutedText}>Time remaining</p>
                 <p className="font-mono text-orange-300 font-bold">
@@ -243,11 +242,11 @@ export function InvoicePage() {
                     <h3
                       className={`text-sm font-medium ${styles.mutedText} mb-2`}
                     >
-                      {paymentMethod === 'Virtual Account'
-                        ? 'Virtual Account Number'
-                        : paymentMethod === 'Convenience Store'
-                        ? 'Payment Code'
-                        : 'Reference Number'}
+                      {paymentMethod === "Virtual Account"
+                        ? "Virtual Account Number"
+                        : paymentMethod === "Convenience Store"
+                        ? "Payment Code"
+                        : "Reference Number"}
                     </h3>
                     <div className="flex items-center">
                       <p className={`font-mono text-lg ${styles.text}`}>
@@ -257,7 +256,7 @@ export function InvoicePage() {
                         variant="ghost"
                         size="sm"
                         onClick={() =>
-                          copyToClipboard(paymentReference, 'Reference number')
+                          copyToClipboard(paymentReference, "Reference number")
                         }
                         className={`ml-2 ${styles.buttonGhost}`}
                       >
@@ -288,7 +287,7 @@ export function InvoicePage() {
                     <ol
                       className={`list-decimal pl-5 space-y-2 ${styles.text}`}
                     >
-                      {paymentMethod === 'Virtual Account' && (
+                      {paymentMethod === "Virtual Account" && (
                         <>
                           <li>
                             Log in to your mobile banking app or internet
@@ -299,20 +298,20 @@ export function InvoicePage() {
                           <li>Confirm the amount and complete your payment</li>
                         </>
                       )}
-                      {paymentMethod === 'QRIS' && (
+                      {paymentMethod === "QRIS" && (
                         <>
                           <li>Open your preferred e-wallet app</li>
                           <li>Scan the QR code shown above</li>
                           <li>Confirm the amount and complete your payment</li>
                         </>
                       )}
-                      {paymentMethod === 'Convenience Store' && (
+                      {paymentMethod === "Convenience Store" && (
                         <>
                           <li>
-                            Visit your nearest{' '}
-                            {data.paymentCode === 'FT'
-                              ? 'Alfamart'
-                              : 'Indomaret'}
+                            Visit your nearest{" "}
+                            {data.paymentCode === "FT"
+                              ? "Alfamart"
+                              : "Indomaret"}
                           </li>
                           <li>Tell the cashier you want to make a payment</li>
                           <li>Show the payment code above</li>
@@ -321,7 +320,7 @@ export function InvoicePage() {
                           </li>
                         </>
                       )}
-                      {paymentMethod === 'E-Wallet' && (
+                      {paymentMethod === "E-Wallet" && (
                         <>
                           <li>Open your e-wallet app</li>
                           <li>Click on the payment button in your app</li>

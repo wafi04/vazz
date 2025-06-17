@@ -88,7 +88,6 @@ export function DialogPayment({ className }: { className?: string }) {
         // Check if effect was cancelled during async operation
         if (!isCancelled) {
           setVoucherApplied(true);
-          console.log("Voucher validated successfully");
         }
       } catch (err: any) {
         if (!isCancelled) {

@@ -85,7 +85,6 @@ export function FormCategories({
               }))}
               selected={watch("categoryIds")?.map((id) => id.toString()) || []}
               onChange={(values) => {
-                console.log("MultiSelect onChange:", values);
                 setValue(
                   "categoryIds",
                   values.map((v) => Number.parseInt(v))

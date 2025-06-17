@@ -17,13 +17,13 @@ import { FormTopupContent } from "../_components/form-topup";
 import { MembershipContent } from "../_components/membership";
 import { TableProfileTopup } from "../_components/table/table-profile-topup";
 import { TableDeposit } from "../_components/table/table-deposit";
-import { TableMembership } from "../_components/table/table-memberhisp";
+import { TableMembership } from "../_components/table/table-membership";
 import { PaginationComponent } from "@/components/ui/pagination-component";
 
 export default function ProfilePage() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10); // You can make this dynamic if needed
+  const [itemsPerPage] = useState(10);
   const [activeTab, setActiveTab] = useState("deposit");
 
   const {
@@ -48,7 +48,6 @@ export default function ProfilePage() {
     setCurrentPage(page);
   };
 
-  // Refetch data when page changes
   useEffect(() => {
     refetch();
   }, [currentPage, refetch]);
@@ -117,7 +116,6 @@ export default function ProfilePage() {
             value={activeTab}
             onValueChange={(value) => {
               setActiveTab(value);
-              // Reset pagination when switching tabs
               if (value === "history") {
                 setCurrentPage(1);
               }

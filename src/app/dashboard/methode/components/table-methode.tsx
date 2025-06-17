@@ -49,7 +49,7 @@ export default function TableMethode({ data }: TableMethodeProps) {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(
     null
   );
-  const [open,setOpen]  = useState<boolean>(false)
+  const [open, setOpen] = useState<boolean>(false);
 
   const getPaymentTypeIcon = (type: string) => {
     switch (type) {
@@ -70,13 +70,9 @@ export default function TableMethode({ data }: TableMethodeProps) {
     }
   };
 
-  const handleDelete = (id: number) => {
-    console.log(`Delete payment method with ID: ${id}`);
-  };
-
   const handleViewDetails = (method: PaymentMethod) => {
     setSelectedMethod(method);
-    setOpen(true)
+    setOpen(true);
   };
 
   return (
@@ -196,8 +192,8 @@ export default function TableMethode({ data }: TableMethodeProps) {
         <DetailsMethod
           open={open}
           onClose={() => {
-            setSelectedMethod(null)
-            setOpen(true)
+            setSelectedMethod(null);
+            setOpen(true);
           }}
           data={selectedMethod}
         />

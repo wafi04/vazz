@@ -25,7 +25,7 @@ const getStartOfMonthInWIB = () => {
 type AdminStats = {
   totalTransactions: number;
   recentTransactions: Transaction[];
-  statusCounts: { successful: number; pending: number; failed: number };
+  statusCounts: { success: number; pending: number; failed: number };
   revenue: { today: string; thisMonth: string; thisMonthFormatted: number };
   profit: { today: string; thisMonth: string };
   percentages: { success: string; failed: string };
@@ -114,7 +114,6 @@ export const adminStats = publicProcedure
             updated_at: Date | null;
             log: string | null;
             success_report_sended: boolean | null;
-            // Payment fields
             payment_id: number | null;
             payment_created_at: Date | null;
             payment_updated_at: Date | null;
@@ -148,7 +147,7 @@ export const adminStats = publicProcedure
             p.updated_at,
             p.log,
             p.success_report_sended,
-            -- Payment details
+
             pb.id as payment_id,
             pb.created_at as payment_created_at,
             pb.updated_at as payment_updated_at,
@@ -205,7 +204,6 @@ export const adminStats = publicProcedure
           discount: row.discount,
           priceBuy: row.price_buy,
           profit: row.profit,
-
           profitRupiah: row.profit_rupiah.toString(),
           harga: row.harga,
           status: row.status,
@@ -242,7 +240,7 @@ export const adminStats = publicProcedure
           ...acc,
           [curr.status.toLowerCase()]: Number(curr.count),
         }),
-        { successful: 0, pending: 0, failed: 0 }
+        { success: 0, pending: 0, failed: 0 }
       );
 
       // Calculate profits
@@ -274,7 +272,7 @@ export const adminStats = publicProcedure
 
       const successPercentage =
         totalTransactions > 0
-          ? ((statusMap.successful / totalTransactions) * 100).toFixed(2)
+          ? ((statusMap.success / totalTransactions) * 100).toFixed(2)
           : "0";
 
       const failedPercentage =
@@ -598,7 +596,6 @@ export const PembelianAll = router({
       const userTotals = new Map();
 
       transactions.forEach((tx) => {
-        console.log(tx);
         const userKey = tx.username;
 
         if (!userKey) return;

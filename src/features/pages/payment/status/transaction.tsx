@@ -93,6 +93,9 @@ export function TransactionDetails({ data }: TransactionDetailsProps) {
                   <DetailItem label="User Id" value={data.userId} />
                 )}
                 {data.zone && <DetailItem label="Zone" value={data.zone} />}
+                {data.message && (
+                  <DetailItem label="Message" value={data.message} />
+                )}
               </div>
             </motion.div>
           </CardContent>
@@ -183,15 +186,13 @@ export function TransactionDetails({ data }: TransactionDetailsProps) {
                     valueClassName="font-semibold text-primary"
                   />
                   {data.pembayaran.feeRupiah &&
-                    data.pembayaran.feeRupiah > 0 && (
-                      <DetailItem
-                        label="Pajak"
-                        value={FormatPrice(
-                          data.pembayaran?.feeRupiah as number
-                        )}
-                        valueClassName="font-semibold text-primary"
-                      />
-                    )}
+                  data.pembayaran.feeRupiah > 1 ? (
+                    <DetailItem
+                      label="Pajak"
+                      value={FormatPrice(data.pembayaran?.feeRupiah as number)}
+                      valueClassName="font-semibold text-primary"
+                    />
+                  ) : null}
                   <DetailItem
                     label="Total"
                     value={FormatPrice(data.pembayaran?.totalAmount as number)}
