@@ -1,15 +1,15 @@
-import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
-import { FormSubCategory } from '@/types/schema/categories';
-import { TRPCError } from '@trpc/server';
-import { Prisma } from '@prisma/client';
+import { z } from "zod";
+import { publicProcedure, router } from "../trpc";
+import { FormSubCategory } from "@/types/schema/categories";
+import { TRPCError } from "@trpc/server";
+import { Prisma } from "@prisma/client";
 
 export const subCategory = router({
   getCategories: publicProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.categories.findMany({
+    return await ctx.prisma.category.findMany({
       select: {
         id: true,
-        nama: true,
+        name: true,
       },
     });
   }),
@@ -38,9 +38,6 @@ export const subCategory = router({
         where,
         take,
         skip,
-        orderBy: {
-          createdAt: 'desc',
-        },
       });
       const totalCount = await ctx.prisma.subCategory.count({
         where,
@@ -112,7 +109,7 @@ export const subCategory = router({
             id: input.id,
           },
         });
-        return { success: true, message: 'delete successfully' };
+        return { success: true, message: "delete successfully" };
       } catch (error) {
         if (error instanceof TRPCError) {
           console.error(`erorr update sub category ${error.message}`);

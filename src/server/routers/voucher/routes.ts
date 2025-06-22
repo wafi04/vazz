@@ -70,8 +70,8 @@ export const Vouchers = router({
             code,
             "discountType",
            "discountValue",
-            "maxDiscount",
-             "minPurchase",
+          "maxDiscount",
+            "minPurchase",
            "usageLimit",
             "usageCount",
             is_for_all_categories as "isForAllCategories",
@@ -429,13 +429,13 @@ export const Vouchers = router({
             const voucher = await prisma.voucher.findFirst({
               where: {
                 code: input.code,
-                isActive: true,
+                isActive: "active",
                 startDate: { lte: currentDate },
                 expiryDate: { gte: currentDate },
                 AND: [
                   {
                     OR: [
-                      { isForAllCategories: true },
+                      { isForAllCategories: "yes" },
                       {
                         categories: {
                           some: {

@@ -39,56 +39,54 @@ export const categoriesRouter = router({
         // 1. Parallel execution - jalankan secara bersamaan
         const [user, category] = await Promise.all([
           getProfile().catch(() => undefined),
-          prisma.categories.findUnique({
-            where: { kode: input.code, status: "active" },
+          prisma.category.findUnique({
+            where: { code: input.code, status: "active" },
             select: {
               id: true,
-              isChecknickname: true,
-              nama: true,
-              subNama: true,
+              isCheckNickname: true,
+              name: true,
+              subName: true,
               brand: true,
-              kode: true,
-              serverId: true,
+              code: true,
               status: true,
               thumbnail: true,
-              tipe: true,
-              petunjuk: true,
-              ketLayanan: true,
-              ketId: true, // Sesuai dengan `ketId` di Prisma (String? @db.Text)
+              type: true,
+              instruction: true,
+              information: true,
               placeholder1: true, // Sesuai dengan `placeholder1` di Prisma (String @db.Text)
               placeholder2: true, // Sesuai dengan `placeholder2` di Prisma (String @db.Text)
               createdAt: true, // Sesuai dengan `createdAt` di Prisma (DateTime?)
               updatedAt: true, // Sesuai dengan `updatedAt` di Prisma (DateTime?)
-              bannerLayanan: true, // Sesuai dengan `bannerLayanan` di Prisma (String)
+              banner: true, // Sesuai dengan `bannerLayanan` di Prisma (String)
               subCategories: {
                 where: {
-                  active: true,
+                  isActive: "active",
                 },
                 select: {
                   id: true,
                   name: true,
                 },
               },
-              layanan: {
+              services: {
                 where: {
-                  status: true,
+                  status: "active",
                   subCategoryId: input.subCategory,
                 },
                 select: {
                   id: true,
-                  layanan: true,
-                  harga: true,
+                  serviceName: true,
+                  price: true,
                   productLogo: true,
                   providerId: true,
-                  hargaPlatinum: true,
-                  hargaReseller: true,
-                  hargaFlashSale: true,
-                  hargaSuggest: true,
+                  pricePlatinum: true,
+                  priceReseller: true,
+                  priceFlashSale: true,
+                  priceSuggest: true,
                   isFlashSale: true,
                   subCategoryId: true,
                   isSuggest: true,
                 },
-                orderBy: { harga: "asc" },
+                orderBy: { price: "asc" },
               },
             },
           }),
@@ -96,14 +94,14 @@ export const categoriesRouter = router({
 
         validateResourceExists(category, "Category", input.code);
 
-        // 3. Optimasi price calculation - harga berdasarkan role atau default untuk non-login
-        const layananWithAdjustedPrice = category?.layanan.map((item) => {
-          let finalPrice = item.harga;
+        // 3. Optimasi price calculation - price berdasarkan role atau default untuk non-login
+        const layananWithAdjustedPrice = category?.services.map((item) => {
+          let finalPrice = item.price;
           if (user?.session?.role) {
             if (user.session.role === "Platinum") {
-              finalPrice = item.hargaPlatinum;
+              finalPrice = item.pricePlatinum;
             } else if (user.session.role === "Reseller") {
-              finalPrice = item.hargaReseller;
+              finalPrice = item.priceReseller;
             }
           }
           return {
@@ -134,15 +132,15 @@ export const categoriesRouter = router({
         isAll = false,
       } = input;
 
-      const where: Prisma.CategoriesWhereInput = {
+      const where: Prisma.CategoryWhereInput = {
         ...(active ? { status: active } : {}),
         ...(type ? { tipe: type } : {}),
         ...(search
           ? {
               OR: [
-                { kode: { startsWith: search } },
-                { nama: { contains: search } },
-                { subNama: { contains: search } },
+                { code: { startsWith: search } },
+                { name: { contains: search } },
+                { subName: { contains: search } },
               ],
             }
           : {}),
@@ -157,9 +155,9 @@ export const categoriesRouter = router({
         },
       };
 
-      const orderBy: { nama: Prisma.SortOrder } = { nama: "asc" };
+      const orderBy: { name: Prisma.SortOrder } = { name: "asc" };
 
-      const allCategories = await prisma.categories.findMany({
+      const allCategories = await prisma.category.findMany({
         where,
         include,
         orderBy,

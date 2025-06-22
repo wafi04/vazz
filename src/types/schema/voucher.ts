@@ -1,33 +1,33 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const voucherSchema = z.object({
   id: z.number().int().positive().optional(),
   code: z
     .string()
-    .min(1, 'Voucher code is required')
-    .max(50, 'Voucher code must be 50 characters or less'),
+    .min(1, "Voucher code is required")
+    .max(50, "Voucher code must be 50 characters or less"),
   discountType: z.string(),
-  discountValue: z.number().positive('Discount value must be greater than 0'),
+  discountValue: z.number().positive("Discount value must be greater than 0"),
   maxDiscount: z
     .number()
-    .positive('Maximum discount must be greater than 0')
+    .positive("Maximum discount must be greater than 0")
     .optional()
     .nullable(),
   minPurchase: z
     .number()
-    .positive('Minimum purchase must be greater than 0')
+    .positive("Minimum purchase must be greater than 0")
     .optional()
     .nullable(),
   usageLimit: z
     .number()
     .int()
-    .positive('Usage limit must be a positive integer')
+    .positive("Usage limit must be a positive integer")
     .optional()
     .nullable(),
   usageCount: z
     .number()
     .int()
-    .nonnegative('Usage count must be a non-negative integer')
+    .nonnegative("Usage count must be a non-negative integer")
     .optional()
     .default(0),
   isForAllCategories: z.boolean().default(false),
@@ -42,7 +42,7 @@ export const voucherSchema = z.object({
     .transform((val) => new Date(val)),
   description: z
     .string()
-    .max(500, 'Description must be 500 characters or less')
+    .max(500, "Description must be 500 characters or less")
     .optional()
     .nullable(),
   createdAt: z.date().optional(),
@@ -64,14 +64,14 @@ export function convertToVoucherType(input: any) {
 export const voucherValidationSchema = voucherSchema
   .refine(
     (data) => {
-      if (data.discountType === 'PERCENTAGE' && data.discountValue > 100) {
+      if (data.discountType === "PERCENTAGE" && data.discountValue > 100) {
         return false;
       }
       return true;
     },
     {
-      message: 'Percentage discount cannot exceed 100%',
-      path: ['discountValue'],
+      message: "Percentage discount cannot exceed 100%",
+      path: ["discountValue"],
     }
   )
   .refine(
@@ -79,7 +79,7 @@ export const voucherValidationSchema = voucherSchema
       if (
         data.maxDiscount !== null &&
         data.maxDiscount !== undefined &&
-        data.discountType === 'FIXED' &&
+        data.discountType === "FIXED" &&
         data.maxDiscount > data.discountValue
       ) {
         return false;
@@ -88,8 +88,8 @@ export const voucherValidationSchema = voucherSchema
     },
     {
       message:
-        'Maximum discount cannot be greater than the fixed discount value',
-      path: ['maxDiscount'],
+        "Maximum discount cannot be greater than the fixed discount value",
+      path: ["maxDiscount"],
     }
   )
   .refine(
@@ -104,8 +104,8 @@ export const voucherValidationSchema = voucherSchema
       return true;
     },
     {
-      message: 'Expiry date must be after start date',
-      path: ['expiryDate'],
+      message: "Expiry date must be after start date",
+      path: ["expiryDate"],
     }
   );
 
@@ -127,18 +127,18 @@ export const updateVoucherSchema = voucherSchema
       return Object.keys(data).length > 0;
     },
     {
-      message: 'At least one field must be provided for update',
+      message: "At least one field must be provided for update",
     }
   );
 
 // Schema for filtering vouchers
 export const voucherFilterSchema = z.object({
   code: z.string().optional(),
-  discountType: z.enum(['PERCENTAGE', 'FIXED']).optional(),
+  discountType: z.enum(["PERCENTAGE", "FIXED"]).optional(),
   minDiscountValue: z.number().optional(),
   maxDiscountValue: z.number().optional(),
-  isActive: z.boolean().optional(),
-  isForAllCategories: z.boolean().optional(),
+  isActive: z.string().optional(),
+  isForAllCategories: z.string().optional(),
   startDateFrom: z.string().optional(),
   startDateTo: z.string().optional(),
   expiryDateFrom: z.string().optional(),
@@ -148,17 +148,17 @@ export const voucherFilterSchema = z.object({
   pageSize: z.number().int().positive().optional().default(10),
   sortBy: z
     .enum([
-      'id',
-      'code',
-      'discountValue',
-      'startDate',
-      'expiryDate',
-      'createdAt',
-      'updatedAt',
+      "id",
+      "code",
+      "discountValue",
+      "startDate",
+      "expiryDate",
+      "createdAt",
+      "updatedAt",
     ])
     .optional()
-    .default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+    .default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
 });
 
 // Type definitions based on Zod schemas
@@ -166,7 +166,3 @@ export type Voucher = z.infer<typeof voucherSchema>;
 export type CreateVoucherInput = z.infer<typeof createVoucherSchema>;
 export type UpdateVoucherInput = z.infer<typeof updateVoucherSchema>;
 export type VoucherFilter = z.infer<typeof voucherFilterSchema>;
-
-
-
-

@@ -9,7 +9,7 @@ import { TRANSACTION_FLOW } from "@/types/transaction";
 import { GenerateRandomId } from "@/utils/generateRandomId";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { ProductData } from "@/types/product";
+import { ServiceData } from "@/types/product";
 import { CalculatePricingWithProfitLogic } from "./calculateProfit";
 
 export const CreateOrder = z.object({
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     const transactionPromise = prisma.$transaction(
       async (tx) => {
         // Find product with explicit locking
-        const product = await tx.layanan.findFirst({
+        const product = await tx.service.findFirst({
           where: {
             providerId: productCode,
           },
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         }
 
         const calculatePricing = CalculatePricingWithProfitLogic(
-          product as ProductData,
+          product as ServiceData,
           user?.session.role
         );
 
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
           const validated = await checkingVoucher(tx, {
             amount: price,
             voucherCode,
-            categoryId: product?.kategoriId,
+            categoryId: product?.categoryId,
           });
 
           if (validated && validated.status && validated.voucherId) {
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
             noWa,
             orderId: merchantOrderId,
             productCode: productCode,
-            productName: product.layanan,
+            productName: product.serviceName,
             tx,
             userId: userId,
             username: user.session.username,
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
             code: data.status ? 200 : 400,
             data: {
               orderId: merchantOrderId,
-              productName: product.layanan,
+              productName: product.serviceName,
               amount: price,
               discount: discountAmount,
               finalAmount: price,
@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
             paymentAmount: Math.round(total),
             paymentCode,
             merchantOrderId,
-            productDetails: product.layanan,
+            productDetails: product.serviceName,
             callbackUrl: `${baseUrl}/api/v1/callback/duitku`,
             returnUrl: `${baseUrl}/invoice?invoice=${merchantOrderId}`,
             cust: user?.session.username,
@@ -243,23 +243,23 @@ export async function POST(req: NextRequest) {
 
           let pembelian;
           try {
-            pembelian = await tx.pembelian.create({
+            pembelian = await tx.transaction.create({
               data: {
-                profitRupiah: profit,
-                harga: price,
+                profitAmount: profit,
+                price,
                 profit: calculatePricing.profit,
-                isDigi: true,
-                layanan: product.layanan,
+                isDigi: "true",
+                serviceName: product.serviceName,
                 status: TRANSACTION_FLOW.PENDING,
-                successReportSended: false,
                 log: JSON.stringify(log),
                 discount: discountAmount,
-                priceBuy: product.hargaFromDigi,
+                purchasePrice: product.priceFromDigi,
                 nickname,
                 orderId: merchantOrderId,
-                tipeTransaksi: "TOPUP",
+                transactionType: "TOPUP",
                 userId,
                 zone,
+                successReportSent: "NEVER",
                 providerOrderId: productCode,
                 message: "Pembelian Pending",
                 username: user?.session.username as string,
@@ -278,18 +278,18 @@ export async function POST(req: NextRequest) {
           }
 
           // Create payment record
-          await tx.pembayaran.create({
+          await tx.payment.create({
             data: {
               totalAmount: total,
               orderId: merchantOrderId,
-              harga: price.toString(),
-              metode: method.method?.name ?? "",
-              noPembeli: noWa,
-              feeRupiah: feeRupiah,
+              price: price.toString(),
+              method: method.method?.name ?? "",
+              buyerNumber: noWa,
+              feeAmount: feeRupiah,
               fee,
               status: TRANSACTION_FLOW.PENDING,
               reference: toDuitku.data.reference,
-              noPembayaran,
+              paymentNumber: noPembayaran,
               createdAt: new Date(),
             },
           });
@@ -304,7 +304,7 @@ export async function POST(req: NextRequest) {
               orderId: merchantOrderId,
               reference: toDuitku.data.reference,
               transactionId: merchantOrderId,
-              productName: product.layanan,
+              productName: product.serviceName,
               discount: discountAmount,
               finalAmount: price,
               paymentMethod: paymentCode,

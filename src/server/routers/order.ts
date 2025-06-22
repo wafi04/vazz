@@ -12,11 +12,11 @@ export const order = router({
       })
     )
     .query(async ({ input, ctx }) => {
-      const where: Prisma.PembelianWhereInput = {};
+      const where: Prisma.TransactionWhereInput = {};
       try {
-        const transactions = await ctx.prisma.pembelian.findMany({
+        const transactions = await ctx.prisma.transaction.findMany({
           where: {
-            isDigi: true,
+            isDigi: "yes",
             orderId: {
               startsWith: "MANUAL",
             },
@@ -24,7 +24,7 @@ export const order = router({
             status: input.status || undefined,
           },
           include: {
-            pembayaran: true,
+            payment: true,
           },
         });
 
@@ -79,18 +79,18 @@ export const order = router({
         }
 
         // Build the where clause
-        const where: Prisma.PembelianWhereInput = {
+        const where: Prisma.TransactionWhereInput = {
           username: user.username,
         };
 
         // Add search functionality based on schema fields
         if (input.search && input.search.trim() !== "") {
           where.OR = [
-            { layanan: { contains: input.search } },
+            { serviceName: { contains: input.search } },
             { orderId: { contains: input.search } },
             { nickname: { contains: input.search } },
             { status: { contains: input.search } },
-            { tipeTransaksi: { contains: input.search } },
+            { transactionType: { contains: input.search } },
           ];
         }
 
@@ -98,12 +98,12 @@ export const order = router({
         const skip = (input.page - 1) * input.perPage;
 
         // Get total count for pagination info
-        const totalCount = await ctx.prisma.pembelian.count({
+        const totalCount = await ctx.prisma.transaction.count({
           where,
         });
 
         // Get transactions with pagination
-        const transactions = await ctx.prisma.pembelian.findMany({
+        const transactions = await ctx.prisma.transaction.findMany({
           where,
           skip,
           take: input.perPage,
@@ -111,7 +111,7 @@ export const order = router({
             createdAt: "desc",
           },
           include: {
-            pembayaran: true,
+            payment: true,
           },
         });
 
@@ -160,9 +160,9 @@ export const order = router({
         const skip = (page - 1) * limit;
 
         // Filter conditions
-        const where: Prisma.PembelianWhereInput = {
-          pembayaran: {
-            metode: "MANUAL",
+        const where: Prisma.TransactionWhereInput = {
+          payment: {
+            method: "MANUAL",
           },
         };
 
@@ -177,22 +177,22 @@ export const order = router({
             { orderId: { contains: search } },
             { username: { contains: search } },
             { userId: { contains: search } },
-            { layanan: { contains: search } },
+            { serviceName: { contains: search } },
             { providerOrderId: { contains: search } },
             { refId: { contains: search } },
           ];
         }
 
         // Get total count for pagination
-        const totalCount = await ctx.prisma.pembelian.count({
+        const totalCount = await ctx.prisma.transaction.count({
           where,
         });
 
         // Get manual orders with payment details
-        const manualOrders = await ctx.prisma.pembelian.findMany({
+        const manualOrders = await ctx.prisma.transaction.findMany({
           where,
           include: {
-            pembayaran: true,
+            payment: true,
           },
           orderBy: {
             createdAt: "desc",

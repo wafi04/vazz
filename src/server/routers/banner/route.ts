@@ -4,8 +4,8 @@ import { z } from "zod";
 // Schema validasi untuk input
 const createBeritaSchema = z.object({
   path: z.string().min(1, "Path tidak boleh kosong"),
-  tipe: z.string().min(1, "Tipe tidak boleh kosong"),
-  deskripsi: z.string().min(1, "Deskripsi tidak boleh kosong"),
+  type: z.string().min(1, "Tipe tidak boleh kosong"),
+  description: z.string().min(1, "Deskripsi tidak boleh kosong"),
 });
 
 const updateBeritaSchema = z.object({
@@ -30,44 +30,44 @@ const getBeritaByTipeSchema = z.object({
 const paginationSchema = z.object({
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(100).default(10),
-  tipe: z.string().optional(),
+  type: z.string().optional(),
 });
 
 export const beritaRouter = router({
-  // CREATE - Membuat berita baru
+  // CREATE - Membuat news baru
   create: publicProcedure
     .input(createBeritaSchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        const berita = await ctx.prisma.berita.create({
+        const news = await ctx.prisma.news.create({
           data: {
             path: input.path,
-            tipe: input.tipe,
-            deskripsi: input.deskripsi,
+            type: input.type,
+            description: input.description,
           },
         });
         return {
           success: true,
-          data: berita,
+          data: news,
           message: "Berita berhasil dibuat",
         };
       } catch (error) {
-        throw new Error("Gagal membuat berita");
+        throw new Error("Gagal membuat news");
       }
     }),
 
-  // READ - Mendapatkan semua berita dengan pagination
+  // READ - Mendapatkan semua news dengan pagination
   getAll: publicProcedure
     .input(paginationSchema)
     .query(async ({ input, ctx }) => {
       try {
-        const { page, limit, tipe } = input;
+        const { page, limit, type } = input;
         const skip = (page - 1) * limit;
 
-        const whereClause = tipe ? { tipe } : {};
+        const whereClause = type ? { type } : {};
 
         const [beritas, total] = await Promise.all([
-          ctx.prisma.berita.findMany({
+          ctx.prisma.news.findMany({
             where: whereClause,
             skip,
             take: limit,
@@ -75,7 +75,7 @@ export const beritaRouter = router({
               createdAt: "desc",
             },
           }),
-          ctx.prisma.berita.count({
+          ctx.prisma.news.count({
             where: whereClause,
           }),
         ]);
@@ -95,44 +95,44 @@ export const beritaRouter = router({
           },
         };
       } catch (error) {
-        throw new Error("Gagal mengambil data berita");
+        throw new Error("Gagal mengambil data news");
       }
     }),
 
-  // READ - Mendapatkan berita berdasarkan ID
+  // READ - Mendapatkan news berdasarkan ID
   getById: publicProcedure
     .input(getBeritaByIdSchema)
     .query(async ({ input, ctx }) => {
       try {
-        const berita = await ctx.prisma.berita.findUnique({
+        const news = await ctx.prisma.news.findUnique({
           where: {
             id: input.id,
           },
         });
 
-        if (!berita) {
+        if (!news) {
           throw new Error("Berita tidak ditemukan");
         }
 
         return {
           success: true,
-          data: berita,
+          data: news,
         };
       } catch (error) {
         throw new Error(
-          error instanceof Error ? error.message : "Gagal mengambil berita"
+          error instanceof Error ? error.message : "Gagal mengambil news"
         );
       }
     }),
 
-  // READ - Mendapatkan berita berdasarkan tipe
+  // READ - Mendapatkan news berdasarkan tipe
   getByTipe: publicProcedure
     .input(getBeritaByTipeSchema)
     .query(async ({ input, ctx }) => {
       try {
-        const beritas = await ctx.prisma.berita.findMany({
+        const beritas = await ctx.prisma.news.findMany({
           where: {
-            tipe: input.tipe,
+            type: input.tipe,
           },
           orderBy: {
             createdAt: "desc",
@@ -145,41 +145,41 @@ export const beritaRouter = router({
           count: beritas.length,
         };
       } catch (error) {
-        throw new Error("Gagal mengambil berita berdasarkan tipe");
+        throw new Error("Gagal mengambil news berdasarkan tipe");
       }
     }),
 
-  // READ - Mendapatkan semua tipe berita yang unik
+  // READ - Mendapatkan semua tipe news yang unik
   getAllTipes: publicProcedure.query(async ({ ctx }) => {
     try {
-      const tipes = await ctx.prisma.berita.findMany({
+      const tipes = await ctx.prisma.news.findMany({
         select: {
-          tipe: true,
+          type: true,
         },
-        distinct: ["tipe"],
+        distinct: ["type"],
         orderBy: {
-          tipe: "asc",
+          type: "asc",
         },
       });
 
       return {
         success: true,
-        data: tipes.map((item) => item.tipe),
+        data: tipes.map((item) => item.type),
       };
     } catch (error) {
-      throw new Error("Gagal mengambil daftar tipe berita");
+      throw new Error("Gagal mengambil daftar tipe news");
     }
   }),
 
-  // UPDATE - Memperbarui berita
+  // UPDATE - Memperbarui news
   update: publicProcedure
     .input(updateBeritaSchema)
     .mutation(async ({ input, ctx }) => {
       try {
         const { id, ...updateData } = input;
 
-        // Cek apakah berita exists
-        const existingBerita = await ctx.prisma.berita.findUnique({
+        // Cek apakah news exists
+        const existingBerita = await ctx.prisma.news.findUnique({
           where: { id },
         });
 
@@ -187,8 +187,8 @@ export const beritaRouter = router({
           throw new Error("Berita tidak ditemukan");
         }
 
-        // Update berita
-        const updatedBerita = await ctx.prisma.berita.update({
+        // Update news
+        const updatedBerita = await ctx.prisma.news.update({
           where: { id },
           data: {
             ...updateData,
@@ -203,18 +203,18 @@ export const beritaRouter = router({
         };
       } catch (error) {
         throw new Error(
-          error instanceof Error ? error.message : "Gagal memperbarui berita"
+          error instanceof Error ? error.message : "Gagal memperbarui news"
         );
       }
     }),
 
-  // DELETE - Menghapus berita
+  // DELETE - Menghapus news
   delete: publicProcedure
     .input(deleteBeritaSchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        // Cek apakah berita exists
-        const existingBerita = await ctx.prisma.berita.findUnique({
+        // Cek apakah news exists
+        const existingBerita = await ctx.prisma.news.findUnique({
           where: { id: input.id },
         });
 
@@ -222,8 +222,8 @@ export const beritaRouter = router({
           throw new Error("Berita tidak ditemukan");
         }
 
-        // Hapus berita
-        await ctx.prisma.berita.delete({
+        // Hapus news
+        await ctx.prisma.news.delete({
           where: { id: input.id },
         });
 
@@ -233,44 +233,44 @@ export const beritaRouter = router({
         };
       } catch (error) {
         throw new Error(
-          error instanceof Error ? error.message : "Gagal menghapus berita"
+          error instanceof Error ? error.message : "Gagal menghapus news"
         );
       }
     }),
 
-  // DELETE - Menghapus berita berdasarkan tipe
+  // DELETE - Menghapus news berdasarkan tipe
   deleteByTipe: publicProcedure
     .input(getBeritaByTipeSchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        const result = await ctx.prisma.berita.deleteMany({
+        const result = await ctx.prisma.news.deleteMany({
           where: {
-            tipe: input.tipe,
+            type: input.tipe,
           },
         });
 
         return {
           success: true,
-          message: `${result.count} berita dengan tipe "${input.tipe}" berhasil dihapus`,
+          message: `${result.count} news dengan tipe "${input.tipe}" berhasil dihapus`,
           deletedCount: result.count,
         };
       } catch (error) {
-        throw new Error("Gagal menghapus berita berdasarkan tipe");
+        throw new Error("Gagal menghapus news berdasarkan tipe");
       }
     }),
 
-  // UTILITY - Menghitung total berita
+  // UTILITY - Menghitung total news
   getCount: publicProcedure
     .input(
       z.object({
-        tipe: z.string().optional(),
+        type: z.string().optional(),
       })
     )
     .query(async ({ input, ctx }) => {
       try {
-        const whereClause = input.tipe ? { tipe: input.tipe } : {};
+        const whereClause = input.type ? { type: input.type } : {};
 
-        const count = await ctx.prisma.berita.count({
+        const count = await ctx.prisma.news.count({
           where: whereClause,
         });
 
@@ -279,7 +279,7 @@ export const beritaRouter = router({
           count,
         };
       } catch (error) {
-        throw new Error("Gagal menghitung total berita");
+        throw new Error("Gagal menghitung total news");
       }
     }),
 });

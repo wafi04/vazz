@@ -19,7 +19,7 @@ export const Methods = router({
 
     const where = {
       ...(isActive !== undefined && {
-        isActive: isActive === "Active" ? true : false,
+        isActive: isActive,
       }),
       ...(type && {
         tipe: type,
@@ -32,7 +32,7 @@ export const Methods = router({
     };
 
     if (isAll) {
-      const methods = await prisma.method.findMany({
+      const methods = await prisma.paymentMethod.findMany({
         where,
         orderBy: {
           createdAt: "desc",
@@ -56,7 +56,7 @@ export const Methods = router({
     if (limit && limit > 0) {
       const skip = (page - 1) * limit;
 
-      const methods = await prisma.method.findMany({
+      const methods = await prisma.paymentMethod.findMany({
         where,
         skip,
         take: limit,
@@ -65,7 +65,7 @@ export const Methods = router({
         },
       });
 
-      const total = await prisma.method.count({ where });
+      const total = await prisma.paymentMethod.count({ where });
       const totalPages = Math.ceil(total / limit);
 
       return {
@@ -79,7 +79,7 @@ export const Methods = router({
       };
     }
 
-    const methods = await prisma.method.findMany({
+    const methods = await prisma.paymentMethod.findMany({
       where,
       orderBy: {
         createdAt: "desc",
@@ -102,7 +102,7 @@ export const Methods = router({
     .input(methodschema)
     .mutation(async ({ ctx, input }) => {
       try {
-        const newMethod = await ctx.prisma.method.create({
+        const newMethod = await ctx.prisma.paymentMethod.create({
           data: { ...input },
         });
 
@@ -115,12 +115,12 @@ export const Methods = router({
         return {
           data: null,
           status: false,
-          message: "Failed to create method",
+          message: "Failed to create paymentMethod",
         };
       }
     }),
 
-  // Update method (new procedure)
+  // Update paymentMethod (new procedure)
   update: publicProcedure
     .input(
       z.object({
@@ -130,7 +130,7 @@ export const Methods = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const updatedMethod = await ctx.prisma.method.update({
+        const updatedMethod = await ctx.prisma.paymentMethod.update({
           where: { id: input.id },
           data: input.data,
         });
@@ -155,12 +155,12 @@ export const Methods = router({
         return {
           data: null,
           status: false,
-          message: "Failed to update method",
+          message: "Failed to update paymentMethod",
         };
       }
     }),
 
-  // Delete method (new procedure)
+  // Delete paymentMethod (new procedure)
   delete: publicProcedure
     .input(
       z.object({
@@ -169,7 +169,7 @@ export const Methods = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const deletedMethod = await ctx.prisma.method.delete({
+        const deletedMethod = await ctx.prisma.paymentMethod.delete({
           where: { id: input.id },
         });
 
@@ -193,7 +193,7 @@ export const Methods = router({
         return {
           data: null,
           status: false,
-          message: "Failed to delete method",
+          message: "Failed to delete paymentMethod",
         };
       }
     }),

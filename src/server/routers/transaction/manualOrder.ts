@@ -18,7 +18,7 @@ export const manualOrder = router({
     .input(filterManual)
     .query(async ({ ctx, input }) => {
       try {
-        const where: Prisma.PembelianManualWhereInput = {};
+        const where: Prisma.ManualTransactionWhereInput = {};
 
         if (!input.isAll) {
           where.AND = [];
@@ -32,7 +32,7 @@ export const manualOrder = router({
           }
 
           if (input.pembelianManualId) {
-            where.AND.push({ pembelianManualId: input.pembelianManualId });
+            where.AND.push({ manualTransactionId: input.pembelianManualId });
           }
 
           if (input.createdBy) {
@@ -41,18 +41,15 @@ export const manualOrder = router({
         }
 
         // Hitung total data untuk pagination
-        const total = await ctx.prisma.pembelianManual.count({ where });
+        const total = await ctx.prisma.manualTransaction.count({ where });
 
         // Ambil data dengan pagination
-        const transactions = await ctx.prisma.pembelianManual.findMany({
+        const transactions = await ctx.prisma.manualTransaction.findMany({
           where,
           skip: (input.page - 1) * input.perPage,
           take: input.perPage,
           orderBy: {
             createdAt: "desc",
-          },
-          include: {
-            pembelian: true,
           },
         });
 

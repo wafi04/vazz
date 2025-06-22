@@ -71,7 +71,7 @@ export interface Transaction {
   layanan: string;
   profit: number;
   profitRupiah: string;
-  harga: number;
+  price: number;
   status: string;
   createdAt?: string | null;
   pembayaran: PaymentDetails | null;

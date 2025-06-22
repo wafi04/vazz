@@ -21,16 +21,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not Found" }, { status: 404 });
     }
 
-    // Raw SQL untuk cari method - lebih cepat
+    // Raw SQL untuk cari payment method - lebih cepat
     const methodResult = (await prisma.$queryRaw`
-      SELECT name, code, type_tax AS "typeTax", tax_admin AS "taxAdmin"
-      FROM methods 
+      SELECT name, code, tax_type AS "taxType", tax_admin AS "taxAdmin"
+      FROM payment_methods 
       WHERE code = ${code} 
       LIMIT 1
     `) as Array<{
       name: string;
       code: string;
-      typeTax: string;
+      taxType: string;
       taxAdmin: number;
     }>;
 
@@ -49,17 +49,17 @@ export async function POST(req: NextRequest) {
     );
 
     let fee = 0;
-    let feeRupiah = 0;
+    let feeAmount = 0;
 
-    if (method.typeTax === "PERCENTAGE") {
+    if (method.taxType === "PERCENTAGE") {
       fee = (amount * method.taxAdmin) / 100;
-      feeRupiah = fee;
-    } else if (method.typeTax === "FIXED") {
+      feeAmount = fee;
+    } else if (method.taxType === "FIXED") {
       fee = method.taxAdmin;
-      feeRupiah = method.taxAdmin;
+      feeAmount = method.taxAdmin;
     } else {
       fee = method.taxAdmin;
-      feeRupiah = method.taxAdmin;
+      feeAmount = method.taxAdmin;
     }
 
     const duitku = new Duitku(
@@ -90,17 +90,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Tentukan noPembayaran dari response Duitku
+    // Tentukan paymentNumber dari response Duitku
     const urlPaymentMethods = ["DA", "OV", "SA"];
     const vaPaymentMethods = ["I1", "BR", "B1", "BT", "SP", "FT", "M2", "VA"];
-    let noPayment = "";
+    let paymentNumber = "";
 
     if (urlPaymentMethods.includes(method.code)) {
-      noPayment = paymentData.data.paymentUrl;
+      paymentNumber = paymentData.data.paymentUrl;
     } else if (vaPaymentMethods.includes(method.code)) {
-      noPayment = paymentData.data.vaNumber || "";
+      paymentNumber = paymentData.data.vaNumber || "";
     } else {
-      noPayment = paymentData.data.qrString || "";
+      paymentNumber = paymentData.data.qrString || "";
     }
 
     const currentTime = getWIBTime();
@@ -112,22 +112,23 @@ export async function POST(req: NextRequest) {
       if (type === "DEPOSIT") {
         await tx.$executeRaw`
           INSERT INTO deposits (
-            username, metode, status, jumlah,
-            no_pembayaran, deposit_id, created_at, updated_at, log
+            username, method, status, amount,
+            payment_reference, deposit_id, created_at, updated_at, log
           )
           VALUES (
             ${user.username}, ${method.name}, 'PENDING', ${amount}, 
-            ${noPayment}, ${merchantOrderId}, 
+            ${paymentNumber}, ${merchantOrderId}, 
             ${currentTime}, ${currentTime}, ${logData}
           )
         `;
       }
 
-      // Insert pembelian
-      const pembelianResult = (await tx.$queryRaw`
-        INSERT INTO pembelians (
-          profit, profit_rupiah, username, harga, tipe_transaksi, 
-          layanan, order_id, status, is_digi, success_report_sended,log,message
+      // Insert transaction
+      const transactionResult = (await tx.$queryRaw`
+        INSERT INTO transactions (
+          profit, profit_amount, username, price, transaction_type, 
+          service_name, order_id, status, is_digi, success_report_sent, log, message,
+          created_at, updated_at
         )
         VALUES (
           ${amount}, ${amount}, ${user.username}, ${amount}, ${type}, 
@@ -136,41 +137,42 @@ export async function POST(req: NextRequest) {
               ? `Membership ${user.username}`
               : `Deposit ${user.username}`
           }, 
-          ${merchantOrderId}, 'PENDING', false, false,${logData},"Pembelian Pending"
+          ${merchantOrderId}, 'PENDING', 'false', 'false', ${logData}, 'Transaction Pending',
+          ${currentTime}, ${currentTime}
         )
         RETURNING *
       `) as Array<any>;
 
+      // Insert payment
       await tx.$executeRaw`
-        INSERT INTO pembayarans (
-          harga, metode, no_pembeli, status, order_id, 
-          no_pembayaran, reference, fee, total_amount,created_at
+        INSERT INTO payments (
+          price, method, buyer_number, status, order_id, 
+          payment_number, reference, fee_amount, total_amount, created_at, updated_at
         )
         VALUES (
-          ${amount}, ${method.name}, ${user.whatsapp}, 'PENDING', 
-          ${merchantOrderId}, ${noPayment}, 
+          ${amount.toString()}, ${method.name}, ${user.whatsapp}, 'PENDING', 
+          ${merchantOrderId}, ${paymentNumber}, 
           ${paymentData.data.reference || ""}, 
-          ${feeRupiah}, ${amount + feeRupiah},
-          ${currentTime}
+          ${feeAmount}, ${amount + feeAmount},
+          ${currentTime}, ${currentTime}
         )
       `;
 
-      return pembelianResult[0];
+      return transactionResult[0];
     });
 
     return NextResponse.json({
       data: {
         ...result,
-        fee: feeRupiah,
+        fee: feeAmount,
         totalAmount: totalAmount,
         originalAmount: amount,
-        noPayment: noPayment,
+        paymentNumber: paymentNumber,
       },
       status: true,
       statusCode: 201,
     });
   } catch (error) {
-    console.error("Payment API Error:", error);
     return NextResponse.json(
       {
         error: "Internal server error",

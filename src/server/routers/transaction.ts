@@ -39,7 +39,7 @@ type AdminStats = {
 };
 
 const calculateProfit = (
-  transactions: { harga: number; profitRupiah: number }[]
+  transactions: { price: number; profitRupiah: number }[]
 ) =>
   transactions.reduce((sum, t) => {
     const profitAmount = Math.round(t.profitRupiah);
@@ -72,7 +72,7 @@ export const adminStats = publicProcedure
       ] = await Promise.all([
         // Today's revenue
         ctx.prisma.$queryRaw<[{ total_revenue: bigint | null }]>`
-          SELECT COALESCE(SUM(harga), 0) as total_revenue
+          SELECT COALESCE(SUM(price), 0) as total_revenue
           FROM pembelians 
           WHERE status = 'SUCCESS' 
           AND created_at >= ${startOfToday}
@@ -80,7 +80,7 @@ export const adminStats = publicProcedure
 
         // This month's revenue
         ctx.prisma.$queryRaw<[{ total_revenue: bigint | null }]>`
-          SELECT COALESCE(SUM(harga), 0) as total_revenue
+          SELECT COALESCE(SUM(price), 0) as total_revenue
           FROM pembelians 
           WHERE status = 'SUCCESS' 
           AND created_at >= ${startOfMonth}
@@ -102,10 +102,10 @@ export const adminStats = publicProcedure
             user_id: string | null;
             zone: string | null;
             nickname: string | null;
-            layanan: string;
+            transacti: string;
             price_buy: number;
             discount: number;
-            harga: number;
+            price: number;
             profit: number;
             profit_rupiah: number;
             status: string;
@@ -138,7 +138,7 @@ export const adminStats = publicProcedure
             p.layanan,
             p.price_buy,
             p.discount,
-            p.harga,
+            p.price,
             p.profit,
             p.profit_rupiah,
             p.status,
@@ -155,7 +155,7 @@ export const adminStats = publicProcedure
             pb.fee as payment_fee,
             pb.fee_rupiah as payment_fee_rupiah,
             pb.total_amount as payment_total_amount,
-            pb.harga as payment_harga,
+            pb.price as payment_harga,
             pb.order_id as payment_order_id,
             pb.no_pembeli as payment_no_pembeli,
             pb.metode as payment_metode,
@@ -175,12 +175,12 @@ export const adminStats = publicProcedure
         // Profit calculations
         ctx.prisma.$queryRaw<
           Array<{
-            harga: number;
+            price: number;
             profit_rupiah: number;
             created_at: Date;
           }>
         >`
-          SELECT harga, profit_rupiah, created_at
+          SELECT price, profit_rupiah, created_at
           FROM pembelians 
           WHERE status = 'SUCCESS' 
           AND created_at >= ${startOfMonth}
@@ -200,12 +200,12 @@ export const adminStats = publicProcedure
           isReorder: row.is_re_order,
           orderId: row.order_id,
           username: row.username,
-          layanan: row.layanan,
+          layanan: row.servicename,
           discount: row.discount,
           priceBuy: row.price_buy,
           profit: row.profit,
           profitRupiah: row.profit_rupiah.toString(),
-          harga: row.harga,
+          price: row.price,
           status: row.status,
           createdAt: row.created_at?.toISOString() || null,
           updatedAt: row.updated_at?.toISOString() || null,
@@ -223,7 +223,7 @@ export const adminStats = publicProcedure
                 fee: row.payment_fee,
                 feeRupiah: row.payment_fee_rupiah,
                 totalAmount: row.payment_total_amount || 0,
-                harga: row.payment_harga || "",
+                price: row.payment_harga || "",
                 orderId: row.payment_order_id || row.order_id,
                 noPembayaran: "",
                 noPembeli: row.payment_no_pembeli || "",
@@ -247,12 +247,12 @@ export const adminStats = publicProcedure
       const todayProfit = calculateProfit(
         profitTransactionsResult
           .filter((t) => t.created_at >= startOfToday)
-          .map((t) => ({ harga: t.harga, profitRupiah: t.profit_rupiah }))
+          .map((t) => ({ price: t.price, profitRupiah: t.profit_rupiah }))
       );
 
       const thisMonthProfit = calculateProfit(
         profitTransactionsResult.map((t) => ({
-          harga: t.harga,
+          price: t.price,
           profitRupiah: t.profit_rupiah,
         }))
       );
@@ -333,7 +333,7 @@ export const adminStatsRealtime = publicProcedure.query(async ({ ctx }) => {
         ]
       >`
         SELECT 
-          COALESCE(SUM(CASE WHEN status = 'SUCCESS' THEN harga END), 0) as revenue,
+          COALESCE(SUM(CASE WHEN status = 'SUCCESS' THEN price END), 0) as revenue,
           COALESCE(SUM(CASE WHEN status = 'SUCCESS' THEN profit_rupiah END), 0) as profit,
           COUNT(*) as transactions
         FROM pembelians 
@@ -351,7 +351,7 @@ export const adminStatsRealtime = publicProcedure.query(async ({ ctx }) => {
         ]
       >`
         SELECT 
-          COALESCE(SUM(CASE WHEN status = 'SUCCESS' THEN harga END), 0) as revenue,
+          COALESCE(SUM(CASE WHEN status = 'SUCCESS' THEN price END), 0) as revenue,
           COALESCE(SUM(CASE WHEN status = 'SUCCESS' THEN profit_rupiah END), 0) as profit,
           COUNT(*) as transactions
         FROM pembelians 
@@ -410,12 +410,12 @@ export const PembelianAll = router({
       }
 
       // Gunakan findUnique dengan kondisi yang spesifik
-      const purchase = await ctx.prisma.pembelian.findUnique({
+      const purchase = await ctx.prisma.transaction.findUnique({
         where: {
           orderId: merchantOrderId,
         },
         include: {
-          pembayaran: true,
+          payment: true,
         },
       });
 
@@ -428,10 +428,10 @@ export const PembelianAll = router({
 
       // Fetch layanan details jika diperlukan
       let layananDetails = null;
-      if (purchase.layanan) {
-        layananDetails = await ctx.prisma.layanan.findFirst({
+      if (purchase.transacti) {
+        layananDetails = await ctx.prisma.transaction.findFirst({
           where: {
-            layanan: purchase.layanan,
+            transacti: purchase.transacti,
           },
         });
       }
@@ -459,7 +459,7 @@ export const PembelianAll = router({
           input;
 
         // Build the where clause
-        const where: Prisma.PembelianWhereInput = {};
+        const where: Prisma.TransactionWhereInput = {};
 
         // Filter by status
         if (status) {
@@ -493,10 +493,10 @@ export const PembelianAll = router({
 
         // Return all records if all flag is set
         if (all) {
-          const allTransactions = await ctx.prisma.pembelian.findMany({
+          const allTransactions = await ctx.prisma.transaction.findMany({
             where,
             include: {
-              pembayaran: true,
+              payment: true,
             },
             orderBy: {
               createdAt: "desc",
@@ -514,7 +514,7 @@ export const PembelianAll = router({
 
         // Execute queries in parallel
         const [transactions, totalCount] = await Promise.all([
-          ctx.prisma.pembelian.findMany({
+          ctx.prisma.transaction.findMany({
             where,
             skip,
             take: limit,
@@ -525,7 +525,7 @@ export const PembelianAll = router({
               createdAt: "desc",
             },
           }),
-          ctx.prisma.pembelian.count({ where }),
+          ctx.prisma.transaction.count({ where }),
         ]);
 
         return {
@@ -537,9 +537,9 @@ export const PembelianAll = router({
       } catch (error) {
         // Enhanced error reporting
         if (error instanceof Error) {
-          throw new Error(`Failed to fetch pembelian data: ${error.message}`);
+          throw new Error(`Failed to fetch transaction data: ${error.message}`);
         }
-        throw new Error("Failed to fetch pembelian data: Unknown error");
+        throw new Error("Failed to fetch transaction data: Unknown error");
       }
     }),
   trackingInvoice: publicProcedure
@@ -604,18 +604,18 @@ export const PembelianAll = router({
           const existingData = userTotals.get(userKey);
           userTotals.set(userKey, {
             username: tx.username || existingData.username,
-            harga: existingData.harga + tx.harga,
+            price: existingData.price + tx.price,
           });
         } else {
           userTotals.set(userKey, {
             username: tx.username,
-            harga: tx.harga,
+            price: tx.price,
           });
         }
       });
 
       return Array.from(userTotals.values())
-        .sort((a, b) => b.harga - a.harga)
+        .sort((a, b) => b.price - a.price)
         .slice(0, 10); // Take top 10
     };
 
@@ -633,7 +633,7 @@ export const PembelianAll = router({
     const [todayTransactions, weekTransactions, monthTransactions] =
       await Promise.all([
         // Today's transactions (last 24 hours)
-        ctx.prisma.pembelian.findMany({
+        ctx.prisma.transaction.findMany({
           where: {
             createdAt: {
               gte: last24Hours,
@@ -644,12 +644,12 @@ export const PembelianAll = router({
           select: {
             nickname: true,
             username: true,
-            harga: true,
+            price: true,
           },
         }),
 
         // This week's transactions (last 7 days)
-        ctx.prisma.pembelian.findMany({
+        ctx.prisma.transaction.findMany({
           where: {
             createdAt: {
               gte: lastWeek,
@@ -660,12 +660,12 @@ export const PembelianAll = router({
           select: {
             nickname: true,
             username: true,
-            harga: true,
+            price: true,
           },
         }),
 
         // This month's transactions (last 30 days)
-        ctx.prisma.pembelian.findMany({
+        ctx.prisma.transaction.findMany({
           where: {
             createdAt: {
               gte: lastMonth,
@@ -676,7 +676,7 @@ export const PembelianAll = router({
           select: {
             nickname: true,
             username: true,
-            harga: true,
+            price: true,
           },
         }),
       ]);

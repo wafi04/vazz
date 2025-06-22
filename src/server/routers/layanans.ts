@@ -19,39 +19,39 @@ export const Layanans = router({
       try {
         const skip = (input.page - 1) * input.perPage;
 
-        const where: Prisma.LayananWhereInput = {};
+        const where: Prisma.ServiceWhereInput = {};
 
         // Add search filter
         if (input.search) {
-          where.layanan = {
+          where.serviceName = {
             contains: input.search,
           };
         }
 
         // Add status filter
         if (input.status) {
-          where.status = input.status === "active" ? true : false;
+          where.status = input.status;
         }
 
         // Execute query with filters
-        const data = await ctx.prisma.layanan.findMany({
+        const data = await ctx.prisma.service.findMany({
           where,
           skip,
           take: input.perPage,
           orderBy: {
-            layanan: "asc", // Default ordering
+            serviceName: "desc", // Default ordering
           },
           select: {
             id: true,
-            layanan: true,
-            hargaPlatinum: true,
-            harga: true,
+            serviceName: true,
+            pricePlatinum: true,
+            price: true,
             status: true,
           },
         });
 
         // Get total count for pagination info (optional)
-        const totalCount = await ctx.prisma.layanan.count({ where });
+        const totalCount = await ctx.prisma.service.count({ where });
 
         return {
           data,
@@ -95,18 +95,18 @@ export const Layanans = router({
       try {
         const skip = (input.page - 1) * input.perPage;
 
-        const where: Prisma.LayananWhereInput = {};
+        const where: Prisma.ServiceWhereInput = {};
 
         // Add search filter
         if (input.search) {
-          where.layanan = {
+          where.serviceName = {
             contains: input.search,
           };
         }
 
         // Add category filter
         if (input.categoryId) {
-          where.kategoriId = parseInt(input.categoryId);
+          where.categoryId = parseInt(input.categoryId);
         }
 
         // Add provider filter
@@ -116,44 +116,41 @@ export const Layanans = router({
 
         // Add status filter
         if (input.status !== undefined) {
-          where.status = input.status === "active" ? true : false;
+          where.status = input.status;
         }
 
         // Add flash sale filter
         if (input.isFlashSale !== undefined) {
-          where.isFlashSale = input.isFlashSale;
+          where.isFlashSale =
+            input.isFlashSale === true ? "active" : "inactive";
         }
 
         // Execute query with filters
-        const data = await ctx.prisma.layanan.findMany({
+        const data = await ctx.prisma.service.findMany({
           where,
           skip,
           take: input.perPage,
           orderBy: {
-            layanan: "asc", // Default ordering
+            serviceName: "asc", // Default ordering
           },
           // No include section since relationships don't exist
         });
 
         // Get total count for pagination info
-        const totalCount = await ctx.prisma.layanan.count({ where });
+        const totalCount = await ctx.prisma.service.count({ where });
 
         const transformedData = await Promise.all(
           data.map(async (item) => {
-            const category = await ctx.prisma.categories.findUnique({
-              where: { id: item.kategoriId },
-              select: { id: true, nama: true },
+            const category = await ctx.prisma.category.findUnique({
+              where: { id: item.categoryId },
+              select: { id: true, name: true },
             });
 
             return {
               ...item,
-              name: item.layanan,
-              price: item.harga,
+              name: item.serviceName,
+              price: item.price,
               isActive: item.status,
-              category: category || {
-                id: item.kategoriId,
-                nama: `Kategori ${item.kategoriId}`, // Fallback if category not found
-              },
             };
           })
         );
@@ -195,33 +192,34 @@ export const Layanans = router({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const category = await ctx.prisma.categories.findFirst({
-          where: { kode: input.category },
+        const category = await ctx.prisma.category.findFirst({
+          where: { code: input.category },
         });
         const subCategories = await ctx.prisma.subCategory.findMany({
           where: {
             categoryId: category?.id,
-            active: true,
+            isActive: "active",
           },
         });
-        const data = await ctx.prisma.layanan.findMany({
+        const data = await ctx.prisma.service.findMany({
           where: {
-            kategoriId: category?.id,
+            categoryId: category?.id,
           },
           select: {
-            layanan: true,
+            serviceName: true,
             providerId: true,
-            hargaPlatinum: true,
-            harga: true,
-            hargaFlashSale: true,
+            pricePlatinum: true,
+            price: true,
+            priceFlashSale: true,
             isFlashSale: true,
             id: true,
           },
           orderBy: {
-            harga: "asc",
+            price: "asc",
           },
         });
         return {
+          status: true,
           layanan: data,
           subCategories,
         };
@@ -241,7 +239,7 @@ export const Layanans = router({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const category = await ctx.prisma.categories.findFirst({
+        const category = await ctx.prisma.category.findFirst({
           where: { id: parseInt(input.category) },
         });
 
@@ -249,18 +247,18 @@ export const Layanans = router({
           throw new Error("failed to create category");
         }
 
-        const data = await ctx.prisma.layanan.findMany({
+        const data = await ctx.prisma.service.findMany({
           where: {
-            kategoriId: category?.id,
+            categoryId: category?.id,
           },
           select: {
-            layanan: true,
+            serviceName: true,
             providerId: true,
-            harga: true,
+            price: true,
             id: true,
           },
           orderBy: {
-            harga: "asc",
+            price: "asc",
           },
         });
         return {
@@ -277,13 +275,13 @@ export const Layanans = router({
     .input(layananFormSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        await ctx.prisma.layanan.update({
+        await ctx.prisma.service.update({
           where: {
             id: input.id as number,
           },
           data: {
             ...input,
-            status: input.status ? true : false,
+            status: input.status,
           },
         });
 
@@ -301,19 +299,19 @@ export const Layanans = router({
   flashsale: publicProcedure.query(async ({ ctx }) => {
     try {
       // First, fetch all flash sale items
-      const layananItems = await ctx.prisma.layanan.findMany({
+      const layananItems = await ctx.prisma.service.findMany({
         where: {
-          isFlashSale: true,
+          isFlashSale: "active",
         },
       });
 
       // Get all the unique kategoriId values
       const categoryIds = Array.from(
-        new Set(layananItems.map((item) => item.kategoriId))
+        new Set(layananItems.map((item) => item.categoryId))
       );
 
       // Fetch all related categories in one query
-      const categories = await ctx.prisma.categories.findMany({
+      const categories = await ctx.prisma.category.findMany({
         where: {
           // Use 'in' operator to fetch multiple categories at once
           id: {
@@ -332,7 +330,7 @@ export const Layanans = router({
       // Combine layanan items with their categories
       const data = layananItems.map((layanan) => ({
         ...layanan,
-        category: categoryMap[layanan.kategoriId] || null,
+        category: categoryMap[layanan.categoryId] || null,
       }));
 
       return data;

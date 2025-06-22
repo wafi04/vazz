@@ -39,6 +39,7 @@
     "@trpc/next": "^10.45.2",
     "@trpc/react-query": "^10.45.2",
     "@trpc/server": "^10.45.2",
+    "@upstash/redis": "^1.35.0",
     "axios": "^1.8.4",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",

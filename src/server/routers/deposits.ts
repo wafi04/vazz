@@ -15,7 +15,7 @@ export const Deposits = router({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const where: Prisma.DepositsWhereInput = {};
+        const where: Prisma.DepositWhereInput = {};
         const take = input.perPage;
         const skip = (input.page - 1) * take;
 
@@ -25,7 +25,7 @@ export const Deposits = router({
           };
         }
 
-        const totalCount = await ctx.prisma.deposits.count({
+        const totalCount = await ctx.prisma.deposit.count({
           where,
         });
 
@@ -33,7 +33,7 @@ export const Deposits = router({
         const hasNextPage = input.page < totalPages;
         const hasPreviousPage = input.page > 1;
 
-        const data = await ctx.prisma.deposits.findMany({
+        const data = await ctx.prisma.deposit.findMany({
           where,
           take,
           skip,
@@ -70,13 +70,13 @@ export const Deposits = router({
           data: null,
         };
       }
-      const user = await ctx.prisma.users.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: {
           id: session.session.id,
         },
       });
 
-      const data = await ctx.prisma.deposits.findMany({
+      const data = await ctx.prisma.deposit.findMany({
         where: {
           username: session?.session.username,
         },
@@ -121,7 +121,7 @@ export const Deposits = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      return await ctx.prisma.deposits.findFirst({
+      return await ctx.prisma.deposit.findFirst({
         where: {
           depositId: input.depositId,
         },

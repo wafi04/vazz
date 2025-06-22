@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 export const getAll = z.object({
-  isFlashSale: z.boolean().optional(),
+  isFlashSale: z.string().optional(),
   categoryId: z.string().optional(),
   status: z.string().optional(),
   price: z.enum(["asc", "desc"]).optional(),
@@ -25,18 +25,18 @@ export const Products = router({
         perPage = 10,
       } = input;
 
-      const where: Prisma.LayananWhereInput = {};
+      const where: Prisma.ServiceWhereInput = {};
 
       if (search) {
         where.OR = [
           {
-            layanan: { contains: search, mode: "insensitive" },
+            serviceName: { contains: search, mode: "insensitive" },
           },
         ];
       }
 
       if (categoryId) {
-        where.kategoriId = parseInt(categoryId);
+        where.categoryId = parseInt(categoryId);
       }
 
       if (typeof isFlashSale === "boolean") {
@@ -44,19 +44,19 @@ export const Products = router({
       }
 
       if (status !== "all") {
-        where.status = status === "active";
+        where.status = status;
       }
 
-      const orderBy: Prisma.LayananOrderByWithRelationInput = {};
+      const orderBy: Prisma.ServiceOrderByWithRelationInput = {};
 
       if (price) {
-        orderBy.harga = price;
+        orderBy.price = price;
       } else {
         orderBy.createdAt = "desc";
       }
 
       const [data, total] = await Promise.all([
-        ctx.prisma.layanan.findMany({
+        ctx.prisma.service.findMany({
           where,
           skip: (page - 1) * perPage,
           take: perPage,
@@ -64,7 +64,7 @@ export const Products = router({
             createdAt: "desc",
           },
         }),
-        ctx.prisma.layanan.count({
+        ctx.prisma.service.count({
           where,
         }),
       ]);

@@ -5,15 +5,15 @@ import { FormCategory } from "@/types/schema/categories";
 export const mainRouter = router({
   getBanners: publicProcedure.query(async ({ ctx }) => {
     try {
-      const banners = await ctx.prisma.berita.findMany();
-      const layananFlashsale = await ctx.prisma.layanan.findMany({
+      const banners = await ctx.prisma.news.findMany();
+      const layananFlashsale = await ctx.prisma.service.findMany({
         where: {
-          isFlashSale: true,
+          isFlashSale: "active",
         },
         select: {
-          hargaFlashSale: true,
-          judulFlashSale: true,
-          layanan: true,
+          priceFlashSale: true,
+          titleFlashSale: true,
+          serviceName: true,
           bannerFlashSale: true,
           expiredFlashSale: true,
         },
@@ -37,7 +37,7 @@ export const mainRouter = router({
   createCategory: publicProcedure
     .input(FormCategory)
     .mutation(async ({ ctx, input }) => {
-      const category = await ctx.prisma.categories.create({
+      const category = await ctx.prisma.category.create({
         data: {
           ...input,
         },
@@ -58,7 +58,7 @@ export const mainRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const category = await ctx.prisma.categories.update({
+      const category = await ctx.prisma.category.update({
         where: { id: input.id },
         data: input.data,
       });
@@ -77,7 +77,7 @@ export const mainRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      await ctx.prisma.categories.delete({
+      await ctx.prisma.category.delete({
         where: { id: input.id },
       });
 
@@ -94,9 +94,9 @@ export const mainRouter = router({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const categories = await ctx.prisma.categories.findFirst({
+        const categories = await ctx.prisma.category.findFirst({
           where: {
-            kode: input.kode,
+            code: input.kode,
             status: "active",
           },
         });
@@ -117,9 +117,9 @@ export const mainRouter = router({
     }),
   getCategoriesType: publicProcedure.query(async ({ ctx }) => {
     try {
-      return await ctx.prisma.categories.findMany({
+      return await ctx.prisma.category.findMany({
         select: {
-          tipe: true,
+          type: true,
         },
       });
     } catch (error) {
@@ -142,15 +142,15 @@ export const mainRouter = router({
         const skip = (input.page - 1) * input.perPage;
 
         // Get paginated data
-        const categories = await ctx.prisma.categories.findMany({
-          where: { tipe: input.type, status: "active" },
+        const categories = await ctx.prisma.category.findMany({
+          where: { type: input.type, status: "active" },
           skip,
           take: input.perPage,
           orderBy: { id: "asc" },
         });
 
-        const totalCount = await ctx.prisma.categories.count({
-          where: { tipe: input.type },
+        const totalCount = await ctx.prisma.category.count({
+          where: { type: input.type },
         });
 
         const totalPages = Math.ceil(totalCount / input.perPage);
@@ -191,11 +191,11 @@ export const mainRouter = router({
       const skip = (page - 1) * take;
 
       // Build dynamic where clause
-      const where: Prisma.CategoriesWhereInput = {};
+      const where: Prisma.CategoryWhereInput = {};
 
       // Add type filter if provided
       if (type) {
-        where.tipe = type;
+        where.type = type;
       }
 
       // Add status filter if provided
@@ -206,17 +206,17 @@ export const mainRouter = router({
       // Add search filter if provided
       if (search) {
         where.OR = [
-          { nama: { contains: search } },
-          { subNama: { contains: search } },
+          { name: { contains: search } },
+          { subName: { contains: search } },
           { brand: { contains: search } },
-          { kode: { contains: search } },
+          { code: { contains: search } },
         ];
       }
 
       try {
         // Get categories with pagination and filters
         const [categories, totalCount] = await Promise.all([
-          ctx.prisma.categories.findMany({
+          ctx.prisma.category.findMany({
             where,
             take,
             skip,
@@ -224,7 +224,7 @@ export const mainRouter = router({
               createdAt: "desc",
             },
           }),
-          ctx.prisma.categories.count({ where }),
+          ctx.prisma.category.count({ where }),
         ]);
 
         // Calculate pagination metadata
@@ -250,9 +250,9 @@ export const mainRouter = router({
     }),
   getCategoriesPopular: publicProcedure.query(async ({ ctx }) => {
     try {
-      const categories = await ctx.prisma.categories.findMany({
+      const categories = await ctx.prisma.category.findMany({
         where: {
-          tipe: "populer",
+          type: "populer",
           status: "active",
         },
       });
@@ -283,7 +283,7 @@ export const mainRouter = router({
           : undefined;
 
         // Fetch categories with conditional selection
-        const categories = await ctx.prisma.categories.findMany({
+        const categories = await ctx.prisma.category.findMany({
           select: selectedFields || undefined, // Use selected fields or fetch all
         });
 

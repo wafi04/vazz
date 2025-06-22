@@ -32,28 +32,24 @@ export type Layanan = {
 
 export const layananFormSchema = z.object({
   id: z.number(),
-  layanan: z.string().min(1, "Nama layanan wajib diisi"),
-  kategoriId: z.number().int().positive("Kategori wajib dipilih"), // Corrected to number
+  service: z.string().min(1, "Nama layanan wajib diisi"),
+  categoryId: z.number().int().positive("Kategori wajib dipilih"), // Corrected to number
   subCategoryId: z.number().int().positive("Sub kategori wajib dipilih"),
   providerId: z.string().min(1, "Provider wajib dipilih"),
-  harga: z.number().positive("Harga harus lebih dari 0"),
-  hargaReseller: z.number().positive("Harga reseller harus lebih dari 0"),
-  hargaSuggest: z.number().positive("Harga reseller harus lebih dari 0"),
-  hargaPlatinum: z.number().positive("Harga platinum harus lebih dari 0"),
-  hargaFlashSale: z.number().nullable().optional(), // Corrected to optional
+  price: z.number().positive("price harus lebih dari 0"),
+  priceReseller: z.number().positive("price reseller harus lebih dari 0"),
+  priceSuggest: z.number().positive("price reseller harus lebih dari 0"),
+  pricePlatinum: z.number().positive("price platinum harus lebih dari 0"),
+  priceFlashSale: z.number().nullable().optional(), // Corrected to optional
   profit: z.number().min(0, "Profit tidak boleh negatif"),
   profitReseller: z.number().min(0, "Profit reseller tidak boleh negatif"),
   profitPlatinum: z.number().min(0, "Profit platinum tidak boleh negatif"),
-  isFlashSale: z.boolean().default(false),
-  judulFlashSale: z.string().nullable().optional(),
+  isFlashSale: z.string().default("inactive"),
+  titleFlashSale: z.string().nullable().optional(),
   bannerFlashSale: z.string().nullable().optional(),
   expiredFlashSale: z.string().nullable().optional(),
-  catatan: z.string().default("").nullable(),
-  status: z.boolean().default(true),
-  provider: z
-    .string()
-    .min(1, "Provider wajib diisi")
-    .nullable()
-    .default("digiflazz"),
+  note: z.string(),
+  status: z.string().default("active"),
+  provider: z.string().min(1, "Provider wajib diisi").default("digiflazz"),
   productLogo: z.string().nullable().optional(),
 });

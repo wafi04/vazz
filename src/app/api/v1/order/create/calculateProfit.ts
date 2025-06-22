@@ -1,4 +1,4 @@
-import { ProductData } from "@/types/product";
+import { ServiceData } from "@/types/product";
 
 function hitungHarga(hargaDigi: number, profit: number, isFixed = true) {
   if (isFixed) {
@@ -18,37 +18,37 @@ function hitungProfitRupiah(hargaDigi: number, profit: number, isFixed = true) {
 
 // Main function untuk calculate pricing
 export function CalculatePricingWithProfitLogic(
-  product: ProductData,
+  product: ServiceData,
   userRole?: string
 ) {
   const {
-    hargaFromDigi,
+    priceFromDigi,
     profit,
     profitReseller,
     profitPlatinum,
     isProfitFixed,
     isFlashSale,
-    hargaFlashSale,
+    priceFlashSale,
     expiredFlashSale,
   } = product;
 
   // Cek apakah flash sale masih aktif
   const isFlashSaleActive =
     isFlashSale &&
-    hargaFlashSale &&
+    priceFlashSale &&
     expiredFlashSale &&
     new Date() < new Date(expiredFlashSale);
 
   // Jika flash sale aktif, return harga flash sale
   if (isFlashSaleActive) {
-    const profitFlashSale = hargaFlashSale! - hargaFromDigi;
+    const profitFlashSale = priceFlashSale! - priceFromDigi;
     return {
-      price: hargaFlashSale!,
+      price: priceFlashSale!,
       profit: profitFlashSale,
       profitRupiah: profitFlashSale,
       tier: "FLASH_SALE",
       isFlashSale: true,
-      basePrice: hargaFromDigi,
+      basePrice: priceFromDigi,
     };
   }
 
@@ -77,11 +77,15 @@ export function CalculatePricingWithProfitLogic(
   }
 
   // Hitung harga dan profit
-  const finalPrice = hitungHarga(hargaFromDigi, selectedProfit, isProfitFixed);
-  const profitRupiah = hitungProfitRupiah(
-    hargaFromDigi,
+  const finalPrice = hitungHarga(
+    priceFromDigi,
     selectedProfit,
-    isProfitFixed
+    isProfitFixed === "active"
+  );
+  const profitRupiah = hitungProfitRupiah(
+    priceFromDigi,
+    selectedProfit,
+    isProfitFixed === "active"
   );
 
   return {
@@ -90,14 +94,14 @@ export function CalculatePricingWithProfitLogic(
     profitRupiah: profitRupiah,
     tier: tier,
     isFlashSale: false,
-    basePrice: hargaFromDigi,
+    basePrice: priceFromDigi,
     profitType: isProfitFixed ? "FIXED" : "PERCENTAGE",
   };
 }
 
 // Alternative function jika ingin lebih detail
 export function CalculatePricingWithDetails(
-  product: ProductData,
+  product: ServiceData,
   userRole?: string
 ) {
   const pricing = CalculatePricingWithProfitLogic(product, userRole);
@@ -106,38 +110,38 @@ export function CalculatePricingWithDetails(
   const allTiers = {
     regular: {
       price: hitungHarga(
-        product.hargaFromDigi,
+        product.priceFromDigi,
         product.profit,
-        product.isProfitFixed
+        product.isProfitFixed === "active"
       ),
       profit: hitungProfitRupiah(
-        product.hargaFromDigi,
+        product.priceFromDigi,
         product.profit,
-        product.isProfitFixed
+        product.isProfitFixed === "active"
       ),
     },
     reseller: {
       price: hitungHarga(
-        product.hargaFromDigi,
+        product.priceFromDigi,
         product.profitReseller,
-        product.isProfitFixed
+        product.isProfitFixed === "active"
       ),
       profit: hitungProfitRupiah(
-        product.hargaFromDigi,
+        product.priceFromDigi,
         product.profitReseller,
-        product.isProfitFixed
+        product.isProfitFixed === "active"
       ),
     },
     platinum: {
       price: hitungHarga(
-        product.hargaFromDigi,
+        product.priceFromDigi,
         product.profitPlatinum,
-        product.isProfitFixed
+        product.isProfitFixed === "active"
       ),
       profit: hitungProfitRupiah(
-        product.hargaFromDigi,
+        product.priceFromDigi,
         product.profitPlatinum,
-        product.isProfitFixed
+        product.isProfitFixed === "active"
       ),
     },
   };
@@ -145,14 +149,14 @@ export function CalculatePricingWithDetails(
   let flashSaleInfo = null;
   if (
     product.isFlashSale &&
-    product.hargaFlashSale &&
+    product.priceFlashSale &&
     product.expiredFlashSale
   ) {
     const isActive = new Date() < new Date(product.expiredFlashSale);
     flashSaleInfo = {
       isActive,
-      price: product.hargaFlashSale,
-      profit: product.hargaFlashSale - product.hargaFromDigi,
+      price: product.priceFlashSale,
+      profit: product.priceFlashSale - product.priceFromDigi,
       expiredAt: product.expiredFlashSale,
     };
   }

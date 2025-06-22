@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -8,287 +9,427 @@ datasource db {
   relationMode = "prisma"
 }
 
-model Berita {
-  id        Int       @id @default(autoincrement()) @map("id")
-  path      String    @map("path")
-  tipe      String    @map("tipe")
-  deskripsi String    @map("deskripsi") @db.Text
-  createdAt DateTime? @default(now()) @map("created_at")
-  updatedAt DateTime? @updatedAt @map("updated_at")
+model News {
+  id          Int      @id @default(autoincrement()) @map("id")
+  path        String   @map("path")
+  isActive    String   @default("active") @map("is_active")
+  type        String   @map("type") @db.VarChar(50)
+  description String   @map("description") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@index([tipe])
-  @@map("beritas")
+  @@index([type, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc), type])
+  @@map("news")
 }
 
-model Deposits {
-  id           Int       @id @default(autoincrement()) @map("id")
-  username     String    @map("username")
-  metode       String    @map("metode") @db.VarChar(50)
-  depositId    String?   @unique() @map("deposit_id")
-  noPembayaran String    @map("no_pembayaran")
-  jumlah       Int       @map("jumlah")
-  status       String    @map("status") @db.VarChar(20)
-  createdAt    DateTime? @default(now()) @map("created_at")
-  updatedAt    DateTime? @updatedAt @map("updated_at")
-  log          String?   @db.Text()
+model Deposit {
+  id               Int       @id @default(autoincrement()) @map("id")
+  username         String    @map("username") @db.VarChar(100)
+  method           String    @map("method") @db.VarChar(50)
+  depositId        String?   @unique() @map("deposit_id") @db.VarChar(100)
+  paymentReference String    @map("payment_reference") @db.Text()
+  amount           Int       @map("amount")
+  status           String    @map("status") @db.VarChar(20)
+  createdAt        DateTime? @default(now()) @map("created_at")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+  log              String?   @db.Text()
 
-  user Users? @relation(fields: [username], references: [username])
+  user User @relation(fields: [username], references: [username])
 
-  @@index([username, status])
-  @@index([status, createdAt])
-  @@index([noPembayaran])
+  // Optimized composite indexes
+  @@index([username, status, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([method, status, createdAt(sort: Desc)])
+  @@index([amount, status, createdAt(sort: Desc)])
+  @@index([paymentReference])
+  @@index([depositId])
   @@map("deposits")
 }
 
-model Footer {
-  id         Int       @id @default(autoincrement()) @map("id")
-  namaFooter String    @map("nama_footer") @db.Text
-  urlFooter  String?   @map("url_footer") @db.Text
-  parent     Int?      @map("parent")
-  createdAt  DateTime? @default(now()) @map("created_at")
-  updatedAt  DateTime? @updatedAt @map("updated_at")
+model Category {
+  id              Int      @id @default(autoincrement()) @map("id")
+  name            String   @map("name") @db.VarChar(200)
+  subName         String   @map("sub_name") @db.VarChar(200)
+  brand           String   @map("brand") @db.Text
+  code            String?  @unique @map("code") @db.VarChar(50)
+  isCheckNickname String   @default("active") @map("is_check_nickname") @db.VarChar(10)
+  status          String   @default("active") @map("status") @db.VarChar(10)
+  thumbnail       String   @map("thumbnail") @db.Text()
+  type            String   @default("game") @map("type") @db.VarChar(50)
+  instruction     String?  @map("instruction") @db.Text
+  information     String?  @map("information") @db.Text
+  placeholder1    String   @map("placeholder_1") @db.Text
+  placeholder2    String   @map("placeholder_2") @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  banner          String   @map("banner") @db.VarChar(500)
 
-  @@index([parent])
-  @@map("footer")
+  voucherCategories VoucherCategory[]
+  subCategories     SubCategory[]
+  services          Service[]
+
+  // Optimized indexes
+  @@index([type, status, name])
+  @@index([status, brand, name])
+  @@index([code, status])
+  @@map("categories")
 }
 
-model Categories {
-  id              Int       @id @default(autoincrement()) @map("id")
-  nama            String    @map("nama")
-  subNama         String    @map("sub_nama")
-  brand           String    @map("brand") @db.Text
-  kode            String?   @unique @map("kode")
-  isChecknickname Boolean   @default(false)
-  serverId        Int       @default(0) @map("server_id")
-  status          String    @default("active") @map("status")
-  thumbnail       String    @map("thumbnail")
-  tipe            String    @default("game") @map("tipe")
-  petunjuk        String?   @map("petunjuk")
-  ketLayanan      String?   @map("ket_layanan") @db.Text
-  ketId           String?   @map("ket_id") @db.Text
-  placeholder1    String    @map("placeholder_1") @db.Text
-  placeholder2    String    @map("placeholder_2") @db.Text
-  createdAt       DateTime? @default(now()) @map("created_at")
-  updatedAt       DateTime? @updatedAt @map("updated_at")
-  bannerLayanan   String    @map("bannerlayanan")
-
-  vouchers      VoucherCategory[]
-  subCategories SubCategory[]
-  layanan       Layanan[]
-
-  @@index([tipe, status])
-  @@map("kategoris")
-}
-
-model Layanan {
+model Service {
   id            Int    @id @default(autoincrement()) @map("id")
-  kategoriId    Int    @map("kategori_id")
+  categoryId    Int    @map("category_id")
   subCategoryId Int    @default(1) @map("sub_category_id")
-  providerId    String @map("provider_id")
-  layanan       String @map("layanan")
+  providerId    String @map("provider_id") @db.VarChar(100)
+  serviceName   String @map("service_name") @db.VarChar(300)
 
-  harga          Int  @map("harga")
-  hargaFromDigi  Int  @map("hargaFromDigi")
-  hargaReseller  Int  @map("harga_reseller")
-  hargaPlatinum  Int  @map("harga_platinum")
-  hargaFlashSale Int? @default(0) @map("harga_flash_sale")
-  hargaSuggest   Int  @map("harga_suggest")
+  price          Int  @map("price")
+  priceFromDigi  Int  @map("price_from_digi")
+  priceReseller  Int  @map("price_reseller")
+  pricePlatinum  Int  @map("price_platinum")
+  priceFlashSale Int? @default(0) @map("price_flash_sale")
+  priceSuggest   Int  @map("price_suggest")
 
   profit         Int @map("profit")
   profitReseller Int @map("profit_reseller")
   profitPlatinum Int @map("profit_platinum")
-  profitSuggest  Int @map("profit_sugggest")
+  profitSuggest  Int @map("profit_suggest")
 
-  isProfitFixed Boolean @default(false) @map("profit_fixed")
-  isFlashSale   Boolean @default(false) @map("is_flash_sale")
-  isSuggest     Boolean @default(false) @map("is_suggest")
+  isProfitFixed String @default("false") @map("is_profit_fixed") @db.VarChar(10)
+  isFlashSale   String @default("false") @map("is_flash_sale") @db.VarChar(10)
+  isSuggest     String @default("false") @map("is_suggest") @db.VarChar(10)
 
-  judulFlashSale   String?   @map("judul_flash_sale") @db.VarChar(255)
+  titleFlashSale   String?   @map("title_flash_sale") @db.VarChar(255)
   bannerFlashSale  String?   @map("banner_flash_sale") @db.VarChar(255)
   expiredFlashSale DateTime? @map("expired_flash_sale") @db.Date
-  catatan          String    @map("catatan") @db.Text
-  status           Boolean   @map("status")
-  provider         String    @map("provider")
-  productLogo      String?   @map("product_logo")
+  note             String    @map("note") @db.Text
+  status           String    @map("status")
+  provider         String    @map("provider") @db.VarChar(100)
+  productLogo      String?   @map("product_logo") @db.VarChar(500)
 
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  kategori    Categories  @relation(fields: [kategoriId], references: [id])
+  category    Category    @relation(fields: [categoryId], references: [id])
   subCategory SubCategory @relation(fields: [subCategoryId], references: [id])
 
-  @@index([kategoriId, status])
-  @@index([subCategoryId, status])
+  // Highly optimized indexes for product queries
+  @@index([categoryId, status, price])
+  @@index([subCategoryId, status, price])
   @@index([providerId, status])
-  @@index([isFlashSale, expiredFlashSale])
-  @@index([status, isFlashSale])
-  @@map("layanans")
+  @@index([isFlashSale, expiredFlashSale, status])
+  @@index([isSuggest, status, price])
+  @@index([status, price])
+  @@index([provider, status, createdAt(sort: Desc)])
+  @@index([categoryId, status, isFlashSale])
+  @@map("services")
 }
 
-model Method {
-  id         Int       @id @default(autoincrement()) @map("id")
-  name       String    @map("name") @db.VarChar(55)
-  images     String    @map("images") @db.VarChar(250)
-  code       String    @map("code") @db.VarChar(100)
-  keterangan String    @map("keterangan") @db.VarChar(250)
-  tipe       String    @map("tipe") @db.VarChar(225)
-  min        Int?
-  isActive   Boolean   @default(true)
-  typeTax    String?   @map("type_tax")
-  taxAdmin   Int?      @map("tax_admin")
-  minExpired Int?      @default(0) @map("min_expired")
-  maxExpired Int?      @default(0) @map("max_expired")
-  max        Int?
-  createdAt  DateTime? @default(now()) @map("created_at")
-  updatedAt  DateTime? @updatedAt @map("updated_at")
+model PaymentMethod {
+  id          Int       @id @default(autoincrement()) @map("id")
+  name        String    @map("name") @db.VarChar(55)
+  image       String    @map("image") @db.VarChar(250)
+  code        String    @map("code") @db.VarChar(100)
+  description String    @map("description") @db.VarChar(250)
+  type        String    @map("type") @db.VarChar(50)
+  minAmount   Int?      @map("min_amount")
+  isActive    String    @default("active") @map("is_active") @db.VarChar(10)
+  taxType     String?   @map("tax_type") @db.VarChar(20)
+  taxAdmin    Float?    @map("tax_admin")
+  minExpired  Int?      @default(0) @map("min_expired")
+  maxExpired  Int?      @default(0) @map("max_expired")
+  maxAmount   Int?      @map("max_amount")
+  createdAt   DateTime? @default(now()) @map("created_at")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
 
-  @@index([code, name, isActive])
-  @@map("methods")
+  @@index([code, isActive])
+  @@index([name, isActive])
+  @@index([type, isActive])
+  @@map("payment_methods")
 }
 
-model Pembayaran {
-  id           Int       @id @default(autoincrement()) @map("id")
-  orderId      String    @unique @map("order_id")
-  harga        String    @map("harga")
-  totalAmount  Int       @map("total_amount")
-  noPembayaran String?   @map("no_pembayaran") @db.Text
-  noPembeli    String    @map("no_pembeli")
-  fee          Int?
-  feeRupiah    Int?      @map("fee_rupiah")
-  status       String    @map("status")
-  metode       String    @map("metode")
-  reference    String?   @map("reference")
-  createdAt    DateTime? @default(now()) @map("created_at")
-  updatedAt    DateTime? @updatedAt @map("updated_at")
+model Payment {
+  id            Int       @id @default(autoincrement()) @map("id")
+  orderId       String    @unique @map("order_id") @db.VarChar(100)
+  price         String    @map("price") @db.VarChar(20)
+  totalAmount   Int       @map("total_amount")
+  paymentNumber String?   @map("payment_number") @db.Text
+  buyerNumber   String    @map("buyer_number") @db.VarChar(50)
+  fee           Int?
+  feeAmount     Int?      @map("fee_amount")
+  status        String    @map("status") @db.VarChar(20)
+  method        String    @map("method") @db.VarChar(50)
+  reference     String?   @map("reference") @db.VarChar(200)
+  createdAt     DateTime? @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
 
-  // Add relationship to Method model
-  pembelian Pembelian? @relation("PembayaranToPembelian")
+  transaction Transaction? @relation("PaymentToTransaction")
 
-  @@index([metode])
+  // Optimized indexes
   @@index([orderId])
-  @@index([status])
-  @@index([orderId, metode, status])
-  @@map("pembayarans")
+  @@index([method, status])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([buyerNumber, status])
+  @@map("payments")
 }
 
-model Pembelian {
-  id                  Int               @id @default(autoincrement()) @map("id")
-  orderId             String            @unique @map("order_id")
-  username            String?           @map("username")
-  priceBuy            Int?              @map("price_buy")
-  discount            Int?              @map("discount")
-  userId              String?           @map("user_id")
-  zone                String?           @map("zone") @db.VarChar(50)
-  nickname            String?           @map("nickname") @db.VarChar(100)
-  emailVilog          String?           @map("email_vilog") @db.Text
-  passwordVilog       String?           @map("password_vilog") @db.Text
-  loginviaVilog       String?           @map("loginvia_vilog") @db.Text
-  layanan             String            @map("layanan")
-  harga               Int               @map("harga")
-  profit              Int               @map("profit")
-  message             String?           @map("message")
-  profitRupiah        Int               @map("profit_rupiah")
-  providerOrderId     String?           @map("provider_order_id")
-  status              String            @map("status") @db.VarChar(20)
-  log                 String?           @map("log") @db.VarChar(1000)
-  sn                  String?           @map("sn")
-  isReOrder           Boolean           @default(false) @map("is_re_order")
-  tipeTransaksi       String            @default("game") @map("tipe_transaksi") @db.VarChar(20)
-  isDigi              Boolean           @map("is_digi")
-  refId               String?           @map("ref_id")
-  successReportSended Boolean           @map("success_report_sended")
-  createdAt           DateTime?         @default(now()) @map("created_at")
-  updatedAt           DateTime?         @updatedAt @map("updated_at")
-  voucherUsage        VoucherUsage[]
-  reorder             PembelianManual[]
-  pembayaran          Pembayaran?       @relation("PembayaranToPembelian", fields: [orderId], references: [orderId])
-  user                Users?            @relation(fields: [username], references: [username])
-  systemLogs          SystemLog[]
+model Transaction {
+  id                Int      @id @default(autoincrement()) @map("id")
+  orderId           String   @unique @map("order_id") @db.VarChar(100)
+  username          String?  @map("username") @db.VarChar(100)
+  purchasePrice     Int?     @map("purchase_price")
+  discount          Int?     @map("discount")
+  userId            String?  @map("user_id") @db.VarChar(50)
+  zone              String?  @map("zone") @db.VarChar(50)
+  nickname          String?  @map("nickname") @db.VarChar(100)
+  serviceName       String   @map("service_name") @db.VarChar(300)
+  price             Int      @map("price")
+  profit            Int      @map("profit")
+  message           String?  @map("message") @db.Text
+  profitAmount      Int      @map("profit_amount")
+  providerOrderId   String?  @map("provider_order_id") @db.VarChar(100)
+  status            String   @map("status") @db.VarChar(20)
+  log               String?  @map("log") @db.VarChar(2000)
+  serialNumber      String?  @map("serial_number") @db.Text
+  isReOrder         String   @default("false") @map("is_re_order") @db.VarChar(10)
+  transactionType   String   @default("game") @map("transaction_type") @db.VarChar(20)
+  isDigi            String   @map("is_digi") @db.VarChar(10)
+  refId             String?  @map("ref_id") @db.VarChar(100)
+  successReportSent String   @map("success_report_sent") @db.VarChar(10)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
+  voucherUsages VoucherUsage[]
+  manualOrders  ManualTransaction[]
+  payment       Payment?            @relation("PaymentToTransaction", fields: [orderId], references: [orderId])
+  user          User?               @relation(fields: [username], references: [username])
+
+  // Highly optimized indexes for transaction queries
+  @@index([username, status, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc), status])
+  @@index([isDigi, status, createdAt(sort: Desc)])
+  @@index([transactionType, status, createdAt(sort: Desc)])
+  @@index([orderId, username])
+  @@index([providerOrderId, status])
+  @@index([userId, status])
+  @@map("transactions")
+}
+
+model ManualTransaction {
+  id                  Int     @id @default(autoincrement())
+  orderId             String? @map("order_id") @db.VarChar(100)
+  manualTransactionId String  @map("manual_transaction_id") @db.VarChar(100)
+  userId              String  @map("user_id") @db.VarChar(50)
+  nickname            String? @map("nickname") @db.VarChar(100)
+  price               Int
+  profitAmount        Int     @map("profit_amount")
+  profit              Int
+  zone                String? @db.VarChar(50)
+  whatsapp            String  @db.VarChar(20)
+  productName         String  @map("product_name") @db.VarChar(300)
+  createdBy           String? @map("created_by") @db.VarChar(100)
+  serialNumber        String? @map("serial_number") @db.Text()
+  reason              String? @db.Text
+  status              String  @default("PENDING") @db.VarChar(20)
+
+  transaction Transaction? @relation(onDelete: Cascade, references: [orderId], fields: [orderId])
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt() @map("updated_at")
+
+  @@index([status, createdAt(sort: Desc)])
   @@index([orderId, status])
-  @@index([username, createdAt])
-  @@index([status, createdAt])
-  @@index([orderId, username, status])
-  @@map("pembelians")
-}
-
-model PembelianManual {
-  id                Int     @id @default(autoincrement())
-  orderId           String? @map("order_id")
-  pembelianManualId String  @map("pembelian_manual_id")
-  userId            String  @map("user_id")
-  nickname          String? @map("nickname")
-  harga             Int
-  profitRupiah      Int
-  profit            Int
-  zone              String?
-  whatsapp          String
-  productName       String  @map("product_name")
-  createdBy         String? @map("created_by")
-  sn                String? @db.Text()
-  reason            String?
-  status            String  @default("PENDING")
-
-  pembelian Pembelian? @relation(onDelete: Cascade, references: [orderId], fields: [orderId])
-  createdAt DateTime   @default(now()) @map("created_at")
-  updateAt  DateTime   @updatedAt() @map("updated_at")
-
-  @@index([orderId])
-  @@index([status])
+  @@index([userId, status])
+  @@index([createdBy, status])
 }
 
 model Membership {
   id          Int     @id @default(autoincrement())
-  name        String
+  name        String  @db.VarChar(100)
   description String  @db.Text()
   price       Int
   benefit     String? @db.Text()
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
+
+  @@index([price])
+  @@index([name])
 }
 
 model SubCategory {
-  id         Int       @id @default(autoincrement()) @map("id")
-  categoryId Int       @map("category_id")
-  code       String    @map("code")
-  name       String    @map("name")
-  active     Boolean   @map("active")
-  createdAt  DateTime? @default(now()) @map("created_at")
-  updatedAt  DateTime? @updatedAt @map("updated_at")
+  id         Int    @id @default(autoincrement()) @map("id")
+  categoryId Int    @map("category_id")
+  code       String @map("code") @db.VarChar(50)
+  name       String @map("name") @db.VarChar(200)
+  isActive   String @map("is_active") @db.VarChar(10)
 
-  category Categories @relation(fields: [categoryId], references: [id])
-  Layanan  Layanan[]
+  category Category  @relation(fields: [categoryId], references: [id])
+  services Service[]
 
-  @@index([code, categoryId, active])
-  @@index([categoryId])
+  @@index([categoryId, isActive])
+  @@index([code, isActive])
+  @@index([isActive, name])
   @@map("sub_categories")
 }
 
-model Users {
-  id            Int       @id @default(autoincrement()) @map("id")
-  name          String    @map("name")
-  username      String    @unique @map("username")
-  password      String    @map("password")
-  whatsapp      String?   @map("whatsapp") @db.VarChar(20)
-  balance       Int       @map("balance")
-  role          String    @map("role") @db.VarChar(20)
-  otp           String?   @map("otp") @db.VarChar(6)
-  apiKey        String?   @map("api_key")
-  createdAt     DateTime? @default(now()) @map("created_at")
-  updatedAt     DateTime? @updatedAt @map("updated_at")
-  lastPaymentAt DateTime? @map("last_payment_at")
+model User {
+  id            Int      @id @default(autoincrement()) @map("id")
+  name          String   @map("name") @db.VarChar(200)
+  username      String   @unique @map("username") @db.VarChar(100)
+  password      String   @map("password") @db.VarChar(200)
+  whatsapp      String?  @map("whatsapp") @db.VarChar(20)
+  balance       Int      @map("balance")
+  role          String   @map("role") @db.VarChar(20)
+  otp           String?  @map("otp") @db.VarChar(6)
+  apiKey        String?  @map("api_key") @db.VarChar(100)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  lastPaymentAt DateTime @map("last_payment_at")
 
-  token String?
+  token String? @db.VarChar(500)
 
-  deposits  Deposits[]
-  pembelian Pembelian[]
+  deposits     Deposit[]
+  transactions Transaction[]
 
-  @@index([username, balance])
-  @@index([role, balance])
-  @@index([whatsapp, otp])
-  @@index([username, role, whatsapp])
+  // Optimized indexes for user operations
+  @@index([username, role])
+  @@index([role, balance(sort: Desc)])
+  @@index([whatsapp])
+  @@index([apiKey])
+  @@index([balance(sort: Desc), role])
+  @@index([lastPaymentAt(sort: Desc)])
   @@map("users")
+}
+
+model Voucher {
+  id                 Int    @id @default(autoincrement())
+  code               String @unique @db.VarChar(50)
+  discountType       String @db.VarChar(20)
+  discountValue      Float
+  maxDiscount        Float?
+  minPurchase        Float?
+  usageLimit         Int?
+  usageCount         Int    @default(0)
+  isForAllCategories String @default("false") @map("is_for_all_categories") @db.VarChar(10)
+  isActive           String @default("active") @map("is_active") @db.VarChar(10)
+
+  startDate   DateTime       @default(now()) @map("start_date")
+  expiryDate  DateTime       @map("expiry_date")
+  description String?        @db.Text
+  usages      VoucherUsage[]
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  categories VoucherCategory[]
+
+  // Optimized indexes for voucher validation
+  @@index([code, isActive])
+  @@index([isActive, expiryDate])
+  @@index([startDate, expiryDate, isActive])
+  @@index([discountType, isActive])
+  @@map("vouchers")
+}
+
+model VoucherCategory {
+  id         Int @id @default(autoincrement())
+  voucherId  Int @map("voucher_id")
+  categoryId Int @map("category_id")
+
+  voucher  Voucher  @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([voucherId, categoryId])
+  @@index([voucherId])
+  @@index([categoryId])
+  @@map("voucher_categories")
+}
+
+model VoucherUsage {
+  id        Int       @id @default(autoincrement())
+  voucherId Int       @map("voucher_id")
+  orderId   String    @map("order_id") @db.VarChar(100)
+  username  String?   @map("username") @db.VarChar(100)
+  whatsapp  String?   @map("whatsapp") @db.VarChar(20)
+  amount    Int
+  createdAt DateTime  @default(now()) @map("created_at")
+  expiresAt DateTime? @map("expires_at")
+
+  voucher     Voucher     @relation(fields: [voucherId], references: [id])
+  transaction Transaction @relation(fields: [orderId], references: [orderId])
+
+  @@index([voucherId, createdAt(sort: Desc)])
+  @@index([orderId])
+  @@index([username, createdAt(sort: Desc)])
+  @@index([whatsapp, createdAt(sort: Desc)])
+  @@map("voucher_usages")
+}
+
+model Message {
+  id      Int    @id @default(autoincrement())
+  title   String @db.VarChar(300)
+  text    String @db.Text
+  details Json
+
+  @@index([title])
+  @@map("messages")
+}
+
+model SystemLog {
+  id           Int      @id
+  parentLogId  String?  @map("parent_log_id")
+  orderId      String?  @map("order_id")
+  ref          String?
+  type         String   @db.VarChar(20)
+  action       String
+  status       String
+  details      String?  @db.Text
+  errorMessage String?  @map("error_message") @db.Text
+  metadata     String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([parentLogId])
+  @@index([orderId])
+  @@index([type])
+  @@index([orderId, type])
+  @@map("system_logs")
+}
+
+model PlatformBalance {
+  id            Int       @id @default(autoincrement())
+  platformName  String    @unique @map("platform_name")
+  accountName   String    @map("account_name")
+  accountNumber String?   @map("account_number")
+  balance       Int       @default(0) @map("balance")
+  lastSyncAt    DateTime? @map("last_sync_at")
+  isActive      String    @default("active") @map("is_active") @db.VarChar(10)
+  apiEndpoint   String?   @map("api_endpoint")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  balanceHistories BalanceHistory[]
+
+  @@index([platformName, isActive])
+  @@map("platform_balances")
+}
+
+model BalanceHistory {
+  id            Int      @id @default(autoincrement())
+  platformId    Int      @map("platform_id")
+  batchId       String?  @map("batch_id")
+  balanceBefore Int      @map("balance_before")
+  balanceAfter  Int      @map("balance_after")
+  amountChanged Int      @map("amount_changed")
+  changeType    String   @map("change_type")
+  description   String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  platform PlatformBalance @relation(fields: [platformId], references: [id])
+
+  @@index([platformId, createdAt])
+  @@index([batchId])
+  @@map("balance_histories")
 }
 
 model Account {
@@ -325,93 +466,4 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
-}
-
-model Voucher {
-  id                 Int     @id @default(autoincrement())
-  code               String  @unique
-  discountType       String
-  discountValue      Float
-  maxDiscount        Float?
-  minPurchase        Float?
-  usageLimit         Int?
-  usageCount         Int     @default(0)
-  isForAllCategories Boolean @default(false) @map("is_for_all_categories")
-  isActive           Boolean @default(true) @map("is_active")
-
-  startDate   DateTime       @default(now()) @map("start_date")
-  expiryDate  DateTime       @map("expiry_date")
-  description String?
-  usage       VoucherUsage[]
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
-
-  categories VoucherCategory[]
-
-  @@index([code, isActive])
-  @@index([expiryDate])
-  @@map("vouchers")
-}
-
-model VoucherCategory {
-  id         Int @id @default(autoincrement())
-  voucherId  Int @map("voucher_id")
-  categoryId Int @map("category_id")
-
-  voucher  Voucher    @relation(fields: [voucherId], references: [id], onDelete: Cascade)
-  category Categories @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  @@unique([voucherId, categoryId])
-  @@index([voucherId])
-  @@index([categoryId])
-  @@map("voucher_categories")
-}
-
-model VoucherUsage {
-  id        Int       @id @default(autoincrement())
-  voucherId Int       @map("voucher_id")
-  orderId   String    @map("order_id")
-  username  String?   @map("username")
-  whatsapp  String?   @map("whatsapp")
-  amount    Int
-  createdAt DateTime  @default(now()) @map("created_at")
-  expiresAt DateTime? @map("expires_at")
-
-  voucher   Voucher   @relation(fields: [voucherId], references: [id])
-  pembelian Pembelian @relation(fields: [orderId], references: [orderId])
-
-  @@index([voucherId])
-  @@index([orderId])
-  @@index([username])
-  @@map("voucher_usages")
-}
-
-model SystemLog {
-  id           String   @id @default(cuid())
-  parentLogId  String?
-  orderId      String?
-  ref          String?
-  type         String   @db.VarChar(20)
-  action       String
-  status       String
-  details      String?  @db.Text
-  errorMessage String?  @db.Text
-  metadata     String?  @db.Text
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  order Pembelian? @relation(fields: [orderId], references: [orderId])
-
-  @@index([parentLogId])
-  @@index([orderId])
-  @@index([type])
-  @@index([orderId, type])
-  @@map("system_log")
-}
-
-model Messages {
-  id      Int    @id @default(autoincrement())
-  title   String @db.Char(300)
-  text    String @db.Text
-  details Json
 }

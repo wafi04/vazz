@@ -27,12 +27,12 @@ export async function PaymentUsingSaldo({
   const digi = new Digiflazz(DIGI_USERNAME, DIGI_KEY);
 
   // Create payment record
-  const pembayaran = await tx.pembayaran.create({
+  const pembayaran = await tx.payment.create({
     data: {
-      harga: amount.toString(),
-      metode: "SALDO",
+      price: amount.toString(),
+      method: "SALDO",
       totalAmount: amount,
-      noPembeli: noWa,
+      buyerNumber: noWa,
       status: "PENDING",
       orderId,
       createdAt: new Date(),
@@ -70,7 +70,7 @@ export async function PaymentUsingSaldo({
       : TRANSACTION_FLOW.FAILED;
 
   if (status !== TRANSACTION_FLOW.FAILED) {
-    const updatedUser = await tx.users.update({
+    const updatedUser = await tx.user.update({
       where: {
         username,
       },

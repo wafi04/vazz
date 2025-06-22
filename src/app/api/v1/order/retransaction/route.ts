@@ -5,7 +5,6 @@ import { TransactionType } from "@/types/transaction";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { CalculatePricingWithProfitLogic } from "../create/calculateProfit";
-import { ProductData } from "@/types/product";
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,7 +59,7 @@ export async function POST(req: NextRequest) {
 
       if (orderId) {
         // Mode reorder - ambil data dari pembelian yang sudah ada
-        const pembelian = await tx.pembelian.findUnique({
+        const pembelian = await tx.transaction.findUnique({
           where: {
             orderId,
           },
@@ -71,7 +70,7 @@ export async function POST(req: NextRequest) {
         }
 
         data = {
-          productName: productName ?? pembelian.layanan,
+          productName: productName ?? pembelian.serviceName,
           userId: userId ?? pembelian.userId,
           whatsapp: whatsapp ?? "99072072",
           zone: zone ?? pembelian.zone,
@@ -81,7 +80,7 @@ export async function POST(req: NextRequest) {
         referenceId = `RE${orderId}`;
 
         // Buat record pembelian manual
-        const reorder = await tx.pembelianManual.create({
+        const reorder = await tx.manualTransaction.create({
           data: {
             ...data,
             orderId,
@@ -103,7 +102,7 @@ export async function POST(req: NextRequest) {
         return await handleDigiflazzResponse(tx, toDigi, reorder);
       } else {
         // Mode pembelian baru tanpa orderId
-        const product = await tx.layanan.findFirst({
+        const product = await tx.service.findFirst({
           where: {
             providerId: productCode,
           },
@@ -113,16 +112,14 @@ export async function POST(req: NextRequest) {
           throw new Error("Product not found");
         }
 
-        const calculateProfit = CalculatePricingWithProfitLogic(
-          product as ProductData
-        );
+        const calculateProfit = CalculatePricingWithProfitLogic(product);
         let profitRupiah = calculateProfit.profitRupiah;
 
         data = {
-          productName: productName ?? product.layanan ?? "Manual Order",
+          productName: productName ?? product.serviceName ?? "Manual Order",
           userId,
           profit: product.profit,
-          harga: product.harga,
+          price: product.price,
           profitRupiah,
           whatsapp,
           zone,
@@ -134,7 +131,7 @@ export async function POST(req: NextRequest) {
         referenceId = `MO${timestamp}`;
 
         // Buat record pembelian manual
-        const newOrder = await tx.pembelianManual.create({
+        const newOrder = await tx.manualTransaction.create({
           data: {
             ...data,
             orderId: null, // Tidak ada orderId karena ini pembelian baru
@@ -186,7 +183,7 @@ async function handleDigiflazzResponse(
   const Success = toDigi?.data.status === "Pending";
 
   if (toDigi && toDigi.data && Success) {
-    await tx.pembelianManual.update({
+    await tx.manualTransaction.update({
       where: {
         id: orderRecord.id,
       },
@@ -204,7 +201,7 @@ async function handleDigiflazzResponse(
       data: orderRecord,
     };
   } else {
-    await tx.pembelianManual.update({
+    await tx.manualTransaction.update({
       where: {
         id: orderRecord.id,
       },

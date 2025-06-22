@@ -1,30 +1,34 @@
-export type ProductData = {
+export type ServiceData = {
   id: number;
-  layanan: string;
-  provider: string;
+  categoryId: number;
+  subCategoryId: number;
   providerId: string;
-  kategoriId: number;
-  catatan: string;
-  status: boolean;
-  hargaFromDigi: number;
-  harga: number;
-  hargaSuggest: number;
-  hargaPlatinum: number;
-  hargaReseller: number;
+  serviceName: string;
+
+  price: number;
+  priceFromDigi: number;
+  priceReseller: number;
+  pricePlatinum: number;
+  priceFlashSale: number | null;
+  priceSuggest: number;
   profit: number;
-  profitSuggest: number;
-  profitPlatinum: number;
   profitReseller: number;
-  productLogo: string | null;
-  isSuggest: boolean;
-  isFlashSale: boolean;
-  isProfitFixed: boolean;
-  judulFlashSale: string | null;
+  profitPlatinum: number;
+  profitSuggest: number;
+
+  isProfitFixed: string;
+  isFlashSale: string;
+  isSuggest: string;
+  titleFlashSale: string | null;
   bannerFlashSale: string | null;
   expiredFlashSale: string | null;
-  hargaFlashSale: number | null;
-  createdAt: string | null;
-  updatedAt: string | null;
+  note: string;
+  status: string;
+  provider: string;
+  productLogo: string | null;
+
+  createdAt: string | Date | null;
+  updatedAt: string | Date | null;
 };
 
 export interface ProductFromCategoryCode {

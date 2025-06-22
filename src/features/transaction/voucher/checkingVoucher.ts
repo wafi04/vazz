@@ -33,7 +33,7 @@ export async function checkingVoucher(
   const voucher = await tx.voucher.findFirst({
     where: {
       code: voucherCode,
-      isActive: true,
+      isActive: "active",
       expiryDate: { gt: new Date() },
       startDate: { lte: new Date() },
     },

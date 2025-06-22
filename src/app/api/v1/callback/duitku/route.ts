@@ -3,7 +3,6 @@ import { Digiflazz } from "@/lib/digiflazz";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-// Type definitions
 interface CallbackData {
   merchantCode: string;
   amount: number;
@@ -19,14 +18,14 @@ interface TransactionResult {
   data?: any;
 }
 
-interface Pembelian {
+interface Transaction {
   orderId: string;
-  tipeTransaksi: string;
+  transactionType: string;
   providerOrderId: string | null;
   userId: string | null;
   zone: string | null;
   username: string | null;
-  harga: number;
+  price: number;
 }
 
 interface Membership {
@@ -54,7 +53,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       console.log("⚠️ Could not read raw body:", e);
     }
 
-    // Handle berbagai format data dari Duitku
     if (contentType.includes("application/json")) {
       try {
         callbackData = (await req.json()) as CallbackData;
@@ -146,7 +144,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Detailed field validation
     const {
       merchantCode,
       amount,
@@ -177,17 +174,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     const result: TransactionResult = await prisma.$transaction(async (tx) => {
-      const pembelian: Pembelian | null = await tx.pembelian.findUnique({
+      const transaction: Transaction | null = await tx.transaction.findUnique({
         where: {
           orderId: merchantOrderId,
         },
+        select: {
+          orderId: true,
+          transactionType: true,
+          providerOrderId: true,
+          userId: true,
+          zone: true,
+          username: true,
+          price: true,
+        },
       });
 
-      if (!pembelian) {
+      if (!transaction) {
         throw new Error("Purchases not found");
       }
 
-      await tx.pembelian.update({
+      await tx.transaction.update({
         where: {
           orderId: merchantOrderId,
         },
@@ -199,7 +205,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         },
       });
 
-      await tx.pembayaran.update({
+      await tx.payment.update({
         where: {
           orderId: merchantOrderId,
         },
@@ -210,12 +216,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         },
       });
 
-      if (pembelian.tipeTransaksi === "TOPUP") {
+      if (transaction.transactionType === "TOPUP") {
         const topUpParams = {
-          productCode: pembelian.providerOrderId as string,
+          productCode: transaction.providerOrderId as string,
           reference: merchantOrderId,
-          userId: pembelian.userId as string,
-          serverId: pembelian.zone as string,
+          userId: transaction.userId as string,
+          serverId: transaction.zone as string,
         };
 
         const toDigi = await digiflazz.TopUp(topUpParams);
@@ -229,7 +235,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
               ...callbackData,
               message: "Pesanan Sedang Dalam Pemrosesan",
             };
-            await tx.pembelian.update({
+            await tx.transaction.update({
               where: {
                 orderId: merchantOrderId,
               },
@@ -246,12 +252,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
               data: toDigi,
             };
           } else {
-            if (pembelian.username) {
+            if (transaction.username) {
               const log = {
                 ...callbackData,
                 message: "Pembayaran Gagal,Uang Sudah Menjadi Saldo Akun",
               };
-              await tx.pembelian.update({
+              await tx.transaction.update({
                 where: {
                   orderId: merchantOrderId,
                 },
@@ -262,27 +268,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
                   status: "FAILED",
                 },
               });
-              await tx.users.update({
+              await tx.user.update({
                 where: {
-                  username: pembelian.username,
+                  username: transaction.username,
                 },
                 data: {
                   balance: {
-                    increment: pembelian.harga,
+                    increment: transaction.price,
                   },
                 },
               });
               return {
                 type: "error" as const,
                 message: "Order Failed,Silahkan Hubungi Admin",
-                data: pembelian,
+                data: transaction,
               };
             } else {
               const log = {
                 ...callbackData,
                 message: "Pembayaran Gagal,Silahkan Hubungi Admin",
               };
-              await tx.pembelian.update({
+              await tx.transaction.update({
                 where: {
                   orderId: merchantOrderId,
                 },
@@ -295,24 +301,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
               return {
                 type: "error" as const,
                 message: "Order Failed,Silahkan Hubungi Admin",
-                data: pembelian,
+                data: transaction,
               };
             }
           }
         }
         throw new Error("Failed to process top-up transaction");
-      } else if (pembelian.tipeTransaksi === "DEPOSIT") {
-        const deposit = await tx.deposits.update({
+      } else if (transaction.transactionType === "DEPOSIT") {
+        const deposit = await tx.deposit.update({
           where: {
             depositId: merchantOrderId,
           },
           data: {
             status: "PAID",
-            noPembayaran: merchantOrderId,
           },
         });
 
-        await tx.users.update({
+        await tx.user.update({
           where: {
             username: deposit.username,
           },
@@ -335,10 +340,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             },
           });
 
-        if (membershipFields && pembelian.username) {
-          await tx.users.update({
+        if (membershipFields && transaction.username) {
+          await tx.user.update({
             where: {
-              username: pembelian.username as string,
+              username: transaction.username as string,
             },
             data: {
               role: membershipFields?.name as string,

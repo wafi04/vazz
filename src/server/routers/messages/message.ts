@@ -53,7 +53,7 @@ export const Messages = router({
     .input(createMessages)
     .mutation(async ({ ctx, input }) => {
       try {
-        const create = await ctx.prisma.messages.create({
+        const create = await ctx.prisma.message.create({
           data: {
             title: input.title,
             text: input.text,
@@ -71,7 +71,7 @@ export const Messages = router({
   // READ - Mendapatkan satu pesan berdasarkan ID
   getById: publicProcedure.input(getMessages).query(async ({ ctx, input }) => {
     try {
-      const message = await ctx.prisma.messages.findUnique({
+      const message = await ctx.prisma.message.findUnique({
         where: { id: input.id },
       });
 
@@ -105,12 +105,12 @@ export const Messages = router({
           : {};
 
         // Get total count for pagination
-        const totalCount = await ctx.prisma.messages.count({
+        const totalCount = await ctx.prisma.message.count({
           where: whereClause,
         });
 
-        // Get messages
-        const messages = await ctx.prisma.messages.findMany({
+        // Get message
+        const message = await ctx.prisma.message.findMany({
           where: whereClause,
           skip,
           take: limit,
@@ -119,7 +119,7 @@ export const Messages = router({
         const totalPages = Math.ceil(totalCount / limit);
 
         const result = {
-          data: messages.map((msg) => ({
+          data: message.map((msg) => ({
             id: msg.id,
             title: msg.title,
             text: msg.text,
@@ -136,15 +136,15 @@ export const Messages = router({
 
         return formatResponse(result, "Messages retrieved successfully");
       } catch (error) {
-        console.error("Error getting messages:", error);
-        return formatResponse(null, "Failed to retrieve messages");
+        console.error("Error getting message:", error);
+        return formatResponse(null, "Failed to retrieve message");
       }
     }),
 
   // READ - Mendapatkan semua pesan tanpa pagination (untuk dropdown, dll)
   getAllSimple: publicProcedure.query(async ({ ctx }) => {
     try {
-      const messages = await ctx.prisma.messages.findMany({
+      const message = await ctx.prisma.message.findMany({
         select: {
           id: true,
           title: true,
@@ -152,10 +152,10 @@ export const Messages = router({
         orderBy: { title: "asc" },
       });
 
-      return formatResponse(messages, "Messages retrieved successfully");
+      return formatResponse(message, "Messages retrieved successfully");
     } catch (error) {
-      console.error("Error getting messages:", error);
-      return formatResponse(null, "Failed to retrieve messages");
+      console.error("Error getting message:", error);
+      return formatResponse(null, "Failed to retrieve message");
     }
   }),
 
@@ -167,7 +167,7 @@ export const Messages = router({
         const { id, ...updateData } = input;
 
         // Check if message exists
-        const existingMessage = await ctx.prisma.messages.findUnique({
+        const existingMessage = await ctx.prisma.message.findUnique({
           where: { id },
         });
 
@@ -176,7 +176,7 @@ export const Messages = router({
         }
 
         // Update message
-        const updatedMessage = await ctx.prisma.messages.update({
+        const updatedMessage = await ctx.prisma.message.update({
           where: { id },
           data: {
             ...(updateData.title && { title: updateData.title }),
@@ -200,7 +200,7 @@ export const Messages = router({
     .mutation(async ({ ctx, input }) => {
       try {
         // Check if message exists
-        const existingMessage = await ctx.prisma.messages.findUnique({
+        const existingMessage = await ctx.prisma.message.findUnique({
           where: { id: input.id },
         });
 
@@ -209,7 +209,7 @@ export const Messages = router({
         }
 
         // Delete message
-        await ctx.prisma.messages.delete({
+        await ctx.prisma.message.delete({
           where: { id: input.id },
         });
 
@@ -231,25 +231,25 @@ export const Messages = router({
           return formatResponse(null, "No IDs provided");
         }
 
-        // Delete messages
-        const deleteResult = await ctx.prisma.messages.deleteMany({
+        // Delete message
+        const deleteResult = await ctx.prisma.message.deleteMany({
           where: { id: { in: ids } },
         });
 
         return formatResponse(
           { deletedCount: deleteResult.count },
-          `${deleteResult.count} messages deleted successfully`
+          `${deleteResult.count} message deleted successfully`
         );
       } catch (error) {
-        console.error("Error bulk deleting messages:", error);
-        return formatResponse(null, "Failed to delete messages");
+        console.error("Error bulk deleting message:", error);
+        return formatResponse(null, "Failed to delete message");
       }
     }),
 
   // GET COUNT - Mendapatkan jumlah total pesan
   getCount: publicProcedure.query(async ({ ctx }) => {
     try {
-      const count = await ctx.prisma.messages.count();
+      const count = await ctx.prisma.message.count();
       return formatResponse({ count }, "Message count retrieved successfully");
     } catch (error) {
       console.error("Error getting message count:", error);
@@ -269,7 +269,7 @@ export const Messages = router({
       try {
         const { query, limit } = input;
 
-        const messages = await ctx.prisma.messages.findMany({
+        const message = await ctx.prisma.message.findMany({
           where: {
             OR: [
               { title: { contains: query, mode: "insensitive" } },
@@ -280,10 +280,10 @@ export const Messages = router({
           orderBy: { id: "desc" },
         });
 
-        return formatResponse(messages, "Search completed successfully");
+        return formatResponse(message, "Search completed successfully");
       } catch (error) {
-        console.error("Error searching messages:", error);
-        return formatResponse(null, "Failed to search messages");
+        console.error("Error searching message:", error);
+        return formatResponse(null, "Failed to search message");
       }
     }),
 });

@@ -125,17 +125,17 @@ export const MembershipRouter = router({
       if (!user) {
         throw new TRPCClientError("unauthentcated");
       }
-      const membership = await ctx.prisma.pembelian.findMany({
+      const membership = await ctx.prisma.transaction.findMany({
         where: {
           AND: [
             {
               username: user?.session.username,
-              tipeTransaksi: "Membership",
+              transactionType: "Membership",
             },
           ],
         },
         include: {
-          pembayaran: true,
+          payment: true,
         },
       });
 

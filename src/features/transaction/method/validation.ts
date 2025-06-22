@@ -16,10 +16,10 @@ export async function ValidationMethodPayment({
   paymentCode: string;
   tx: Prisma.TransactionClient;
 }) {
-  const method = await tx.method.findFirst({
+  const method = await tx.paymentMethod.findFirst({
     where: {
       code: paymentCode,
-      isActive: true,
+      isActive: "active",
     },
   });
 
@@ -42,14 +42,14 @@ export async function ValidationMethodPayment({
   }
 
   // Validasi min/max
-  if (method.min && amount < method.min) {
+  if (method.minAmount && amount < method.minAmount) {
     status = false;
-    message = `Harga kurang dari ${formatRupiah(method.min)}`;
+    message = `Harga kurang dari ${formatRupiah(method.minAmount)}`;
   }
 
-  if (method.max && amount > method.max) {
+  if (method.maxAmount && amount > method.maxAmount) {
     status = false;
-    message = `Batas Harga telah limit ${formatRupiah(method.max)}`;
+    message = `Batas Harga telah limit ${formatRupiah(method.maxAmount)}`;
   }
 
   // Jika tidak valid, return early
@@ -68,12 +68,12 @@ export async function ValidationMethodPayment({
 
   // Hitung pajak
   let taxAmount = 0;
-  if (method.typeTax && method.taxAdmin) {
-    if (method.typeTax === "PERCENTAGE") {
+  if (method.taxType && method.taxAdmin) {
+    if (method.taxType === "PERCENTAGE") {
       // Hitung pajak percentage
       const rawTax = (amount * method.taxAdmin) / 100;
       taxAmount = Math.round(rawTax);
-    } else if (method.typeTax === "FIXED") {
+    } else if (method.taxType === "FIXED") {
       taxAmount = method.taxAdmin;
     }
   } else {

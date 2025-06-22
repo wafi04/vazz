@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { messageLogs } from "@/data/messages/messageLog";
+
+interface TransactionData {
+  id: number;
+  payment: {
+    orderId: string;
+    price: string;
+  } | null;
+  orderId: string;
+  username: string | null;
+  price: number;
+  successReportSent: string;
+}
 
 export async function POST(req: NextRequest) {
   let referenceId: string = "UNKNOWN";
@@ -14,10 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          data: {
-            message: "Invalid callback data format",
-            rc: "30",
-          },
+          messaxge: "Invalid callback data format",
         },
         { status: 400 }
       );
@@ -30,10 +40,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          data: {
-            message: "Missing reference ID",
-            rc: "31",
-          },
+          message: "Missing reference ID",
         },
         { status: 400 }
       );
@@ -41,7 +48,6 @@ export async function POST(req: NextRequest) {
 
     referenceId = ref_id;
 
-    // Normalize status - Digiflazz menggunakan "sukses" untuk transaksi berhasil
     const normalizedStatus = status ? status.trim().toLowerCase() : "";
     const purchaseStatus = normalizedStatus === "sukses" ? "SUCCESS" : "FAILED";
 
@@ -49,14 +55,28 @@ export async function POST(req: NextRequest) {
     return await prisma.$transaction(
       async (tx) => {
         // Find the pembelian record
-        const pembelian = await tx.pembelian.findFirst({
-          where: { refId: referenceId },
-        });
+        const pembelian: TransactionData | null =
+          await tx.transaction.findFirst({
+            where: { refId: referenceId },
+            select: {
+              id: true,
+              orderId: true,
+              username: true,
+              successReportSent: true,
+              price: true,
+              payment: {
+                select: {
+                  orderId: true,
+                  price: true,
+                },
+              },
+            },
+          });
 
         if (!pembelian) {
           return NextResponse.json(
             {
-              success: "1",
+              success: false,
               data: {
                 message: "Pembelian Not Found",
                 rc: "14",
@@ -66,66 +86,49 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        // Find associated pembayaran
-        const pembayaran = await tx.pembayaran.findFirst({
-          where: { orderId: pembelian?.orderId },
-        });
-
         // Prepare log message based on transaction status
         let logMessage = message || "";
         let refundProcessed = false;
 
         // For successful transactions, especially vouchers, include SN in the log
         if (purchaseStatus === "SUCCESS" && sn) {
-          logMessage = `Transaksi berhasil. SN/Kode Voucher: ${sn}`;
+          logMessage = messageLogs("SUCCESS", `SN/Kode Voucher: ${sn}`);
         }
         // If transaction fails, check for username and attempt to refund
         else if (purchaseStatus === "FAILED" && pembelian.username) {
           // Find user by username from pembelian record
-          const user = await tx.users.findFirst({
+          const user = await tx.transaction.findFirst({
             where: {
               username: pembelian.username as string,
             },
           });
 
-          if (user && pembayaran) {
+          if (user && pembelian) {
             // Refund balance - pastikan harga dikonversi ke number
             const harga =
-              typeof pembayaran.harga === "string"
-                ? parseInt(pembayaran.harga, 10)
-                : pembayaran.harga;
+              typeof pembelian.price === "string"
+                ? parseInt(pembelian.price, 10)
+                : pembelian.price;
 
-            await tx.users.update({
+            await tx.user.update({
               where: { id: user.id },
               data: {
                 balance: { increment: harga },
               },
             });
-
-            // Update log message with refund information
-            logMessage = `Transaksi gagal: ${
-              message || "unknown error"
-            }. Saldo telah dikembalikan ke Saldo Akun.`;
+            logMessage = messageLogs("FAILED");
             refundProcessed = true;
           } else if (!user) {
-            logMessage = `Transaksi gagal: ${
-              message || "unknown error"
-            }. Refund gagal: User ${pembelian.username} tidak ditemukan.`;
-          } else if (!pembayaran) {
-            logMessage = `Transaksi gagal: ${
-              message || "unknown error"
-            }. Refund gagal: Pembayaran untuk order ${
-              pembelian.orderId
-            } tidak ditemukan.`;
+            logMessage = messageLogs("FAILED");
           }
         }
 
         // Update pembelian record with final status
-        await tx.pembelian.update({
+        await tx.transaction.update({
           where: { id: pembelian.id },
           data: {
             status: purchaseStatus,
-            sn: sn || null,
+            serialNumber: sn || null,
             log: logMessage,
             updatedAt: new Date(),
           },
@@ -134,18 +137,18 @@ export async function POST(req: NextRequest) {
         // Trigger WhatsApp notification for status change
 
         // Handle success report flag update
-        if (purchaseStatus === "SUCCESS" && !pembelian.successReportSended) {
-          await tx.pembelian.update({
+        if (purchaseStatus === "SUCCESS" && !pembelian.successReportSent) {
+          await tx.transaction.update({
             where: { id: pembelian.id },
-            data: { successReportSended: true },
+            data: { successReportSent: "DONE" },
           });
         }
 
         return NextResponse.json({
           success: true,
+          message: "Callback processed successfully",
           data: {
-            message: "Callback processed successfully",
-            rc: "00",
+            ...pembelian,
           },
         });
       },
@@ -157,11 +160,8 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     return NextResponse.json({
-      success: "2",
-      data: {
-        message: error instanceof Error ? error.message : "System error",
-        rc: "99",
-      },
+      success: false,
+      message: error instanceof Error ? error.message : "System error",
     });
   } finally {
     await prisma.$disconnect();

@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     // Perform transaction with proper response handling
     const result = await prisma.$transaction(async (tx) => {
       // Find product
-      const product = await tx.layanan.findFirst({
+      const product = await tx.service.findFirst({
         where: {
           providerId: productCode,
         },
@@ -43,11 +43,11 @@ export async function POST(req: NextRequest) {
       // Set price based on user role
       let price;
       if (user && user.session.role === "Platinum") {
-        price = product.hargaPlatinum;
+        price = product.pricePlatinum;
       } else if (user?.session.role === "Reseller") {
-        price = product.hargaReseller;
+        price = product.priceReseller;
       } else {
-        price = product.harga;
+        price = product.price;
       }
 
       // Validate payment method
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       const validationVoucher = await checkingVoucher(tx, {
         amount: price,
         voucherCode,
-        categoryId: product.kategoriId,
+        categoryId: product.categoryId,
       });
 
       // Return data for use outside the transaction

@@ -23,7 +23,7 @@ export const subCategories = router({
       }
 
       if (input.active !== "all") {
-        where.active = input.active === "active";
+        where.isActive = input.active;
       }
       if (input.categoryId) {
         where.categoryId = input.categoryId;
@@ -36,9 +36,9 @@ export const subCategories = router({
       const data = await ctx.prisma.subCategory.findMany({
         where,
         skip,
-        take: perPage, // Changed from 'page' to 'perPage'
+        take: perPage,
         orderBy: {
-          createdAt: "desc",
+          name: "desc",
         },
       });
 

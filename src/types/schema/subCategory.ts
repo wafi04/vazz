@@ -15,7 +15,7 @@ export const getByCategoryId = z.object({
 export const createSubCategorySchema = z.object({
   code: z.string(),
   name: z.string(),
-  active: z.boolean(),
+  isActive: z.string(),
   categoryId: z.number(),
 });
 

@@ -43,7 +43,7 @@ export default async function CreateUser({
     const hashedPassword = hashSync(validatedData.password, 10);
 
     // Create user
-    const user = await prisma.users.create({
+    const user = await prisma.user.create({
       data: {
         ...validatedData,
         password: hashedPassword,

@@ -18,7 +18,7 @@ export const member = router({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const where: Prisma.UsersWhereInput = {};
+        const where: Prisma.UserWhereInput = {};
 
         if (input.filter) {
           where.username = input.filter;
@@ -28,7 +28,7 @@ export const member = router({
         const take = input.perPage;
 
         const [data, total] = await Promise.all([
-          ctx.prisma.users.findMany({
+          ctx.prisma.user.findMany({
             where,
             skip,
             take,
@@ -36,7 +36,7 @@ export const member = router({
               createdAt: "desc",
             },
           }),
-          ctx.prisma.users.count({ where }),
+          ctx.prisma.user.count({ where }),
         ]);
 
         return {
@@ -65,7 +65,7 @@ export const member = router({
           message: "Message retrieved successfully",
         };
       }
-      const membershipme = await ctx.prisma.deposits.findMany({
+      const membershipme = await ctx.prisma.deposit.findMany({
         where: {
           username: session.session.username,
           depositId: {
@@ -107,13 +107,13 @@ export const member = router({
         const skip = (page - 1) * limit;
 
         // Get total count of pembelian for pagination info
-        const totalPembelian = await ctx.prisma.pembelian.count({
+        const totalPembelian = await ctx.prisma.transaction.count({
           where: {
             username: session.session?.username, // Adjust this based on your relation
           },
         });
 
-        const profile = await ctx.prisma.users.findUnique({
+        const profile = await ctx.prisma.user.findUnique({
           where: {
             username: session.session?.username,
           },
@@ -126,7 +126,7 @@ export const member = router({
             otp: true,
             whatsapp: true,
             apiKey: true,
-            pembelian: {
+            transactions: {
               skip: skip,
               take: limit,
               orderBy: {
@@ -182,8 +182,9 @@ export const member = router({
           throw new Error("Username Telah Terpakai");
         }
 
-        const create = await ctx.prisma.users.create({
+        const create = await ctx.prisma.user.create({
           data: {
+            lastPaymentAt: new Date(),
             ...input,
             role: "Member",
             balance: 0,
@@ -214,7 +215,7 @@ export const member = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const create = await ctx.prisma.users.update({
+        const create = await ctx.prisma.user.update({
           where: {
             id: input.id,
           },
@@ -254,7 +255,7 @@ export const member = router({
             message: "user not found",
           };
         }
-        const userdelete = await ctx.prisma.users.delete({
+        const userdelete = await ctx.prisma.user.delete({
           where: {
             id: input.userId,
           },
